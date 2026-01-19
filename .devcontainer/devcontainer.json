@@ -1,0 +1,40 @@
+{
+	"name": "malpertus",
+	"privileged": false,
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	"runArgs": [
+		"--network=host",
+		"--hostname=malpertus"
+	],
+	"remoteUser": "grimbard",
+  "features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/stuartleeks/dev-container-features/shell-history:0": {}
+  },
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bierner.markdown-mermaid",
+				"github.vscode-pull-request-github",
+				"mads-hartmann.bash-ide-vscode",
+				"mechatroner.rainbow-csv",
+				"ms-vscode-remote.remote-ssh",
+				"ms-vscode-remote.remote-containers",
+				"ms-vscode-remote.vscode-remote-extensionpack",
+				"MS-SarifVSCode.sarif-viewer",
+				"timonwong.shellcheck",
+				"vsce-toolroom.vscode-beautify",
+				"google.gemini-cli-vscode-ide-companion"
+			],
+			"settings": {
+				"files.eol": "auto",
+				"terminal.integrated.defaultProfile.linux": "bash",
+				"window.restoreWindows": "none",
+				"workbench.startupEditor": "none"
+			}
+		}
+	},
+	"postCreateCommand": "bash -i -c ./.devcontainer/postCreateCommand.sh"
+}

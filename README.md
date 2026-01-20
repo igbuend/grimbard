@@ -41,6 +41,10 @@ The code in this project is licensed under the [MIT license](LICENSE).
 
 The documents (e.g. markdown files) are licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
 
+The security pattern skills were created from [Security Pattern Catalogue - DistriNet Research](https://securitypatterns.distrinet-research.be/). The [Gitlab repo](https://gitlab.kuleuven.be/distrinet/research/security-patterns/security-pattern-catalogue) is licensed under a [Creative Commons Attribution Non Commercial Share Alike 4.0 International License](https://creativecommons.org/licenses/by-nc-sa/4.0/).
+
+The anti-pattern skills were created from [sec-context](https://github.com/Arcanum-Sec/sec-context) by [Arcanum Security](https://arcanum-sec.com/). The repository does not contain any copyright information (which legally means it is copyrighted by default). Awaiting clarification, but consider this work a derivative (IANAL).
+
 Some of the Claude skills are (modified) versions of the [Trail of Bits Skills Marketplace](https://github.com/trailofbits/skills). These skills are licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
 
 

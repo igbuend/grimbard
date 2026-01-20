@@ -5,10 +5,7 @@ description: Security anti-pattern for mass assignment vulnerabilities (CWE-915)
 
 # Mass Assignment Anti-Pattern
 
-**CWE:** CWE-915 (Improperly Controlled Modification of Dynamically-Determined Object Attributes)
-**CAPEC:** [CAPEC-114: Authentication Abuse](https://capec.mitre.org/data/definitions/114.html)
 **Severity:** High
-**OWASP:** A01:2021 - Broken Access Control
 
 ## Risk
 
@@ -178,6 +175,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-915: Mass Assignment](https://cwe.mitre.org/data/definitions/915.html)
+- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 - [OWASP Mass Assignment](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
+- [CWE-915: Mass Assignment](https://cwe.mitre.org/data/definitions/915.html)
+- [CAPEC-114: Authentication Abuse](https://capec.mitre.org/data/definitions/114.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

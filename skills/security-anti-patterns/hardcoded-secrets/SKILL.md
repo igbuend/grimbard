@@ -5,10 +5,7 @@ description: Security anti-pattern for hardcoded credentials and secrets (CWE-79
 
 # Hardcoded Secrets Anti-Pattern
 
-**CWE:** CWE-798 (Use of Hard-coded Credentials), CWE-259 (Use of Hard-coded Password)
-**CAPEC:** [CAPEC-191: Read Sensitive Constants Within an Executable](https://capec.mitre.org/data/definitions/191.html)
 **Severity:** Critical
-**OWASP:** A07:2021 - Identification and Authentication Failures
 
 ## Risk
 
@@ -157,6 +154,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- [OWASP Top 10 A07:2021 - Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 - [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
+- [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
+- [CAPEC-191: Read Sensitive Constants Within an Executable](https://capec.mitre.org/data/definitions/191.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

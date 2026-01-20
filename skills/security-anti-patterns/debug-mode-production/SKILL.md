@@ -5,10 +5,7 @@ description: Security anti-pattern for debug mode in production (CWE-215). Use w
 
 # Debug Mode in Production Anti-Pattern
 
-**CWE:** CWE-215 (Insertion of Sensitive Information Into Debugging Code)
-**CAPEC:** [CAPEC-121: Exploit Non-Production Interfaces](https://capec.mitre.org/data/definitions/121.html)
 **Severity:** High
-**OWASP:** A05:2021 - Security Misconfiguration
 
 ## Risk
 
@@ -156,6 +153,7 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 - [CWE-215: Debug Information Exposure](https://cwe.mitre.org/data/definitions/215.html)
-- [OWASP Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
+- [CAPEC-121: Exploit Non-Production Interfaces](https://capec.mitre.org/data/definitions/121.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

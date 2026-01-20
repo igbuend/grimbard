@@ -5,10 +5,7 @@ description: Security anti-pattern for Cross-Site Scripting vulnerabilities (CWE
 
 # Cross-Site Scripting (XSS) Anti-Pattern
 
-**CWE:** CWE-79 (Improper Neutralization of Input During Web Page Generation)
-**CAPEC:** [CAPEC-86](https://capec.mitre.org/data/definitions/86.html), [CAPEC-591](https://capec.mitre.org/data/definitions/591.html), [CAPEC-592](https://capec.mitre.org/data/definitions/592.html) (XSS variants)
 **Severity:** Critical
-**OWASP:** A03:2021 - Injection
 
 ## Risk
 
@@ -179,6 +176,10 @@ Different contexts require different encoding:
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP XSS Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross_Site_Scripting_Prevention_Cheat_Sheet.html)
+- [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
+- [CAPEC-86: XSS Through HTTP Headers](https://capec.mitre.org/data/definitions/86.html)
+- [CAPEC-591: Reflected XSS](https://capec.mitre.org/data/definitions/591.html)
+- [CAPEC-592: Stored XSS](https://capec.mitre.org/data/definitions/592.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

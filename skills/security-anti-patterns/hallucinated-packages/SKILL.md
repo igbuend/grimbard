@@ -5,10 +5,7 @@ description: Security anti-pattern for hallucinated (non-existent) packages (CWE
 
 # Hallucinated Packages Anti-Pattern
 
-**CWE:** CWE-1357 (Reliance on Unverified Package)
-**CAPEC:** [CAPEC-538: Open-Source Library Manipulation](https://capec.mitre.org/data/definitions/538.html)
 **Severity:** Critical
-**OWASP:** A06:2021 - Vulnerable and Outdated Components
 
 ## Risk
 
@@ -167,7 +164,9 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A06:2021 - Vulnerable and Outdated Components](https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/)
 - [CWE-1357: Reliance on Unverified Package](https://cwe.mitre.org/data/definitions/1357.html)
+- [CAPEC-538: Open-Source Library Manipulation](https://capec.mitre.org/data/definitions/538.html)
 - [USENIX Study on Package Hallucination](https://arxiv.org/abs/2406.10279)
 - [Socket.dev: AI Package Hallucinations](https://socket.dev/blog/ai-package-hallucinations)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

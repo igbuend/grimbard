@@ -5,10 +5,7 @@ description: Security anti-pattern for session fixation vulnerabilities (CWE-384
 
 # Session Fixation Anti-Pattern
 
-**CWE:** CWE-384 (Session Fixation)
-**CAPEC:** [CAPEC-61: Session Fixation](https://capec.mitre.org/data/definitions/61.html)
 **Severity:** High
-**OWASP:** A07:2021 - Identification and Authentication Failures
 
 ## Risk
 
@@ -171,6 +168,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-384: Session Fixation](https://cwe.mitre.org/data/definitions/384.html)
+- [OWASP Top 10 A07:2021 - Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 - [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+- [CWE-384: Session Fixation](https://cwe.mitre.org/data/definitions/384.html)
+- [CAPEC-61: Session Fixation](https://capec.mitre.org/data/definitions/61.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

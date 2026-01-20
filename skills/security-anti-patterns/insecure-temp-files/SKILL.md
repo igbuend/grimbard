@@ -5,10 +5,7 @@ description: Security anti-pattern for insecure temporary files (CWE-377). Use w
 
 # Insecure Temp Files Anti-Pattern
 
-**CWE:** CWE-377 (Insecure Temporary File)
-**CAPEC:** [CAPEC-155: Screen Temporary Files for Sensitive Information](https://capec.mitre.org/data/definitions/155.html)
 **Severity:** Medium
-**OWASP:** A01:2021 - Broken Access Control
 
 ## Risk
 
@@ -212,6 +209,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 - [CWE-377: Insecure Temporary File](https://cwe.mitre.org/data/definitions/377.html)
+- [CAPEC-155: Screen Temporary Files for Sensitive Information](https://capec.mitre.org/data/definitions/155.html)
 - [Python tempfile module](https://docs.python.org/3/library/tempfile.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

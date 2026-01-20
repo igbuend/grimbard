@@ -5,10 +5,7 @@ description: Security anti-pattern for missing input validation (CWE-20). Use wh
 
 # Missing Input Validation Anti-Pattern
 
-**CWE:** CWE-20 (Improper Input Validation)
-**CAPEC:** [CAPEC-153: Input Data Manipulation](https://capec.mitre.org/data/definitions/153.html)
 **Severity:** High
-**OWASP:** A03:2021 - Injection (enables), A04:2021 - Insecure Design
 
 ## Risk
 
@@ -178,6 +175,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
+- [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
+- [CAPEC-153: Input Data Manipulation](https://capec.mitre.org/data/definitions/153.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

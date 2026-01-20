@@ -5,10 +5,7 @@ description: Security anti-pattern for verbose error messages (CWE-209). Use whe
 
 # Verbose Error Messages Anti-Pattern
 
-**CWE:** CWE-209 (Generation of Error Message Containing Sensitive Information)
-**CAPEC:** [CAPEC-54: Query System for Information](https://capec.mitre.org/data/definitions/54.html)
 **Severity:** Medium
-**OWASP:** A05:2021 - Security Misconfiguration
 
 ## Risk
 
@@ -153,6 +150,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-209: Error Message Information Exposure](https://cwe.mitre.org/data/definitions/209.html)
+- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 - [OWASP Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)
+- [CWE-209: Error Message Information Exposure](https://cwe.mitre.org/data/definitions/209.html)
+- [CAPEC-54: Query System for Information](https://capec.mitre.org/data/definitions/54.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

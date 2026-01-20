@@ -5,10 +5,7 @@ description: Security anti-pattern for excessive data exposure (CWE-200). Use wh
 
 # Excessive Data Exposure Anti-Pattern
 
-**CWE:** CWE-200 (Exposure of Sensitive Information to an Unauthorized Actor)
-**CAPEC:** [CAPEC-37: Retrieve Embedded Sensitive Data](https://capec.mitre.org/data/definitions/37.html)
 **Severity:** High
-**OWASP:** A01:2021 - Broken Access Control, A03:2021 - Injection
 
 ## Risk
 
@@ -173,6 +170,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)
+- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 - [OWASP API3: Excessive Data Exposure](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
+- [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)
+- [CAPEC-37: Retrieve Embedded Sensitive Data](https://capec.mitre.org/data/definitions/37.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

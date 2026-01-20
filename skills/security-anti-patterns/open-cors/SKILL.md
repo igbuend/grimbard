@@ -5,10 +5,7 @@ description: Security anti-pattern for overly permissive CORS (CWE-346). Use whe
 
 # Open CORS Anti-Pattern
 
-**CWE:** CWE-346 (Origin Validation Error)
-**CAPEC:** [CAPEC-111: JSON Hijacking](https://capec.mitre.org/data/definitions/111.html)
 **Severity:** Medium
-**OWASP:** A05:2021 - Security Misconfiguration
 
 ## Risk
 
@@ -175,6 +172,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 - [CWE-346: Origin Validation Error](https://cwe.mitre.org/data/definitions/346.html)
+- [CAPEC-111: JSON Hijacking](https://capec.mitre.org/data/definitions/111.html)
 - [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

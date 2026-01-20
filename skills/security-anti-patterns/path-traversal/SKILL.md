@@ -5,10 +5,7 @@ description: Security anti-pattern for path traversal vulnerabilities (CWE-22). 
 
 # Path Traversal Anti-Pattern
 
-**CWE:** CWE-22 (Improper Limitation of a Pathname to a Restricted Directory)
-**CAPEC:** [CAPEC-126: Path Traversal](https://capec.mitre.org/data/definitions/126.html)
 **Severity:** High
-**OWASP:** A01:2021 - Broken Access Control
 
 ## Risk
 
@@ -143,6 +140,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
+- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 - [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
+- [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
+- [CAPEC-126: Path Traversal](https://capec.mitre.org/data/definitions/126.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

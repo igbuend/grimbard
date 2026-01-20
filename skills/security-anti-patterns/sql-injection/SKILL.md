@@ -5,10 +5,7 @@ description: Security anti-pattern for SQL injection vulnerabilities (CWE-89). U
 
 # SQL Injection Anti-Pattern
 
-**CWE:** CWE-89 (Improper Neutralization of Special Elements used in an SQL Command)
-**CAPEC:** [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)
 **Severity:** Critical
-**OWASP:** A03:2021 - Injection
 
 ## Risk
 
@@ -90,6 +87,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
+- [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
+- [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

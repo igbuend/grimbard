@@ -5,10 +5,7 @@ description: Security anti-pattern for weak encryption (CWE-326, CWE-327). Use w
 
 # Weak Encryption Anti-Pattern
 
-**CWE:** CWE-326 (Inadequate Encryption Strength), CWE-327 (Use of Broken Cryptographic Algorithm)
-**CAPEC:** [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
 **Severity:** High
-**OWASP:** A02:2021 - Cryptographic Failures
 
 ## Risk
 
@@ -177,6 +174,7 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 - [CWE-326: Inadequate Encryption Strength](https://cwe.mitre.org/data/definitions/326.html)
-- [OWASP Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

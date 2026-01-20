@@ -5,10 +5,7 @@ description: Security anti-pattern for weak password hashing (CWE-327, CWE-759).
 
 # Weak Password Hashing Anti-Pattern
 
-**CWE:** CWE-327 (Use of Broken Cryptographic Algorithm), CWE-759 (Use of One-Way Hash without a Salt)
-**CAPEC:** [CAPEC-55: Rainbow Table Password Cracking](https://capec.mitre.org/data/definitions/55.html)
 **Severity:** High
-**OWASP:** A02:2021 - Cryptographic Failures
 
 ## Risk
 
@@ -150,6 +147,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-327: Broken Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 - [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
+- [CWE-327: Broken Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [CAPEC-55: Rainbow Table Password Cracking](https://capec.mitre.org/data/definitions/55.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

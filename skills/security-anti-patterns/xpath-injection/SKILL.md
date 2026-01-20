@@ -5,10 +5,7 @@ description: Security anti-pattern for XPath injection vulnerabilities (CWE-643)
 
 # XPath Injection Anti-Pattern
 
-**CWE:** CWE-643 (Improper Neutralization of Data within XPath Expressions)
-**CAPEC:** [CAPEC-83: XPath Injection](https://capec.mitre.org/data/definitions/83.html)
 **Severity:** High
-**OWASP:** A03:2021 - Injection
 
 ## Risk
 
@@ -114,6 +111,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-643: XPath Injection](https://cwe.mitre.org/data/definitions/643.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP XPath Injection](https://owasp.org/www-community/attacks/XPATH_Injection)
+- [CWE-643: XPath Injection](https://cwe.mitre.org/data/definitions/643.html)
+- [CAPEC-83: XPath Injection](https://capec.mitre.org/data/definitions/83.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

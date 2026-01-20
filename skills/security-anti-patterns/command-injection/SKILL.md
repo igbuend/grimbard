@@ -5,10 +5,7 @@ description: Security anti-pattern for OS command injection vulnerabilities (CWE
 
 # Command Injection Anti-Pattern
 
-**CWE:** CWE-78 (Improper Neutralization of Special Elements used in an OS Command)
-**CAPEC:** [CAPEC-88: OS Command Injection](https://capec.mitre.org/data/definitions/88.html)
 **Severity:** Critical
-**OWASP:** A03:2021 - Injection
 
 ## Risk
 
@@ -108,6 +105,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP OS Command Injection Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)
+- [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)
+- [CAPEC-88: OS Command Injection](https://capec.mitre.org/data/definitions/88.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

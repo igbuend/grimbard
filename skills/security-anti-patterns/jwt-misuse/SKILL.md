@@ -5,10 +5,7 @@ description: Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Use
 
 # JWT Misuse Anti-Pattern
 
-**CWE:** CWE-287 (Improper Authentication), CWE-347 (Improper Verification of Cryptographic Signature)
-**CAPEC:** [CAPEC-220: Client-Server Protocol Manipulation](https://capec.mitre.org/data/definitions/220.html)
 **Severity:** High
-**OWASP:** A07:2021 - Identification and Authentication Failures
 
 ## Risk
 
@@ -208,6 +205,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
+- [OWASP Top 10 A07:2021 - Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
 - [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
+- [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
+- [CAPEC-220: Client-Server Protocol Manipulation](https://capec.mitre.org/data/definitions/220.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

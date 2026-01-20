@@ -5,10 +5,7 @@ description: Security anti-pattern for missing security headers (CWE-16). Use wh
 
 # Missing Security Headers Anti-Pattern
 
-**CWE:** CWE-16 (Configuration)
-**CAPEC:** [CAPEC-462: Cross-Domain Search Timing](https://capec.mitre.org/data/definitions/462.html)
 **Severity:** Medium
-**OWASP:** A05:2021 - Security Misconfiguration
 
 ## Risk
 
@@ -153,7 +150,9 @@ response.headers['Content-Security-Policy'] = "default-src 'self'"
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-16: Configuration](https://cwe.mitre.org/data/definitions/16.html)
+- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
 - [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/)
+- [CWE-16: Configuration](https://cwe.mitre.org/data/definitions/16.html)
+- [CAPEC-462: Cross-Domain Search Timing](https://capec.mitre.org/data/definitions/462.html)
 - [SecurityHeaders.com](https://securityheaders.com/)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

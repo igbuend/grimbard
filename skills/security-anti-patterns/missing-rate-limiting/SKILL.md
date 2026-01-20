@@ -5,10 +5,7 @@ description: Security anti-pattern for missing rate limiting (CWE-770). Use when
 
 # Missing Rate Limiting Anti-Pattern
 
-**CWE:** CWE-770 (Allocation of Resources Without Limits or Throttling)
-**CAPEC:** [CAPEC-49: Password Brute Forcing](https://capec.mitre.org/data/definitions/49.html)
 **Severity:** High
-**OWASP:** A04:2021 - Insecure Design
 
 ## Risk
 
@@ -150,6 +147,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-770: Resource Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)
+- [OWASP Top 10 A04:2021 - Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
 - [OWASP Rate Limiting](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html)
+- [CWE-770: Resource Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)
+- [CAPEC-49: Password Brute Forcing](https://capec.mitre.org/data/definitions/49.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

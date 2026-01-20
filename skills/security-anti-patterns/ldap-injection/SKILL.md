@@ -5,10 +5,7 @@ description: Security anti-pattern for LDAP injection vulnerabilities (CWE-90). 
 
 # LDAP Injection Anti-Pattern
 
-**CWE:** CWE-90 (Improper Neutralization of Special Elements used in an LDAP Query)
-**CAPEC:** [CAPEC-136: LDAP Injection](https://capec.mitre.org/data/definitions/136.html)
 **Severity:** High
-**OWASP:** A03:2021 - Injection
 
 ## Risk
 
@@ -117,6 +114,8 @@ Characters that must be escaped in LDAP filters:
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-90: LDAP Injection](https://cwe.mitre.org/data/definitions/90.html)
+- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
 - [OWASP LDAP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html)
+- [CWE-90: LDAP Injection](https://cwe.mitre.org/data/definitions/90.html)
+- [CAPEC-136: LDAP Injection](https://capec.mitre.org/data/definitions/136.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

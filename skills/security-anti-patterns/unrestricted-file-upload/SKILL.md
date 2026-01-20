@@ -5,10 +5,7 @@ description: Security anti-pattern for unrestricted file upload vulnerabilities 
 
 # Unrestricted File Upload Anti-Pattern
 
-**CWE:** CWE-434 (Unrestricted Upload of File with Dangerous Type)
-**CAPEC:** [CAPEC-1: Accessing Functionality Not Properly Constrained by ACLs](https://capec.mitre.org/data/definitions/1.html)
 **Severity:** Critical
-**OWASP:** A04:2021 - Insecure Design
 
 ## Risk
 
@@ -184,6 +181,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-434: Unrestricted File Upload](https://cwe.mitre.org/data/definitions/434.html)
+- [OWASP Top 10 A04:2021 - Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
 - [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
+- [CWE-434: Unrestricted File Upload](https://cwe.mitre.org/data/definitions/434.html)
+- [CAPEC-1: Accessing Functionality Not Properly Constrained by ACLs](https://capec.mitre.org/data/definitions/1.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

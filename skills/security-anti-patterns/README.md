@@ -1,10 +1,10 @@
 # Security Anti-Patterns Skills
 
-Security anti-patterns that AI-generated code commonly exhibits. Each skill provides BAD (vulnerable) and GOOD (secure) pseudocode patterns to help identify and fix security vulnerabilities.
+Security anti-patterns that human or AI-generated code commonly exhibits. Each skill provides BAD (vulnerable) and GOOD (secure) pseudocode patterns to help identify and fix security vulnerabilities.
 
 ## Overview
 
-These 25 anti-pattern skills are extracted from research on AI-generated code vulnerabilities:
+These 37 anti-pattern skills are extracted from research on AI-generated code vulnerabilities:
 
 - **86%** of AI-generated code fails XSS defenses
 - **5-21%** of AI-suggested packages don't exist (slopsquatting)
@@ -52,6 +52,47 @@ These 25 anti-pattern skills are extracted from research on AI-generated code vu
 | [open-cors](./open-cors/) | CWE-346 | Wildcard CORS origins |
 | [insecure-temp-files](./insecure-temp-files/) | CWE-377 | Predictable temp file paths |
 | [verbose-error-messages](./verbose-error-messages/) | CWE-209 | Stack traces exposed to users |
+
+## Advanced Security Anti-Patterns
+
+These 12 advanced skills cover edge cases, sophisticated attack vectors, and specialized vulnerabilities that require deeper security knowledge.
+
+### Advanced Injection Patterns
+
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| [second-order-injection](./second-order-injection/) | CWE-89 | Data stored safely but used unsafely later |
+| [encoding-bypass](./encoding-bypass/) | CWE-838 | Double-encoding and character set confusion |
+
+### Advanced XSS Patterns
+
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| [mutation-xss](./mutation-xss/) | CWE-79 | Browser parsing mutations bypass sanitizers |
+| [dom-clobbering](./dom-clobbering/) | CWE-79 | HTML injection overwrites DOM properties |
+
+### Authentication Edge Cases
+
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| [timing-attacks](./timing-attacks/) | CWE-208 | Side-channel through timing differences |
+| [oauth-security](./oauth-security/) | CWE-352 | Missing state parameter and PKCE |
+
+### Cryptographic Edge Cases
+
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| [padding-oracle](./padding-oracle/) | CWE-649 | Error messages reveal padding validity |
+| [length-extension-attacks](./length-extension-attacks/) | CWE-328 | hash(secret+msg) allows forgery |
+
+### Input Validation Edge Cases
+
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| [redos](./redos/) | CWE-1333 | Regex catastrophic backtracking |
+| [unicode-security](./unicode-security/) | CWE-176 | Confusables and normalization issues |
+| [type-confusion](./type-confusion/) | CWE-843 | Weak typing and coercion exploits |
+| [integer-overflow](./integer-overflow/) | CWE-190 | Arithmetic overflow bypasses validation |
 
 ## Usage
 

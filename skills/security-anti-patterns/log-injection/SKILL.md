@@ -5,10 +5,7 @@ description: Security anti-pattern for log injection vulnerabilities (CWE-117). 
 
 # Log Injection Anti-Pattern
 
-**CWE:** CWE-117 (Improper Output Neutralization for Logs)
-**CAPEC:** [CAPEC-93: Log Injection-Tampering-Forging](https://capec.mitre.org/data/definitions/93.html)
 **Severity:** Medium
-**OWASP:** A09:2021 - Security Logging and Monitoring Failures
 
 ## Risk
 
@@ -142,6 +139,8 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
-- [CWE-117: Log Injection](https://cwe.mitre.org/data/definitions/117.html)
+- [OWASP Top 10 A09:2021 - Security Logging and Monitoring Failures](https://owasp.org/Top10/A09_2021-Security_Logging_and_Monitoring_Failures/)
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
+- [CWE-117: Log Injection](https://cwe.mitre.org/data/definitions/117.html)
+- [CAPEC-93: Log Injection-Tampering-Forging](https://capec.mitre.org/data/definitions/93.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -5,10 +5,7 @@ description: Security anti-pattern for insufficient randomness vulnerabilities (
 
 # Insufficient Randomness Anti-Pattern
 
-**CWE:** CWE-330 (Use of Insufficiently Random Values)
-**CAPEC:** [CAPEC-112: Brute Force](https://capec.mitre.org/data/definitions/112.html)
 **Severity:** High
-**OWASP:** A02:2021 - Cryptographic Failures
 
 ## Risk
 
@@ -139,6 +136,7 @@ END FUNCTION
 
 ## References
 
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)
+- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
 - [CWE-330: Insufficiently Random Values](https://cwe.mitre.org/data/definitions/330.html)
-- [OWASP Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [CAPEC-112: Brute Force](https://capec.mitre.org/data/definitions/112.html)
+- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

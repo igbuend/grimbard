@@ -1,3 +1,7 @@
+<p align="center" width="100%">
+    <img width="50%" src="grimbard.png" alt="grimbard logo" title="grimbard logo">
+</p>
+
 # grimbard
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)

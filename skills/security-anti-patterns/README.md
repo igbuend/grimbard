@@ -1,123 +1,45 @@
-# Security Anti-Patterns Skills
+# Security Anti-Patterns
 
-Security anti-patterns that human or AI-generated code commonly exhibits. Each skill provides BAD (vulnerable) and GOOD (secure) pseudocode patterns to help identify and fix security vulnerabilities.
+This directory contains a collection of security anti-patterns. Each anti-pattern is a "skill" that can be used to identify and fix common security vulnerabilities in code.
 
-## Overview
+## Anti-Patterns
 
-These 37 anti-pattern skills are extracted from research on AI-generated code vulnerabilities:
-
-- **86%** of AI-generated code fails XSS defenses
-- **5-21%** of AI-suggested packages don't exist (slopsquatting)
-- AI code is **2.74x more likely** to have XSS vulnerabilities
-- SQL injection patterns appeared thousands of times in AI training data
-
-## Skills by Severity
-
-### Critical Severity
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [hallucinated-packages](./hallucinated-packages/) | CWE-1357 | AI suggests non-existent packages |
-| [xss](./xss/) | CWE-79 | Cross-site scripting (Reflected/Stored/DOM) |
-| [hardcoded-secrets](./hardcoded-secrets/) | CWE-798 | Credentials embedded in source code |
-| [sql-injection](./sql-injection/) | CWE-89 | Unsanitized input in SQL queries |
-| [missing-authentication](./missing-authentication/) | CWE-287 | Unprotected endpoints |
-| [command-injection](./command-injection/) | CWE-78 | Unsanitized input in shell commands |
-| [unrestricted-file-upload](./unrestricted-file-upload/) | CWE-434 | No validation on uploaded files |
-
-### High Severity
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [missing-input-validation](./missing-input-validation/) | CWE-20 | No type/length/format validation |
-| [insufficient-randomness](./insufficient-randomness/) | CWE-330 | Weak random for security tokens |
-| [missing-rate-limiting](./missing-rate-limiting/) | CWE-770 | No request throttling |
-| [excessive-data-exposure](./excessive-data-exposure/) | CWE-200 | Returning more data than needed |
-| [path-traversal](./path-traversal/) | CWE-22 | Directory traversal attacks |
-| [weak-password-hashing](./weak-password-hashing/) | CWE-327 | MD5/SHA1 instead of bcrypt/argon2 |
-| [debug-mode-production](./debug-mode-production/) | CWE-215 | Debug enabled in production |
-| [weak-encryption](./weak-encryption/) | CWE-326 | Outdated algorithms or modes |
-| [session-fixation](./session-fixation/) | CWE-384 | Session ID not regenerated |
-| [jwt-misuse](./jwt-misuse/) | CWE-287 | Weak JWT secrets or algorithms |
-| [mass-assignment](./mass-assignment/) | CWE-915 | Uncontrolled property binding |
-| [ldap-injection](./ldap-injection/) | CWE-90 | Unsanitized LDAP filters |
-| [xpath-injection](./xpath-injection/) | CWE-643 | Unsanitized XPath queries |
-
-### Medium Severity
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [log-injection](./log-injection/) | CWE-117 | Unsanitized data in logs |
-| [missing-security-headers](./missing-security-headers/) | CWE-16 | No CSP, HSTS, X-Frame-Options |
-| [open-cors](./open-cors/) | CWE-346 | Wildcard CORS origins |
-| [insecure-temp-files](./insecure-temp-files/) | CWE-377 | Predictable temp file paths |
-| [verbose-error-messages](./verbose-error-messages/) | CWE-209 | Stack traces exposed to users |
-
-## Advanced Security Anti-Patterns
-
-These 12 advanced skills cover edge cases, sophisticated attack vectors, and specialized vulnerabilities that require deeper security knowledge.
-
-### Advanced Injection Patterns
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [second-order-injection](./second-order-injection/) | CWE-89 | Data stored safely but used unsafely later |
-| [encoding-bypass](./encoding-bypass/) | CWE-838 | Double-encoding and character set confusion |
-
-### Advanced XSS Patterns
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [mutation-xss](./mutation-xss/) | CWE-79 | Browser parsing mutations bypass sanitizers |
-| [dom-clobbering](./dom-clobbering/) | CWE-79 | HTML injection overwrites DOM properties |
-
-### Authentication Edge Cases
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [timing-attacks](./timing-attacks/) | CWE-208 | Side-channel through timing differences |
-| [oauth-security](./oauth-security/) | CWE-352 | Missing state parameter and PKCE |
-
-### Cryptographic Edge Cases
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [padding-oracle](./padding-oracle/) | CWE-649 | Error messages reveal padding validity |
-| [length-extension-attacks](./length-extension-attacks/) | CWE-328 | hash(secret+msg) allows forgery |
-
-### Input Validation Edge Cases
-
-| Skill | CWE | Description |
-|-------|-----|-------------|
-| [redos](./redos/) | CWE-1333 | Regex catastrophic backtracking |
-| [unicode-security](./unicode-security/) | CWE-176 | Confusables and normalization issues |
-| [type-confusion](./type-confusion/) | CWE-843 | Weak typing and coercion exploits |
-| [integer-overflow](./integer-overflow/) | CWE-190 | Arithmetic overflow bypasses validation |
-
-## Usage
-
-Include the relevant skill when:
-- Generating code that handles user input
-- Reviewing AI-generated code for security issues
-- Building authentication, authorization, or session management
-- Working with databases, file systems, or external commands
-- Implementing APIs or web endpoints
-
-## Related Skills
-
-These anti-patterns complement the positive security patterns in [../security-patterns/](../security-patterns/):
-
-| Anti-Pattern | Related Positive Pattern |
-|--------------|-------------------------|
-| sql-injection | data-validation |
-| xss | output-filter |
-| missing-authentication | authentication |
-| hardcoded-secrets | cryptographic-key-management |
-| weak-encryption | encryption |
-| session-fixation | session-based-access-control |
-
-## References
-
-- Source: [sec-context](https://github.com/Arcanum-Sec/sec-context) by Arcanum Security
-- [CWE Top 25 Most Dangerous Software Weaknesses](https://cwe.mitre.org/top25/)
-- [OWASP Top 10](https://owasp.org/Top10/)
+| Name | Description |
+| --- | --- |
+| [command-injection](command-injection) | Security anti-pattern for OS command injection vulnerabilities (CWE-78). Use when generating or reviewing code that executes shell commands, runs system processes, or handles user input in command-line operations. Detects shell string concatenation and recommends argument arrays. |
+| [debug-mode-production](debug-mode-production) | Security anti-pattern for debug mode in production (CWE-215). Use when generating or reviewing code that configures application settings, deployment configurations, or error handling. Detects hardcoded debug flags and development-only features in production. |
+| [dom-clobbering](dom-clobbering) | Security anti-pattern for DOM clobbering vulnerabilities (CWE-79 variant). Use when generating or reviewing code that accesses DOM elements by ID, uses global variables, or relies on document properties. Detects HTML injection that overwrites JavaScript globals. |
+| [encoding-bypass](encoding-bypass) | Security anti-pattern for encoding bypass vulnerabilities (CWE-838). Use when generating or reviewing code that handles URL encoding, Unicode normalization, or character set conversions before security validation. Detects validation before normalization and double-encoding issues. |
+| [excessive-data-exposure](excessive-data-exposure) | Security anti-pattern for excessive data exposure (CWE-200). Use when generating or reviewing API responses, database queries, or data serialization. Detects returning more data than necessary including internal fields, sensitive attributes, and related records. |
+| [hallucinated-packages](hallucinated-packages) | Security anti-pattern for hallucinated (non-existent) packages (CWE-1357). Use when generating or reviewing AI-assisted code that imports packages, dependencies, or libraries. CRITICAL AI-specific vulnerability with 5-21% hallucination rate. Detects dependency confusion and slopsquatting risks. |
+| [hardcoded-secrets](hardcoded-secrets) | Security anti-pattern for hardcoded credentials and secrets (CWE-798). Use when generating or reviewing code that handles API keys, passwords, database credentials, encryption keys, or any sensitive configuration. Detects embedded secrets and recommends environment variables or secret managers. |
+| [insecure-temp-files](insecure-temp-files) | Security anti-pattern for insecure temporary files (CWE-377). Use when generating or reviewing code that creates temporary files, handles file caching, or processes uploads through temp storage. Detects predictable paths, insecure permissions, and missing cleanup. |
+| [insufficient-randomness](insufficient-randomness) | Security anti-pattern for insufficient randomness vulnerabilities (CWE-330). Use when generating or reviewing code that creates security tokens, session IDs, encryption keys, nonces, or any security-critical random values. Detects use of Math.random() or predictable seeds. |
+| [integer-overflow](integer-overflow) | Security anti-pattern for integer overflow vulnerabilities (CWE-190). Use when generating or reviewing code that performs arithmetic on user-controlled values, handles sizes/quantities, or calculates prices/amounts. Detects overflow in validated inputs. |
+| [jwt-misuse](jwt-misuse) | Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Use when generating or reviewing code that creates, validates, or uses JSON Web Tokens. Detects none algorithm attacks, weak secrets, sensitive data in payloads, and missing expiration. |
+| [ldap-injection](ldap-injection) | Security anti-pattern for LDAP injection vulnerabilities (CWE-90). Use when generating or reviewing code that constructs LDAP filters, queries directory services, or handles user input in LDAP operations. Detects unescaped special characters in LDAP filters. |
+| [length-extension-attacks](length-extension-attacks) | Security anti-pattern for hash length extension vulnerabilities (CWE-328). Use when generating or reviewing code that uses hash(secret + message) for authentication, API signatures, or integrity verification. Detects Merkle-Damgard hash misuse. |
+| [log-injection](log-injection) | Security anti-pattern for log injection vulnerabilities (CWE-117). Use when generating or reviewing code that writes to log files, handles logging of user input, or processes log data. Detects unsanitized data in log messages enabling log forging and CRLF injection. |
+| [mass-assignment](mass-assignment) | Security anti-pattern for mass assignment vulnerabilities (CWE-915). Use when generating or reviewing code that creates or updates objects from user input, form handling, or API request processing. Detects uncontrolled property binding enabling privilege escalation. |
+| [missing-authentication](missing-authentication) | Security anti-pattern for missing or broken authentication (CWE-287). Use when generating or reviewing code for login systems, API endpoints, protected routes, or access control. Detects unprotected endpoints, weak password policies, and missing rate limiting on authentication. |
+| [missing-input-validation](missing-input-validation) | Security anti-pattern for missing input validation (CWE-20). Use when generating or reviewing code that processes user input, form data, API parameters, or external data. Detects client-only validation, missing type checks, and absent length limits. Foundation vulnerability enabling most attack classes. |
+| [missing-rate-limiting](missing-rate-limiting) | Security anti-pattern for missing rate limiting (CWE-770). Use when generating or reviewing API endpoints, authentication systems, or public-facing services. Detects absence of request throttling enabling brute force, credential stuffing, and DoS attacks. |
+| [missing-security-headers](missing-security-headers) | Security anti-pattern for missing security headers (CWE-16). Use when generating or reviewing web application code, server configuration, or HTTP response handling. Detects missing CSP, HSTS, X-Frame-Options, and other protective headers. |
+| [mutation-xss](mutation-xss) | Security anti-pattern for mutation XSS (mXSS) vulnerabilities (CWE-79 variant). Use when generating or reviewing code that sanitizes HTML content, handles user-provided markup, or processes rich text. Detects sanitizer bypass through browser parsing mutations. |
+| [oauth-security](oauth-security) | Security anti-pattern for OAuth implementation vulnerabilities (CWE-352, CWE-287). Use when generating or reviewing OAuth/OIDC authentication flows, state parameter handling, or token exchange. Detects missing CSRF protection and insecure redirect handling. |
+| [open-cors](open-cors) | Security anti-pattern for overly permissive CORS (CWE-346). Use when generating or reviewing code that configures CORS headers, handles cross-origin requests, or sets up API access policies. Detects wildcard origins and credential exposure risks. |
+| [padding-oracle](padding-oracle) | Security anti-pattern for padding oracle vulnerabilities (CWE-649). Use when generating or reviewing code that decrypts CBC-mode ciphertext, handles decryption errors, or returns different errors for padding vs other failures. Detects error message oracles. |
+| [path-traversal](path-traversal) | Security anti-pattern for path traversal vulnerabilities (CWE-22). Use when generating or reviewing code that handles file paths, reads/writes files based on user input, or serves static files. Detects missing path canonicalization and directory validation. |
+| [redos](redos) | Security anti-pattern for Regular Expression Denial of Service (CWE-1333). Use when generating or reviewing code that uses regex for input validation, parsing, or pattern matching. Detects catastrophic backtracking patterns with nested quantifiers. |
+| [second-order-injection](second-order-injection) | Security anti-pattern for second-order injection vulnerabilities (CWE-89 variant). Use when generating or reviewing code that retrieves data from databases, caches, or storage and uses it in subsequent queries or commands. Detects trusted internal data used unsafely. |
+| [session-fixation](session-fixation) | Security anti-pattern for session fixation vulnerabilities (CWE-384). Use when generating or reviewing code that handles user sessions, login flows, or authentication state changes. Detects failure to regenerate session IDs after authentication. |
+| [sql-injection](sql-injection) | Security anti-pattern for SQL injection vulnerabilities (CWE-89). Use when generating or reviewing code that constructs database queries, builds SQL statements, or handles user input in database operations. Detects string concatenation in queries and recommends parameterized queries. |
+| [timing-attacks](timing-attacks) | Security anti-pattern for timing side-channel vulnerabilities (CWE-208). Use when generating or reviewing code that compares secrets, tokens, passwords, or cryptographic values. Detects early-exit comparisons that leak information through timing differences. |
+| [type-confusion](type-confusion) | Security anti-pattern for type confusion vulnerabilities (CWE-843). Use when generating or reviewing code in dynamic languages that compares values, processes JSON/user input, or uses loose equality. Detects weak typing exploits and type coercion attacks. |
+| [unicode-security](unicode-security) | Security anti-pattern for Unicode-related vulnerabilities (CWE-176). Use when generating or reviewing code that handles usernames, displays text, validates input, or compares strings. Detects confusable characters, normalization issues, and bidirectional text attacks. |
+| [unrestricted-file-upload](unrestricted-file-upload) | Security anti-pattern for unrestricted file upload vulnerabilities (CWE-434). Use when generating or reviewing code that handles file uploads, processes user-submitted files, or stores uploaded content. Detects missing extension, MIME type, and size validation. |
+| [verbose-error-messages](verbose-error-messages) | Security anti-pattern for verbose error messages (CWE-209). Use when generating or reviewing code that handles errors, exceptions, or generates user-facing error responses. Detects stack trace exposure and detailed error information leakage to users. |
+| [weak-encryption](weak-encryption) | Security anti-pattern for weak encryption (CWE-326, CWE-327). Use when generating or reviewing code that encrypts data, handles encryption keys, or uses cryptographic modes. Detects DES, ECB mode, static IVs, and custom crypto implementations. |
+| [weak-password-hashing](weak-password-hashing) | Security anti-pattern for weak password hashing (CWE-327, CWE-759). Use when generating or reviewing code that stores or verifies user passwords. Detects use of MD5, SHA1, SHA256 without salt, or missing password hashing entirely. Recommends bcrypt, Argon2, or scrypt. |
+| [xpath-injection](xpath-injection) | Security anti-pattern for XPath injection vulnerabilities (CWE-643). Use when generating or reviewing code that queries XML documents, constructs XPath expressions, or handles user input in XML operations. Detects unescaped quotes and special characters in XPath queries. |
+| [xss](xss) | Security anti-pattern for Cross-Site Scripting vulnerabilities (CWE-79). Use when generating or reviewing code that renders HTML, handles user input in web pages, uses innerHTML/document.write, or builds dynamic web content. Covers Reflected, Stored, and DOM-based XSS. AI code has 86% XSS failure rate. |

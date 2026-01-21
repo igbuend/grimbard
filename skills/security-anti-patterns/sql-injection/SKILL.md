@@ -88,6 +88,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
 - [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)

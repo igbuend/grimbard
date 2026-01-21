@@ -169,6 +169,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
+- [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
 - [CWE-384: Session Fixation](https://cwe.mitre.org/data/definitions/384.html)
 - [CAPEC-61: Session Fixation](https://capec.mitre.org/data/definitions/61.html)

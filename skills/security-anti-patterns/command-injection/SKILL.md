@@ -106,6 +106,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP OS Command Injection Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)
 - [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)
 - [CAPEC-88: OS Command Injection](https://capec.mitre.org/data/definitions/88.html)

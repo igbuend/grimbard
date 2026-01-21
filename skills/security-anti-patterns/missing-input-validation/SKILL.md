@@ -176,6 +176,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
 - [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)
 - [CAPEC-153: Input Data Manipulation](https://capec.mitre.org/data/definitions/153.html)

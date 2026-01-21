@@ -137,6 +137,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [CWE-330: Insufficiently Random Values](https://cwe.mitre.org/data/definitions/330.html)
 - [CAPEC-112: Brute Force](https://capec.mitre.org/data/definitions/112.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

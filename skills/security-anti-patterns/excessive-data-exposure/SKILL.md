@@ -171,7 +171,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
-- [OWASP API3: Excessive Data Exposure](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
+- [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
 - [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)
 - [CAPEC-37: Retrieve Embedded Sensitive Data](https://capec.mitre.org/data/definitions/37.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

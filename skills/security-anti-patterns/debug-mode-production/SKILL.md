@@ -154,6 +154,7 @@ END FUNCTION
 ## References
 
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [CWE-215: Debug Information Exposure](https://cwe.mitre.org/data/definitions/215.html)
 - [CAPEC-121: Exploit Non-Production Interfaces](https://capec.mitre.org/data/definitions/121.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

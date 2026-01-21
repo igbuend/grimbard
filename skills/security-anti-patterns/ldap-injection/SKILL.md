@@ -115,6 +115,7 @@ Characters that must be escaped in LDAP filters:
 ## References
 
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP LDAP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html)
 - [CWE-90: LDAP Injection](https://cwe.mitre.org/data/definitions/90.html)
 - [CAPEC-136: LDAP Injection](https://capec.mitre.org/data/definitions/136.html)

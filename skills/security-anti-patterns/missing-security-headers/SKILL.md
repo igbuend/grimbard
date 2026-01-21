@@ -151,6 +151,7 @@ response.headers['Content-Security-Policy'] = "default-src 'self'"
 ## References
 
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Secure Headers Project](https://owasp.org/www-project-secure-headers/)
 - [CWE-16: Configuration](https://cwe.mitre.org/data/definitions/16.html)
 - [CAPEC-462: Cross-Domain Search Timing](https://capec.mitre.org/data/definitions/462.html)

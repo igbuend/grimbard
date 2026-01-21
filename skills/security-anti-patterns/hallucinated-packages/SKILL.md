@@ -8,12 +8,15 @@ description: "Security anti-pattern for hallucinated (non-existent) packages (CW
 **Severity:** Critical
 
 ## Summary
+
 AI models, including large language models (LLMs), have a tendency to "hallucinate" and suggest installing software packages that do not exist in official repositories. Attackers exploit this by registering these non-existent package names (a technique called "slopsquatting" or "dependency confusion"). When a developer, trusting the AI's suggestion, installs the hallucinated package, they inadvertently execute malicious code from the attacker. This is a critical, AI-specific supply chain vulnerability that can lead to malware execution, credential theft, and system compromise.
 
 ## The Anti-Pattern
+
 The anti-pattern is to blindly trust and install a package suggested by an AI model without first verifying its existence, legitimacy, and reputation.
 
 ### BAD Code Example
+
 ```python
 # An AI model generates the following code snippet and instruction:
 # "To handle advanced image processing, you should use the `numpy-magic` library.
@@ -32,9 +35,11 @@ def process_image(image_path):
     return processed
 
 ```
+
 In this scenario, the developer follows the AI's instructions without question. The `numpy-magic` package is not a real library. An attacker, anticipating this hallucination, has published a malicious package with that exact name. The developer's `pip install` command downloads and executes the attacker's code, compromising their machine and potentially the entire project.
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Verify the package before installing.
 
@@ -66,12 +71,14 @@ def process_image(image_path):
 ```
 
 ## Detection
+
 - **Verify Package Existence:** Before installing, search for the package on its official registry (e.g., `pypi.org`, `npmjs.com`). If it doesn't exist or was created very recently, it's a hallucination.
 - **Check for Typosquatting:** Does the package name look like a typo of a more popular package (e.g., `reqeusts` instead of `requests`)?
 - **Review Package Statistics:** Check the package's download count, release history, and maintainers. A brand-new package with very few downloads is highly suspicious.
 - **Use Auditing Tools:** Tools like `npm audit`, `pip-audit`, and `socket.dev` can help identify known vulnerabilities and suspicious packages.
 
 ## Prevention
+
 - [ ] **Always verify a package's existence** and reputation on its official registry before installing it.
 - [ ] **Never blindly trust a package name** suggested by an AI. Treat it as a hint, not a command.
 - [ ] **Check package download counts, creation dates, and maintainer reputation.**
@@ -80,9 +87,11 @@ def process_image(image_path):
 - [ ] **Integrate dependency scanning** and auditing tools into your CI/CD pipeline.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): The core issue is a failure to validate the "input" from the AI model.
 
 ## References
+
 - [OWASP Top 10 A03:2025 - Software Supply Chain Failures](https://owasp.org/Top10/2025/A03_2025-Software_Supply_Chain_Failures/)
 - [OWASP GenAI LLM03:2025 - Supply Chain](https://genai.owasp.org/llmrisk/llm03-supply-chain/)
 - [OWASP API Security API10:2023 - Unsafe Consumption of APIs](https://owasp.org/API-Security/editions/2023/en/0xaa-unsafe-consumption-of-apis/)

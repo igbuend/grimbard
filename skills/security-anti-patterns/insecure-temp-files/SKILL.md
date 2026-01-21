@@ -8,15 +8,19 @@ description: "Security anti-pattern for insecure temporary files (CWE-377). Use 
 **Severity:** Medium
 
 ## Summary
+
 Insecure temporary file creation is a vulnerability that occurs when an application writes data to a temporary file in an unsafe manner. This anti-pattern covers three main flaws: using predictable file names, setting insecure file permissions, and failing to clean up temporary files. Attackers can exploit these flaws to read sensitive data, write malicious content, or cause denial of service. AI-generated code might suggest simplistic file handling that falls into these traps.
 
 ## The Anti-Pattern
+
 The anti-pattern is creating and using temporary files without considering the security implications of their location, naming, permissions, and lifecycle.
 
 ### 1. Predictable File Names
+
 Using a predictable name for a temporary file creates a race condition. An attacker can guess the file name and create a symbolic link (symlink) at that location pointing to a sensitive system file. When the application writes to its "temporary" file, it is actually overwriting the linked file.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Predictable temporary file name in a shared directory.
 import os
@@ -38,6 +42,7 @@ def process_user_data(user_id, data):
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: Use a library function that creates a securely named temporary file.
 import tempfile
@@ -57,9 +62,11 @@ def process_user_data(user_id, data):
 ```
 
 ### 2. Insecure Permissions and Missing Cleanup
+
 Creating a temporary file with default permissions can make it world-readable, allowing other users on the system to access its contents. Failing to delete the temporary file after use means that sensitive data may be left behind on the disk.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: World-readable permissions and no cleanup.
 import uuid
@@ -77,6 +84,7 @@ def generate_report(data):
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: Guaranteed cleanup using a context manager.
 import tempfile
@@ -98,12 +106,14 @@ def generate_report(data):
 ```
 
 ## Detection
+
 - Search the code for file creation in common temporary directories like `/tmp/` or `/var/tmp/`.
 - Look for predictable patterns in temporary file names, such as those based on user IDs, timestamps, or simple counters.
 - Check the permissions set on newly created files. Do they use secure defaults or are they overly permissive?
 - Review the code to ensure that temporary files are always deleted, even in error conditions (i.e., cleanup logic is in a `finally` block or uses a context manager).
 
 ## Prevention
+
 - [ ] **Use a trusted library** for creating temporary files, such as `tempfile` in Python or `Files.createTempFile` in Java. These libraries are designed to handle naming and permissions securely.
 - [ ] **Never construct temporary file paths** using predictable names.
 - [ ] **Ensure temporary files are created with restrictive permissions** (e.g., only readable and writable by the owner, 0600).
@@ -111,10 +121,12 @@ def generate_report(data):
 - [ ] **Consider using in-memory buffers** (like `io.BytesIO` in Python) instead of temporary files if the data is small enough to fit in memory.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Path Traversal Anti-Pattern](../path-traversal/): An attacker might manipulate input to control where a temporary file is written.
 - [Unrestricted File Upload Anti-Pattern](../unrestricted-file-upload/): Applications often use temporary files to process uploads, making this a related risk.
 
 ## References
+
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
 - [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API1:2023 - Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/)

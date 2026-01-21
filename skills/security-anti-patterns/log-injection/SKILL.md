@@ -8,12 +8,15 @@ description: "Security anti-pattern for log injection vulnerabilities (CWE-117).
 **Severity:** Medium
 
 ## Summary
+
 Log injection, or log forging, is a vulnerability that occurs when an attacker can write arbitrary data into an application's log files. This anti-pattern arises when user-supplied input is written to logs without being sanitized. By injecting special characters, such as newlines (\n) and carriage returns (\r), an attacker can create fake log entries. This can be used to hide malicious activity, mislead system administrators, or even exploit vulnerabilities in log analysis tools.
 
 ## The Anti-Pattern
+
 The anti-pattern is logging unsanitized user input directly, allowing an attacker to inject newline characters and forge new log lines.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: User input is logged directly without sanitization.
 import logging
@@ -40,6 +43,7 @@ def user_login(username, ip_address):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Sanitize user input before logging, or use structured logging.
 import logging
@@ -72,21 +76,25 @@ def user_login_structured(username, ip_address):
 ```
 
 ## Detection
+
 - **Review logging statements:** Look for any place in the code where user-controlled input is passed directly into a logging function.
 - **Check for string formatting:** Be suspicious of string concatenation (`+`) or f-strings that combine user input into a log message without prior sanitization.
 - **Test with control characters:** Input data containing `\n`, `\r`, and other control characters to see if they are properly handled in the log output.
 
 ## Prevention
+
 - [ ] **Sanitize all user input** before it is written to a log. The best approach is to strip or encode newline (`\n`), carriage return (`\r`), and other control characters.
 - [ ] **Use a structured logging format** like JSON. Structured logging libraries automatically handle the escaping of special characters within data fields, making log injection impossible.
 - [ ] **Never log sensitive data** such as passwords, API keys, or personally identifiable information (PII).
 - [ ] **Limit the length of data** written to logs to prevent denial-of-service attacks where an attacker tries to fill up the disk space with enormous log entries.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): If logs are viewed in a web browser, failing to escape HTML characters (`<`, `>`) in log entries could lead to XSS.
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): The root cause of log injection is the failure to validate and sanitize user input.
 
 ## References
+
 - [OWASP Top 10 A09:2025 - Security Logging and Alerting Failures](https://owasp.org/Top10/2025/A09_2025-Security_Logging_and_Alerting_Failures/)
 - [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

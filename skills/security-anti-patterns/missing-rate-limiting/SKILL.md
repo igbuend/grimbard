@@ -8,12 +8,15 @@ description: "Security anti-pattern for missing rate limiting (CWE-770). Use whe
 **Severity:** High
 
 ## Summary
+
 Missing rate limiting is a vulnerability where an application fails to restrict the number of times an action can be performed within a given timeframe. This allows an attacker to make an unlimited number of requests to a specific endpoint, which can be abused for various attacks. The most common abuses include brute-forcing credentials on a login page, scraping sensitive data from an API, or causing a denial-of-service (DoS) by overwhelming the application with resource-intensive requests.
 
 ## The Anti-Pattern
+
 The anti-pattern is exposing any endpoint—especially authentication or resource-intensive ones—to the internet without any mechanism to control how frequently it can be called by a single user or IP address.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The login endpoint has no rate limiting.
 from flask import request, jsonify
@@ -42,6 +45,7 @@ def search():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Implement rate limiting using middleware and a tracking backend like Redis.
 from flask import request, jsonify
@@ -88,12 +92,14 @@ def search_secure():
 ```
 
 ## Detection
+
 - **Review public endpoints:** Examine all endpoints that can be accessed without authentication. Do they have rate limiting?
 - **Check authentication endpoints:** Specifically look at login, password reset, and registration endpoints. These are prime targets for brute-force attacks if not rate-limited.
 - **Analyze API design:** For public APIs, check if there is a documented rate-limiting policy (e.g., in the API documentation).
 - **Perform testing:** Write a simple script to hit a single endpoint in a tight loop. If you don't receive a `429 Too Many Requests` status code after a certain number of attempts, the endpoint is likely missing rate limiting.
 
 ## Prevention
+
 - [ ] **Implement IP-based rate limiting** on all public-facing endpoints, especially authentication and other sensitive ones.
 - [ ] **Implement user/account-based rate limiting** for authenticated users to prevent a single user from abusing the system.
 - [ ] **Use an appropriate algorithm:** Common choices are Token Bucket, Leaky Bucket, or Fixed/Sliding Window counters. Most modern web frameworks have middleware or libraries for this.
@@ -102,10 +108,12 @@ def search_secure():
 - [ ] **For login endpoints, consider account lockouts** after a certain number of failed attempts as an additional layer of defense.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Authentication Anti-Pattern](../missing-authentication/): Endpoints that are missing authentication are at even greater risk if they also lack rate limiting.
 - [Denial of Service (DoS):](../#) Missing rate limiting is a primary cause of application-layer DoS vulnerabilities.
 
 ## References
+
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)

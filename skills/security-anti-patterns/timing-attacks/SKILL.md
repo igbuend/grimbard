@@ -8,12 +8,15 @@ description: "Security anti-pattern for timing side-channel vulnerabilities (CWE
 **Severity:** Medium
 
 ## Summary
+
 A timing attack is a side-channel attack where an attacker observes the time it takes for a cryptographic operation or a secret comparison to complete. If an application's code for comparing a secret (like a password or an API key) stops as soon as it finds a mismatch, it leaks information. For example, comparing `ABCDEF` to `ABCDEG` will take slightly longer than comparing `ABCDEF` to `XBCDEF` because more characters are compared before a mismatch is found. An attacker can use these minute timing differences to guess the secret character by character, eventually recovering the entire secret.
 
 ## The Anti-Pattern
+
 The anti-pattern is using a comparison function that returns early upon finding a difference when comparing two sensitive values (e.g., passwords, tokens, cryptographic hashes).
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Naive string comparison that leaks timing information.
 import time
@@ -52,6 +55,7 @@ def check_token():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use a constant-time comparison function that always takes the same amount of time.
 import hmac # Python's `hmac` module provides `compare_digest` for constant-time comparison.
@@ -84,27 +88,31 @@ def check_token_secure():
 ```
 
 ## Detection
+
 - **Review code for secret comparisons:** Look for any place in the code where sensitive values (passwords, API keys, session tokens, cryptographic hashes, HMAC signatures) are compared.
 - **Identify standard equality operators:** Search for `==` or `===` being used for comparing secrets. These operators are typically not constant-time.
 - **Look for custom comparison loops:** If a custom loop iterates through characters and returns `False` on the first mismatch, it's vulnerable.
 
 ## Prevention
+
 - [ ] **Always use a constant-time comparison function** when comparing secrets or other security-sensitive values.
 - [ ] **Know your language's constant-time comparison functions:**
-    - **Python:** `hmac.compare_digest()` or `secrets.compare_digest()`.
-    - **Node.js:** `crypto.timingSafeEqual()`.
-    - **Go:** `subtle.ConstantTimeCompare()`.
-    - **Java:** `MessageDigest.isEqual()` (for byte arrays).
-    - **PHP:** `hash_equals()`.
+  - **Python:** `hmac.compare_digest()` or `secrets.compare_digest()`.
+  - **Node.js:** `crypto.timingSafeEqual()`.
+  - **Go:** `subtle.ConstantTimeCompare()`.
+  - **Java:** `MessageDigest.isEqual()` (for byte arrays).
+  - **PHP:** `hash_equals()`.
 - [ ] **For password hashing verification:** Always use the library's provided verification function (e.g., `bcrypt.checkpw()` or `argon2.verify()`), as these are designed to be timing-safe.
 - [ ] **Ensure the lengths of the values being compared are the same.** If they are not, `hmac.compare_digest` and similar functions will typically return `False` in a constant-time manner.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Weak Password Hashing Anti-Pattern](../weak-password-hashing/): Proper password hashing (e.g., bcrypt) includes protection against timing attacks during verification.
 - [JWT Misuse Anti-Pattern](../jwt-misuse/): Signature verification of JWTs should use constant-time comparisons.
 - [Padding Oracle Anti-Pattern](../padding-oracle/): Another type of cryptographic timing issue where information about padding validity is leaked through timing.
 
 ## References
+
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

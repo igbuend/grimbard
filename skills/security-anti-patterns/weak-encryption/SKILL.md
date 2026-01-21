@@ -8,15 +8,19 @@ description: "Security anti-pattern for weak encryption (CWE-326, CWE-327). Use 
 **Severity:** High
 
 ## Summary
+
 Weak encryption refers to the use of cryptographic algorithms, modes, or implementations that provide insufficient protection for sensitive data. This anti-pattern often stems from using outdated algorithms (e.g., DES, RC4), insecure modes of operation (e.g., ECB), or improper key/initialization vector (IV)/nonce management (e.g., static IVs). AI models, trained on vast codebases, can inadvertently suggest these weak practices found in older tutorials or examples. The consequence is that encrypted data can be easily decrypted by an attacker, leading to data breaches, compliance failures, and loss of trust.
 
 ## The Anti-Pattern
+
 The anti-pattern involves using cryptographic techniques that are no longer considered secure for protecting sensitive data.
 
 ### 1. Outdated or Broken Algorithms
+
 Using algorithms like DES, 3DES, or RC4 is a critical flaw. These algorithms have known vulnerabilities and are easily broken with modern computing power.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Using the outdated DES algorithm.
 from Crypto.Cipher import DES
@@ -35,9 +39,11 @@ def encrypt_data_des(plaintext):
 ```
 
 ### 2. Insecure Modes of Operation (e.g., ECB)
+
 Even if using a strong algorithm like AES, using it in Electronic Codebook (ECB) mode is highly insecure. ECB encrypts identical blocks of plaintext into identical blocks of ciphertext, revealing patterns in the data.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Using AES in ECB mode.
 from Crypto.Cipher import AES
@@ -58,6 +64,7 @@ def encrypt_data_ecb(plaintext):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use a modern, authenticated encryption mode like AES-256-GCM.
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -99,12 +106,14 @@ def decrypt_data_gcm(encrypted_data_with_nonce):
 ```
 
 ## Detection
+
 - **Code review for algorithm choice:** Search your codebase for calls to cryptographic functions using `DES`, `3DES`, `RC4`, `MD5` (for encryption), or `SHA-1` (for encryption/signatures).
 - **Check modes of operation:** Look for `ECB` mode being used with block ciphers like AES.
 - **Inspect IV/Nonce generation:** Verify how initialization vectors (IVs) or nonces are generated. Are they random and unique for each encryption? Avoid static, predictable, or reused IVs.
 - **Custom crypto implementations:** Be extremely wary of any "homegrown" encryption algorithms. These are almost always insecure.
 
 ## Prevention
+
 - [ ] **Use strong, modern algorithms:** For symmetric encryption, always use **AES-256**. For authenticated encryption, prefer **AES-256-GCM** or **ChaCha20-Poly1305**.
 - [ ] **Avoid insecure modes of operation:** Never use ECB mode. If using CBC mode, always pair it with a strong MAC (Message Authentication Code) in an Encrypt-then-MAC scheme. Better yet, use AEAD modes like GCM.
 - [ ] **Generate random, unique IVs/Nonces:** For every encryption operation, a unique and unpredictable IV (for CBC) or nonce (for GCM) must be generated using a cryptographically secure random number generator. Never reuse a nonce with the same key in GCM.
@@ -112,11 +121,13 @@ def decrypt_data_gcm(encrypted_data_with_nonce):
 - [ ] **Ensure key strength:** Use sufficiently long keys (e.g., 256 bits for AES).
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): Encryption keys are critical secrets that must be managed securely.
 - [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): The randomness used for IVs/nonces must be cryptographically secure.
 - [Padding Oracle Anti-Pattern](../padding-oracle/): A specific attack against block ciphers used in CBC mode without proper authentication.
 
 ## References
+
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

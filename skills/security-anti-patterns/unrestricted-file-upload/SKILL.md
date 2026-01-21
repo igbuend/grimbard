@@ -8,12 +8,15 @@ description: "Security anti-pattern for unrestricted file upload vulnerabilities
 **Severity:** Critical
 
 ## Summary
+
 Unrestricted file upload is a critical vulnerability that allows an attacker to upload any file type to a server, including malicious scripts or executables. This anti-pattern occurs when an application accepts user-provided files without sufficient validation of their type, content, or size. A successful attack can lead to remote code execution (RCE) by uploading a web shell, server compromise, or a denial-of-service (DoS) by filling up disk space.
 
 ## The Anti-Pattern
+
 The anti-pattern is accepting and storing uploaded files from users without rigorously validating that the file is of an expected type, has safe content, and is within acceptable size limits.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: No validation of file type, content, or size.
 from flask import Flask, request
@@ -47,6 +50,7 @@ def upload_file():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Implement a multi-layered validation approach for file uploads.
 from flask import Flask, request, jsonify
@@ -102,15 +106,17 @@ def upload_file_secure():
 ```
 
 ## Detection
+
 - **Review file upload handlers:** Identify all endpoints that allow users to upload files.
 - **Check validation logic:** Examine how filenames, file types, and file contents are validated. Look for:
-    - Missing extension checks or using blocklists instead of allowlists.
-    - Relying solely on the `Content-Type` HTTP header, which is easily spoofed.
-    - Not checking the actual content of the file (magic bytes).
-    - Missing size limits.
+  - Missing extension checks or using blocklists instead of allowlists.
+  - Relying solely on the `Content-Type` HTTP header, which is easily spoofed.
+  - Not checking the actual content of the file (magic bytes).
+  - Missing size limits.
 - **Inspect storage location:** Determine where uploaded files are stored. Are they in a web-accessible directory? Can executables be run from there?
 
 ## Prevention
+
 - [ ] **Strict Allowlist for File Extensions:** Only allow a very small, specific set of safe file extensions (e.g., `.png`, `.jpg`, `.pdf`). Never use a blocklist.
 - [ ] **Verify Actual File Content (Magic Bytes):** Don't trust the `Content-Type` header from the client. Instead, inspect the first few bytes of the file (magic bytes) to determine its true type.
 - [ ] **Enforce File Size Limits:** Prevent DoS attacks and resource exhaustion by setting maximum file size limits.
@@ -120,11 +126,13 @@ def upload_file_secure():
 - [ ] **Scan for Malware:** Integrate an antivirus or malware scanner for all uploaded files.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Path Traversal Anti-Pattern](../path-traversal/): Attackers can try to use directory traversal sequences (`../`) in the filename to write files to unintended locations.
 - [Command Injection Anti-Pattern](../command-injection/): If an uploaded file is later processed by a system command, it can lead to command injection.
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): Malicious HTML or SVG files can be uploaded to perform XSS attacks.
 
 ## References
+
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)

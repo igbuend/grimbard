@@ -8,15 +8,19 @@ description: "Security anti-pattern for Cross-Site Scripting vulnerabilities (CW
 **Severity:** Critical
 
 ## Summary
+
 Cross-Site Scripting (XSS) is a type of injection vulnerability where an attacker injects malicious client-side scripts into a web page viewed by other users. This happens when an application includes untrusted data in a web page without proper validation or encoding. XSS attacks can steal session cookies, deface websites, redirect users to malicious sites, or even perform actions on behalf of the victim. It is a pervasive and dangerous vulnerability, with AI-generated code showing a particularly high failure rate in preventing it.
 
 ## The Anti-Pattern
+
 The anti-pattern is directly embedding user-controlled data into HTML content without context-aware encoding or sanitization.
 
 ### 1. Reflected XSS
+
 Malicious script is reflected immediately in the web browser from user-supplied input.
 
 #### BAD Code Example
+
 ```html
 <!-- VULNERABLE: User input is directly inserted into the HTML output. -->
 <!DOCTYPE html>
@@ -38,6 +42,7 @@ Malicious script is reflected immediately in the web browser from user-supplied 
 ```
 
 #### GOOD Code Example
+
 ```html
 <!-- SECURE: HTML-encode all user input before rendering. -->
 <!DOCTYPE html>
@@ -56,9 +61,11 @@ Malicious script is reflected immediately in the web browser from user-supplied 
 ```
 
 ### 2. Stored XSS
+
 Malicious script is stored on the server (e.g., in a database) and served to users each time they visit the affected page.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: User-provided comments are stored and displayed without encoding.
 from flask import Flask, request, render_template_string
@@ -90,6 +97,7 @@ def view_comments():
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: HTML-encode all data retrieved from the database before rendering.
 from flask import Flask, request, render_template_string, escape # Import escape for HTML encoding
@@ -122,9 +130,11 @@ def view_comments_safe():
 ```
 
 ### 3. DOM-based XSS
+
 The XSS vulnerability resides in client-side code rather than server-side code.
 
 #### BAD Code Example
+
 ```javascript
 // VULNERABLE: Client-side JavaScript directly uses URL parameters in innerHTML.
 // http://example.com/page.html?name=<img%20src=x%20onerror=alert(document.cookie)>
@@ -138,6 +148,7 @@ window.onload = function() {
 ```
 
 #### GOOD Code Example
+
 ```javascript
 // SECURE: Use `textContent` which treats input as plain text, not HTML.
 window.onload = function() {
@@ -155,16 +166,18 @@ window.onload = function() {
 ```
 
 ## Detection
+
 - **Code Review:** Examine any code that takes user input or data from a database and inserts it into an HTML page. Look for:
-    - Direct use of `echo`, `print`, `innerHTML`, `document.write()`, `insertAdjacentHTML()`.
-    - Templating engines with auto-escaping disabled.
-    - String concatenation to build HTML.
+  - Direct use of `echo`, `print`, `innerHTML`, `document.write()`, `insertAdjacentHTML()`.
+  - Templating engines with auto-escaping disabled.
+  - String concatenation to build HTML.
 - **Dynamic Analysis (Penetration Testing):**
-    - Input common XSS payloads (`<script>alert(1)</script>`, `"><img src=x onerror=alert(1)>`) into all input fields (URL parameters, form fields, headers).
-    - Check if the payloads are reflected or stored and executed.
+  - Input common XSS payloads (`<script>alert(1)</script>`, `"><img src=x onerror=alert(1)>`) into all input fields (URL parameters, form fields, headers).
+  - Check if the payloads are reflected or stored and executed.
 - **Use XSS Scanners:** Automated tools can help identify potential XSS vulnerabilities.
 
 ## Prevention
+
 - [ ] **HTML-encode all untrusted data** before inserting it into HTML content. This is the primary defense against XSS. Use functions like `htmlspecialchars` (PHP), `escape` (Python Flask), or templating engine auto-escaping (Jinja2, Handlebars).
 - [ ] **Use context-sensitive encoding:** Different contexts (HTML body, HTML attribute, JavaScript, URL, CSS) require different encoding schemes. Do not use a generic encoder for all contexts.
 - [ ] **Sanitize HTML if necessary:** If your application *must* allow users to provide rich HTML content, use a robust, well-maintained HTML sanitization library (e.g., [DOMPurify](https://github.com/cure53/DOMPurify) for JavaScript). Never try to write your own HTML sanitizer.
@@ -173,12 +186,14 @@ window.onload = function() {
 - [ ] **Perform input validation:** While not a primary defense against XSS, validating input to restrict character sets or length can reduce the attack surface.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Mutation XSS Anti-Pattern](../mutation-xss/): A specific type of XSS that bypasses sanitizers due to browser parsing differences.
 - [DOM Clobbering Anti-Pattern](../dom-clobbering/): Another client-side attack that abuses how browsers handle DOM elements.
 - [Missing Security Headers Anti-Pattern](../missing-security-headers/): CSP is a security header that greatly enhances XSS protection.
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): The root cause of many injection vulnerabilities, including XSS.
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

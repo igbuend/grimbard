@@ -8,12 +8,15 @@ description: "Security anti-pattern for weak password hashing (CWE-327, CWE-759)
 **Severity:** High
 
 ## Summary
+
 Weak password hashing is a critical vulnerability that occurs when applications use cryptographic algorithms that are unsuitable for storing passwords. This anti-pattern often involves using fast, general-purpose hash functions (like MD5, SHA-1, or plain SHA-256) without proper salting, or by not hashing passwords at all. Attackers can exploit this to rapidly crack user passwords using pre-computed tables (rainbow tables) or brute-force attacks, especially with modern GPUs. This can lead to mass account compromise and credential stuffing across different services.
 
 ## The Anti-Pattern
+
 The anti-pattern is using cryptographic hash functions that are too fast or lack essential features like salting and adjustable work factors, making them vulnerable to offline attacks.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Using MD5 for password hashing.
 import hashlib
@@ -39,6 +42,7 @@ def hash_password_sha256_unsalted(password):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use a password-hashing algorithm designed to be slow and include a unique salt.
 import bcrypt # Or Argon2, scrypt
@@ -65,31 +69,35 @@ def verify_password_secure(password, stored_hash):
 ```
 
 ## Detection
+
 - **Code Review:** Search your codebase for password hashing implementations.
-    - Look for `hashlib.md5()`, `hashlib.sha1()`, or `hashlib.sha256()` being used for passwords.
-    - Check if `bcrypt`, `argon2`, or `scrypt` libraries are used.
-    - Verify that a unique, cryptographically secure salt is generated for each password.
+  - Look for `hashlib.md5()`, `hashlib.sha1()`, or `hashlib.sha256()` being used for passwords.
+  - Check if `bcrypt`, `argon2`, or `scrypt` libraries are used.
+  - Verify that a unique, cryptographically secure salt is generated for each password.
 - **Database Inspection:** Look at the `password` or `password_hash` column in your user database.
-    - Are the hashes all of the same length and format? (Suggests no salt or static salt).
-    - Do they start with prefixes like `$2a$` (bcrypt), `$argon2id$` (Argon2), or `$s2$` (scrypt)?
+  - Are the hashes all of the same length and format? (Suggests no salt or static salt).
+  - Do they start with prefixes like `$2a$` (bcrypt), `$argon2id$` (Argon2), or `$s2$` (scrypt)?
 - **Check for plaintext passwords:** Ensure that passwords are never stored in plaintext.
 
 ## Prevention
+
 - [ ] **Use strong, slow, adaptive password-hashing functions.**
-    - **Argon2id:** Currently the recommended algorithm for new applications.
-    - **bcrypt:** A widely used and strong algorithm.
-    - **scrypt:** Another strong algorithm.
+  - **Argon2id:** Currently the recommended algorithm for new applications.
+  - **bcrypt:** A widely used and strong algorithm.
+  - **scrypt:** Another strong algorithm.
 - [ ] **Always use a unique, cryptographically secure salt** for each password. Modern algorithms like bcrypt and Argon2 handle salt generation automatically.
 - [ ] **Adjust the work factor (cost) appropriately.** Increase the number of rounds (bcrypt) or memory/time cost (Argon2) until hashing takes about 250-500 milliseconds on your server hardware. This makes brute-forcing expensive for attackers.
 - [ ] **Never use fast, general-purpose hash functions** like MD5, SHA-1, or plain SHA-256 for passwords. These are designed for speed, not for password storage.
 - [ ] **Never store plaintext passwords.**
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): Password hashes are sensitive data and should be protected.
 - [Missing Authentication Anti-Pattern](../missing-authentication/): Weak password hashing undermines the entire authentication process.
 - [Timing Attacks Anti-Pattern](../timing-attacks/): Proper password-hashing libraries use constant-time comparisons to prevent timing attacks during verification.
 
 ## References
+
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

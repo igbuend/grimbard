@@ -8,12 +8,15 @@ description: "Security anti-pattern for mutation XSS (mXSS) vulnerabilities (CWE
 **Severity:** High
 
 ## Summary
+
 Mutation XSS (mXSS) is a sophisticated type of Cross-Site Scripting that bypasses HTML sanitizers. The vulnerability occurs because of inconsistencies in how a sanitizer library and a web browser parse malformed HTML. An attacker provides a string of HTML that appears safe to the sanitizer. However, when that "sanitized" HTML is inserted into the DOM, the browser's own parsing engine "corrects" the malformed code in a way that creates an executable script. The sanitizer sees one DOM, but the browser creates a different, malicious one.
 
 ## The Anti-Pattern
+
 The anti-pattern is relying on an HTML sanitizer without accounting for the browser's aggressive and sometimes unpredictable HTML parsing behavior. The sanitizer is defeated because the final DOM tree created by the browser is different from what the sanitizer checked.
 
 ### BAD Code Example
+
 ```javascript
 // VULNERABLE: A simple sanitizer that is unaware of browser mutations.
 
@@ -50,6 +53,7 @@ renderComment(payload);
 ```
 
 ### GOOD Code Example
+
 ```javascript
 // SECURE: Use a mature, well-maintained, and mutation-aware HTML sanitizer like DOMPurify.
 
@@ -73,11 +77,13 @@ renderCommentSafe(payload);
 ```
 
 ## Detection
+
 - **mXSS is extremely difficult to detect manually.** It relies on deep knowledge of browser-specific parsing edge cases.
 - **Review Sanitizer Choice:** Check if the application uses a known-vulnerable or homegrown HTML sanitizer. If it's not a library like DOMPurify that is actively maintained to fight mXSS, it is likely vulnerable.
 - **Use mXSS-specific payloads:** Test the application's sanitizer with known mXSS payloads from security research (e.g., from the Cure53 research paper).
 
 ## Prevention
+
 - [ ] **Use a battle-tested, mXSS-aware sanitizer library.** The current industry standard is **DOMPurify**. Do not attempt to write your own sanitizer.
 - [ ] **Keep your sanitizer library up to date.** New mXSS vectors are discovered periodically, and libraries are updated with new defenses.
 - [ ] **Configure the sanitizer for maximum safety.** Forbid dangerous tags like `<style>`, `<svg>`, and `<math>` unless they are absolutely necessary.
@@ -85,11 +91,13 @@ renderCommentSafe(payload);
 - [ ] **Avoid HTML sanitization if possible.** If you only need simple formatting like bold or italics, consider using Markdown and a safe Markdown-to-HTML converter instead of allowing raw HTML input.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): mXSS is a specific and advanced technique for achieving XSS.
 - [DOM Clobbering Anti-Pattern](../dom-clobbering/): Another client-side attack that abuses the browser's DOM manipulation behavior.
 - [Encoding Bypass Anti-Pattern](../encoding-bypass/): A different technique for bypassing input filters and sanitizers.
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM09:2025 - Misinformation](https://genai.owasp.org/llmrisk/llm09-misinformation/)
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)

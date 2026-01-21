@@ -8,12 +8,15 @@ description: "Security anti-pattern for hash length extension vulnerabilities (C
 **Severity:** High
 
 ## Summary
+
 A hash length extension attack is a cryptographic vulnerability that affects certain hash functions, including MD5, SHA-1, and SHA-256. The vulnerability stems from their internal structure (the Merkle-Damgård construction). If an attacker knows the hash of `secret + message` and the length of the `secret`, they can calculate the hash of `secret + message + padding + attacker_data` *without knowing the secret itself*. This allows them to append data to a signed message and generate a valid new signature, completely breaking the integrity and authentication of the message.
 
 ## The Anti-Pattern
+
 The anti-pattern is using a vulnerable hash function (like SHA-256) in the construction `hash(secret + message)` to create a message authentication code (MAC).
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Using hash(secret + message) for a message signature.
 import hashlib
@@ -47,6 +50,7 @@ def verify_request(message, signature):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use HMAC (Hash-based Message Authentication Code).
 import hmac
@@ -71,21 +75,25 @@ def verify_request_secure(message, signature):
 ```
 
 ## Detection
+
 - **Review code:** Look for any instance where a message signature or MAC is created by concatenating a secret *at the beginning* of a message and then hashing it with MD5, SHA-1, or SHA-256. The pattern is `hash(secret + data)`.
 - **Check for vulnerable hash functions:** Identify which hash algorithms are being used. If you see MD5, SHA-1, or SHA-2 (SHA-224, SHA-256, SHA-384, SHA-512) used for signing, check the construction.
 - **Use cryptographic analysis tools:** Some advanced static analysis tools can identify weak cryptographic constructions.
 
 ## Prevention
+
 - [ ] **Use HMAC:** Always use HMAC for creating message authentication codes. HMAC is the industry standard and is implemented in the standard library of most modern languages. It is specifically designed to be immune to length extension attacks.
 - [ ] **Choose a secure hash function:** Use HMAC with a strong hash function like SHA-256 or SHA-3.
 - [ ] **Do not roll your own cryptography:** Avoid creating custom signing schemes like `hash(message + secret)` or `hash(secret + message + secret)`. While some might be safe from this specific attack, they may have other flaws. Stick to the standard: HMAC.
 - [ ] **If you cannot use HMAC**, use a hash function that is not vulnerable to length extension, such as SHA-3 or BLAKE2. However, HMAC is still the preferred and most widely supported solution.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Weak Encryption Anti-Pattern](../weak-encryption/): Part of the broader category of cryptographic failures.
 - [Timing Attacks Anti-Pattern](../timing-attacks/): When verifying signatures, it's important to use a constant-time comparison function to avoid leaking information through timing differences.
 
 ## References
+
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [CWE-328: Reversible One-Way Hash](https://cwe.mitre.org/data/definitions/328.html)

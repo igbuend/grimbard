@@ -8,12 +8,15 @@ description: "Security anti-pattern for second-order injection vulnerabilities (
 **Severity:** High
 
 ## Summary
+
 Second-order injection (also known as "stored injection") is a type of injection vulnerability where a malicious payload is first stored in a trusted data store (like a database or log file) and then retrieved and executed later in an insecure context. The initial storage might appear secure because the data is properly parameterized or escaped when it's first saved. However, when the data is later retrieved and used in a dynamic query or command without re-sanitization, the malicious payload is activated. This makes second-order injection particularly insidious and difficult to detect, as the injection point and the execution point are separated in time and often in different parts of the codebase.
 
 ## The Anti-Pattern
+
 The anti-pattern is treating data retrieved from a "trusted" source (like your own database) as inherently safe, and then using it in a dynamic query or command without proper re-sanitization or parameterization.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Data is stored safely, but later retrieved and used unsafely.
 import sqlite3
@@ -53,6 +56,7 @@ def log_user_action(user_id, action):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: All data used in SQL queries is parameterized, regardless of its source.
 import sqlite3
@@ -78,23 +82,27 @@ def log_user_action_safe(user_id, action):
 ```
 
 ## Detection
+
 - **Audit data flows:** Systematically track data from its entry point (user input) through its storage and subsequent retrieval and use.
 - **Identify dynamic query/command construction:** Look for any code that builds SQL queries, shell commands, or other interpretive language statements by concatenating strings that include variables whose values originated from user input, even if they were stored in a database.
 - **Review stored procedures:** If your application uses stored procedures, examine their definitions for any dynamic SQL that might use input parameters without proper escaping or parameterization.
 - **Consider background jobs/asynchronous tasks:** Pay special attention to components that process data in the background, as they might retrieve stored data and use it in new, insecure contexts.
 
 ## Prevention
+
 - [ ] **Parameterize all queries:** This is the most crucial defense. Always use parameterized queries or prepared statements for *all* database interactions, regardless of whether the data comes directly from user input or from your own database.
 - [ ] **Never trust data:** Data retrieved from your own database, cache, or any other internal store should still be considered "tainted" if its ultimate origin was untrusted user input. Apply the same validation and sanitization rules as if it were fresh input.
 - [ ] **Use ORMs (Object-Relational Mappers) consistently:** When used correctly, ORMs help prevent injection by automatically parameterizing queries. Ensure you're not using any "raw query" features of your ORM that might bypass its built-in protections.
 - [ ] **Sanitize output before display:** While not directly preventing second-order injection, it's a good practice to escape data before rendering it in HTML or other contexts to prevent XSS.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [SQL Injection Anti-Pattern](../sql-injection/): Second-order SQL injection is a variant of this fundamental vulnerability.
 - [Command Injection Anti-Pattern](../command-injection/): Similar second-order risks exist when data stored safely is later used in an insecure shell command.
 - [Log Injection Anti-Pattern](../log-injection/): Log files can be a vector for second-order attacks if logged data is later used in an insecure context (e.g., parsing logs with a vulnerable regex).
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

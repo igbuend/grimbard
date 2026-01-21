@@ -8,12 +8,15 @@ description: "Security anti-pattern for padding oracle vulnerabilities (CWE-649)
 **Severity:** High
 
 ## Summary
+
 A padding oracle is a critical cryptographic vulnerability that occurs when an application, while decrypting data, leaks information about whether the padding of the encrypted message is correct or not. This is typically done through different error messages (e.g., "Invalid Padding" vs. "Decryption Failed") or timing differences. By carefully manipulating the ciphertext and observing the server's response, an attacker can use this "oracle" to decrypt the entire message, byte by byte, without ever knowing the encryption key. This completely breaks the confidentiality of the encrypted data.
 
 ## The Anti-Pattern
+
 The anti-pattern is using a block cipher mode like CBC (Cipher Block Chaining) and, upon decryption, returning a different response to the user depending on the type of error that occurred.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The decryption function returns different error messages.
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
@@ -54,6 +57,7 @@ def decrypt_data():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use an Authenticated Encryption with Associated Data (AEAD) mode like GCM.
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -92,22 +96,26 @@ def decrypt_data_secure():
 ```
 
 ## Detection
+
 - **Review decryption code:** Look for any code that decrypts data using CBC mode.
 - **Examine error handling:** Check the `try...except` blocks around decryption logic. Does the code catch different exceptions (e.g., `PaddingError`, `CryptoError`) and return different HTTP responses, status codes, or error messages for each?
 - **Look for timing differences:** In some rare cases, the oracle can be a timing side channel, where valid padding checks take slightly longer than invalid ones. This is much harder to detect via code review.
 - **Perform active testing:** Use a tool like `padbuster` to actively test an endpoint for a padding oracle vulnerability.
 
 ## Prevention
+
 - [ ] **Use an Authenticated Encryption with Associated Data (AEAD) cipher mode.** This is the best solution. Modern modes like **AES-GCM** or **ChaCha20-Poly1305** combine encryption and authentication into a single, secure step. They are not vulnerable to padding oracle attacks.
 - [ ] **If you must use CBC, you must also use a MAC (Encrypt-then-MAC).** First, encrypt the data. Second, compute a Message Authentication Code (like HMAC-SHA256) of the *ciphertext* (and IV). When decrypting, you must first verify the MAC. If the MAC is invalid, reject the data immediately and do not attempt to decrypt it.
 - [ ] **Ensure all decryption errors are handled identically.** Whether the error is due to bad padding, a corrupt block, or an invalid MAC, the application must return the exact same generic error message and HTTP status code.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Weak Encryption Anti-Pattern](../weak-encryption/): Choosing a vulnerable mode like CBC without a MAC is a common weak encryption pattern.
 - [Timing Attacks Anti-Pattern](../timing-attacks/): A related side-channel attack where information is leaked through how long an operation takes.
 - [Verbose Error Messages Anti-Pattern](../verbose-error-messages/): A padding oracle is a specific type of verbose error message vulnerability.
 
 ## References
+
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [CWE-649: Reliance on Obfuscation](https://cwe.mitre.org/data/definitions/649.html)

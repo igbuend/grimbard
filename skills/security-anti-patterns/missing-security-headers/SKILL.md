@@ -8,12 +8,15 @@ description: "Security anti-pattern for missing security headers (CWE-16). Use w
 **Severity:** Medium
 
 ## Summary
+
 HTTP security headers are a crucial, browser-level defense mechanism against common web application attacks like Cross-Site Scripting (XSS), clickjacking, and man-in-the-middle attacks. This anti-pattern occurs when a web application fails to send these headers in its HTTP responses. Without them, the application is leaving the browser to rely on default, often less secure, behaviors, thereby missing an opportunity for a powerful, declarative security layer.
 
 ## The Anti-Pattern
+
 The anti-pattern is simply not including recommended security headers in HTTP responses. By default, browsers have permissive policies, and it is the server's responsibility to instruct the browser to enforce stricter security controls.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: A Flask application that does not set any security headers.
 from flask import Flask, make_response
@@ -39,6 +42,7 @@ def index():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: The application sets a strong baseline of security headers for all responses.
 from flask import Flask, make_response
@@ -83,11 +87,13 @@ def index_secure():
 ```
 
 ## Detection
+
 - **Use browser developer tools:** Open the "Network" tab, inspect a request to your site, and look at the "Response Headers" section. Check for the presence of the headers listed below.
 - **Use an online scanner:** Tools like [SecurityHeaders.com](https://securityheaders.com/) can quickly scan a public website and report on its missing headers.
 - **Review framework configurations:** Check your web server or framework's configuration files to see if security headers are being set globally. Many frameworks have dedicated middleware (like `Helmet` for Express.js) to handle this.
 
 ## Prevention
+
 Implement a middleware or a global response filter in your application that adds the following headers to all outgoing responses.
 
 - [ ] **`Content-Security-Policy` (CSP):** The most important header for preventing XSS. It defines a strict allowlist of sources from which content (like scripts, styles, and images) can be loaded. A good starting point is `default-src 'self'`.
@@ -98,10 +104,12 @@ Implement a middleware or a global response filter in your application that adds
 - [ ] **`Permissions-Policy` (formerly Feature-Policy):** Allows you to selectively enable or disable browser features and APIs (like microphone, camera, geolocation) on your site.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): A strong Content-Security-Policy is a critical defense-in-depth measure against XSS.
 - [Open CORS Anti-Pattern](../open-cors/): Another type of security misconfiguration related to HTTP headers.
 
 ## References
+
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
 - [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

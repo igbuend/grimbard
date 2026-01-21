@@ -8,12 +8,15 @@ description: "Security anti-pattern for Regular Expression Denial of Service (CW
 **Severity:** High
 
 ## Summary
+
 A Regular Expression Denial of Service (ReDoS) is a vulnerability that occurs when a poorly written regular expression takes an extremely long time to evaluate a maliciously crafted input. This can cause the application or server to hang, consuming 100% of a CPU core for seconds or even minutes from a single request. The vulnerability is caused by a phenomenon called "catastrophic backtracking," which is common in regex patterns that have nested quantifiers (e.g., `(a+)+`) or overlapping alternations.
 
 ## The Anti-Pattern
+
 The anti-pattern is using a regex with exponential-time complexity to validate user-provided input. A small increase in the length of the attacker's input can lead to an exponential increase in the regex engine's computation time.
 
 ### BAD Code Example
+
 ```javascript
 // VULNERABLE: A regex with nested quantifiers used for validation.
 
@@ -43,6 +46,7 @@ validateString(malicious_input); // This will hang for a very long time.
 ```
 
 ### GOOD Code Example
+
 ```javascript
 // SECURE: Rewrite the regex to be linear-time, or add other controls.
 
@@ -73,16 +77,18 @@ function validateStringWithLimit(input) {
 ```
 
 ## Detection
+
 - **Scan for "evil" regex patterns:** The most common red flags are nested quantifiers. Look for patterns like:
-    - `(a+)+`
-    - `(a*)*`
-    - `(a|a)+`
-    - `(a?)*`
+  - `(a+)+`
+  - `(a*)*`
+  - `(a|a)+`
+  - `(a?)*`
 - **Look for alternations with overlapping patterns:** `(a|b)*` is safe, but `(a|ab)*` is not, because `ab` can be matched in two different ways.
 - **Use static analysis tools:** There are many linters and security scanners that are specifically designed to detect vulnerable regular expressions in your code (e.g., `safe-regex` for Node.js).
 - **Test with "almost matching" strings:** To test a regex, create a long string that matches the repeating part of the pattern but fails at the very end. If the execution time increases dramatically with the length of the string, it is likely vulnerable.
 
 ## Prevention
+
 - [ ] **Avoid nested quantifiers:** This is the most important rule. A pattern like `(a+)+` can almost always be rewritten more safely as `a+`.
 - [ ] **Be wary of alternations:** Ensure that alternations within a repeated group do not overlap (e.g., use `(a|b)` not `(a|ab)`).
 - [ ] **Limit input length:** Before applying a complex regex, always validate the length of the input string. This provides an effective, though crude, defense against ReDoS by capping the potential execution time.
@@ -90,10 +96,12 @@ function validateStringWithLimit(input) {
 - [ ] **Use a ReDoS-safe regex engine:** Consider using an alternative regex engine like Google's RE2, which guarantees linear-time performance and is immune to catastrophic backtracking.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): Failing to limit input length is a form of missing validation that makes ReDoS attacks possible.
 - [Denial of Service (DoS):](../#) ReDoS is a specific type of application-layer DoS attack.
 
 ## References
+
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)

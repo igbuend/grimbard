@@ -8,14 +8,17 @@ description: "Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Us
 **Severity:** High
 
 ## Summary
+
 JSON Web Tokens (JWTs) are a common standard for creating access tokens, but they are frequently misused, leading to significant security vulnerabilities. This anti-pattern covers several common JWT implementation flaws often seen in AI-generated code, including accepting the "none" algorithm, using weak secrets, storing sensitive data in the payload, and failing to set an expiration time. These mistakes can lead to authentication bypass, token forgery, and sensitive data exposure.
 
 ## The Anti-Patterns and Solutions
 
 ### 1. Algorithm Confusion ("none" Algorithm Attack)
+
 A critical vulnerability where a library accepts any algorithm specified in the token's header. An attacker can change the algorithm to "none" and remove the signature, causing the library to validate the token without any cryptographic checks.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Accepts whatever algorithm is in the header
 import jwt
@@ -31,6 +34,7 @@ def verify_jwt_vulnerable(token, secret_key):
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: Explicitly specify allowed algorithms
 import jwt
@@ -47,9 +51,11 @@ def verify_jwt_secure(token, secret_key):
 ```
 
 ### 2. Weak Secret
+
 Using a weak, predictable, or hardcoded secret for symmetric signing algorithms (like HS256) makes it possible for an attacker to brute-force the secret and forge valid tokens.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Weak or short secret key
 import jwt
@@ -62,6 +68,7 @@ def create_jwt(user_id):
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: Strong, centrally managed secret
 import jwt
@@ -82,9 +89,11 @@ def create_jwt_asymmetric(user_id, private_key):
 ```
 
 ### 3. Sensitive Data in Payload
+
 The JWT payload is Base64Url-encoded, not encrypted. Anyone who intercepts the token can easily decode and read the data it contains. Storing sensitive information like PII, passwords, or internal data in the payload is a major security risk.
 
 #### BAD Code Example
+
 ```python
 # VULNERABLE: Sensitive data in JWT payload
 import jwt
@@ -100,6 +109,7 @@ def create_jwt_with_pii(user, secret_key):
 ```
 
 #### GOOD Code Example
+
 ```python
 # SECURE: Minimal, non-sensitive claims
 import jwt
@@ -118,12 +128,14 @@ def create_jwt_secure(user, secret_key):
 ```
 
 ## Detection
+
 - Review calls to `jwt.decode()` and ensure the `algorithms` parameter is explicitly set to a list of expected algorithms.
 - Search for hardcoded or weak JWT secrets (e.g., `"secret"`, `"password"`, short keys).
 - Inspect the data being added to the JWT payload for any sensitive information (PII, credentials, etc.).
 - Check for the absence of the `exp` (expiration) claim when creating tokens.
 
 ## Prevention
+
 - [ ] **Always specify allowed algorithms** explicitly during token verification.
 - [ ] **Use strong, centrally managed secrets** (at least 256 bits for HS256) or prefer asymmetric algorithms (RS256/ES256) for production systems.
 - [ ] **Never store sensitive data** in JWT payloads. The payload is readable by anyone.
@@ -132,11 +144,13 @@ def create_jwt_secure(user, secret_key):
 - [ ] **Consider implementing a token revocation list** to invalidate tokens for compromised accounts.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): JWT secrets are a common type of hardcoded secret.
 - [Session Fixation Anti-Pattern](../session-fixation/): Provides context on alternative session management strategies.
 - [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): Relevant if generating unique token identifiers (`jti`).
 
 ## References
+
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
 - [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

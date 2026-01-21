@@ -8,12 +8,15 @@ description: "Security anti-pattern for mass assignment vulnerabilities (CWE-915
 **Severity:** High
 
 ## Summary
+
 Mass assignment (also known as "autobinding") is a vulnerability that occurs when a web framework automatically binds incoming HTTP request parameters to variables or objects in the application's code. This is a convenient feature, but it becomes a vulnerability when an attacker can inject and set properties they are not supposed to control. The most common example is an attacker submitting a request with a field like `"isAdmin": true` and having the application blindly save it, escalating their privileges.
 
 ## The Anti-Pattern
+
 The anti-pattern is directly using a dictionary of user-provided data to create or update a database model without first filtering for allowed properties.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The incoming request data is used directly to update the user model.
 from flask import request
@@ -43,6 +46,7 @@ def update_profile():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use a Data Transfer Object (DTO) or an explicit allowlist to control which fields can be updated.
 from flask import request
@@ -92,21 +96,25 @@ def update_profile_dto():
 ```
 
 ## Detection
+
 - **Review update/create logic:** Look for any code that takes a user-provided dictionary or object (`request.body`, `params`, etc.) and uses it to directly populate a model (e.g., `user.update(params)`, `new User(params)`).
 - **Check for "allowlists" vs. "blocklists":** Code that tries to *remove* bad keys (a blocklist, e.g., `del params['is_admin']`) is insecure. A new sensitive property could be added to the model later and forgotten in the blocklist. Secure code uses an *allowlist* to only accept known-good keys.
 - **Test API endpoints:** Send requests to `POST` or `PUT` endpoints with extra, unauthorized fields in the JSON body (e.g., `is_admin`, `role`, `account_balance`) and see if the values are reflected in the API's response or the database.
 
 ## Prevention
+
 - [ ] **Use an allowlist approach:** Never use a blocklist to filter incoming data. Always use an allowlist of properties that are permitted to be set by the user.
 - [ ] **Use Data Transfer Objects (DTOs)** or dedicated input schemas to strictly define the expected request body. This is the most robust solution.
 - [ ] **Set sensitive properties explicitly** in your code, outside of any mass assignment operation (e.g., `new_user.is_admin = False`).
 - [ ] **Be aware of framework features:** Some frameworks have built-in protections against mass assignment. Understand how to use them correctly.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Excessive Data Exposure Anti-Pattern](../excessive-data-exposure/): The inverse of mass assignment. Instead of accepting too much data, the application returns too much data.
 - [Missing Authentication Anti-Pattern](../missing-authentication/): If an endpoint is also missing proper authentication, mass assignment becomes even more dangerous, as an unauthenticated user could modify any object.
 
 ## References
+
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
 - [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)

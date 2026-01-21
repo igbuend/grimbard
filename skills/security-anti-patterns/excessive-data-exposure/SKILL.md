@@ -8,12 +8,15 @@ description: "Security anti-pattern for excessive data exposure (CWE-200). Use w
 **Severity:** High
 
 ## Summary
+
 Excessive Data Exposure is a common vulnerability where an application, particularly an API, reveals more information than is necessary for the client to function. This anti-pattern often occurs when an API endpoint returns a raw database object or a model class directly, without filtering out sensitive or internal fields. Even if the client-side UI hides this data, an attacker can easily intercept the API response to access it, leading to the exposure of personal information (PII), credentials, and internal system details.
 
 ## The Anti-Pattern
+
 The anti-pattern is to serialize and return an entire object from a database or internal model, assuming the client will pick what it needs. This sends all properties of the object, including sensitive ones, over the wire.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Returns the entire raw database user object.
 from flask import jsonify
@@ -42,6 +45,7 @@ def get_user(user_id):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Use a Data Transfer Object (DTO) to explicitly define the API response structure.
 from flask import jsonify
@@ -72,11 +76,13 @@ def get_user(user_id):
 ```
 
 ## Detection
+
 - **Review API responses:** Look for endpoints that return large, complex JSON objects. Check if these objects contain fields that are not used by the front-end application or that seem internal or sensitive (e.g., `passwordHash`, `ssn`, `internalNotes`).
 - **Analyze database queries:** Search for `SELECT *` queries that feed directly into API responses.
 - **Inspect serialization logic:** Look for generic `.toJSON()` or `serialize()` methods on model objects that dump all properties without a filter.
 
 ## Prevention
+
 - [ ] **Use Data Transfer Objects (DTOs)** or ViewModels with an explicit allowlist of fields for every API response.
 - [ ] **Never return raw database or ORM objects** directly from an API endpoint.
 - [ ] **Select only the required columns** in your database queries (`SELECT id, username FROM ...` instead of `SELECT *`).
@@ -85,10 +91,12 @@ def get_user(user_id):
 - [ ] **Define different DTOs for different access levels** (e.g., a `UserPublicDTO` for public profiles and a `UserPrivateDTO` for a user viewing their own data).
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Authentication Anti-Pattern](../missing-authentication/): If an endpoint is missing authentication, excessive data exposure becomes even more dangerous.
 - [Mass Assignment Anti-Pattern](../mass-assignment/): The inverse of this problem, where an API accepts more data than it should, leading to unauthorized modifications.
 
 ## References
+
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
 - [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)

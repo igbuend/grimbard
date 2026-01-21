@@ -8,12 +8,15 @@ description: "Security anti-pattern for path traversal vulnerabilities (CWE-22).
 **Severity:** High
 
 ## Summary
+
 Path traversal (also known as "directory traversal" or "dot-dot-slash") is a vulnerability that allows an attacker to read or write files outside of the intended directory. This anti-pattern occurs when an application uses user-supplied input to construct a file path without properly validating or sanitizing it. By manipulating the input with sequences like `../`, an attacker can navigate up the directory tree and access sensitive files anywhere on the server, such as `/etc/passwd`, application source code, or credentials.
 
 ## The Anti-Pattern
+
 The anti-pattern is concatenating user input directly into a file path without first validating that the input is safe and does not contain any directory traversal characters.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: User input is directly joined with a base directory path.
 from flask import request
@@ -43,6 +46,7 @@ def view_file():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: The user input is validated and the final path is canonicalized.
 from flask import request
@@ -79,12 +83,14 @@ def view_file_secure():
 ```
 
 ## Detection
+
 - **Trace user input:** Follow any user-controlled input (from request parameters, body, headers, etc.) that is used in a file operation.
 - **Look for path concatenation:** Search for functions that join or concatenate strings to form file paths (e.g., `os.path.join`, `+` on strings).
 - **Check for missing validation:** Verify that before being used, the input is checked for path traversal sequences (`../`, `..\`). A simple search-and-replace for `../` is not sufficient due to potential bypasses like `....//`.
 - **Ensure path canonicalization:** The most important check is to see if the application resolves the final path to its absolute, canonical form and then verifies that it is still within the intended base directory.
 
 ## Prevention
+
 - [ ] **Never trust user input** when constructing file paths.
 - [ ] **Validate user input** before using it. The best approach is to use a strict allowlist of known-good filenames if possible. If not, disallow path traversal sequences.
 - [ ] **Canonicalize the path:** After constructing the full path, use a language-specific function (e.g., `os.path.realpath()` in Python, `File.getCanonicalPath()` in Java) to resolve it to its absolute form.
@@ -92,11 +98,13 @@ def view_file_secure():
 - [ ] **Use indirect references:** Instead of passing filenames, consider using IDs or indices from a predefined list of available files, so the user never directly controls a piece of the file path.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): Path traversal is a specific, high-impact consequence of missing input validation.
 - [Unrestricted File Upload Anti-Pattern](../unrestricted-file-upload/): An attacker might use path traversal to write a malicious file (like a web shell) to an executable directory on the server.
 - [Command Injection Anti-Pattern](../command-injection/): Path traversal can be used in conjunction with command injection to execute programs from unexpected locations.
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM07:2025 - System Prompt Leakage](https://genai.owasp.org/llmrisk/llm07-system-prompt-leakage/)
 - [OWASP API Security API1:2023 - Broken Object Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/)

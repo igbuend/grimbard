@@ -8,12 +8,15 @@ description: "Security anti-pattern for session fixation vulnerabilities (CWE-38
 **Severity:** High
 
 ## Summary
+
 Session fixation is a type of session hijacking attack where an attacker "fixes" a user's session ID before the user logs in. The attacker first obtains a valid session ID from the application (e.g., by visiting the login page). Then, they trick the victim into using this pre-determined session ID to log in. Because the application fails to generate a new session ID after successful authentication, the victim becomes logged into the attacker's chosen session. The attacker, still possessing the original session ID, can then hijack the victim's authenticated session.
 
 ## The Anti-Pattern
+
 The anti-pattern is an application that uses the same session identifier before and after a user authenticates.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The session ID is not regenerated after successful login.
 from flask import Flask, session, redirect, url_for, request
@@ -58,6 +61,7 @@ def login():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Regenerate the session ID after successful login and on privilege changes.
 from flask import Flask, session, redirect, url_for, request
@@ -99,26 +103,30 @@ def logout():
 ```
 
 ## Detection
+
 - **Review login flows:** Trace the code paths involved in user authentication. Verify that after a successful login, the application explicitly invalidates the old session and generates a completely new session ID.
 - **Check session management libraries:** Understand how your web framework or session management library handles session ID generation and regeneration. Ensure it's used correctly.
 - **Test with a fixed session ID:** Manually attempt to set a session ID (e.g., using browser developer tools or a proxy like Burp Suite) before logging in. After logging in, check if the session ID remains the same.
 
 ## Prevention
+
 - [ ] **Regenerate the session ID after any change in the user's authentication state,** especially after a successful login. This creates a new session, effectively invalidating any pre-login session ID an attacker might have fixed.
 - [ ] **Regenerate the session ID on privilege level changes** (e.g., when a user promotes themselves to administrator).
 - [ ] **Invalidate the old session** on the server-side when a new session is created.
 - [ ] **Ensure session cookies are set with secure flags:**
-    - `HttpOnly`: Prevents client-side scripts from accessing the cookie.
-    - `Secure`: Ensures the cookie is only sent over HTTPS.
-    - `SameSite`: Helps prevent CSRF attacks.
+  - `HttpOnly`: Prevents client-side scripts from accessing the cookie.
+  - `Secure`: Ensures the cookie is only sent over HTTPS.
+  - `SameSite`: Helps prevent CSRF attacks.
 - [ ] **Implement session timeouts:** Both absolute timeouts and idle timeouts should be used to limit the window of opportunity for an attacker.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Authentication Anti-Pattern](../missing-authentication/): The foundation of secure user management, without which session fixation is more easily exploited.
 - [JWT Misuse Anti-Pattern](../jwt-misuse/): When using JWTs, token revocation and expiration become crucial for managing session state securely.
 - [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): Session IDs must be generated using a cryptographically secure random number generator to prevent prediction.
 
 ## References
+
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
 - [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

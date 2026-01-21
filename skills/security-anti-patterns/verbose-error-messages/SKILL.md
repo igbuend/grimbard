@@ -8,12 +8,15 @@ description: "Security anti-pattern for verbose error messages (CWE-209). Use wh
 **Severity:** Medium
 
 ## Summary
+
 Verbose error messages are a security anti-pattern where an application reveals too much internal information when an error occurs. This can include full stack traces, database error messages, internal file paths, or system configuration details. Attackers can use this information to understand the application's architecture, identify potential vulnerabilities, or craft more targeted attacks. While detailed errors are helpful during development, they must be suppressed or generalized for production environments.
 
 ## The Anti-Pattern
+
 The anti-pattern is presenting raw, detailed exception messages or system errors directly to the end-user.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The application exposes raw database errors and stack traces to the user.
 from flask import Flask, request, jsonify
@@ -54,6 +57,7 @@ def user_profile():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Generic error messages are returned to the user, with detailed logging internally.
 from flask import Flask, request, jsonify
@@ -107,11 +111,13 @@ def login():
 ```
 
 ## Detection
+
 - **Review error handling code:** Look for `try...except` blocks or global error handlers. Check what information is returned to the user in the `except` block.
 - **Test with invalid inputs:** Deliberately trigger errors by providing malformed data, invalid IDs, or non-existent resources. Observe the error messages returned by the application.
 - **Check server configurations:** Ensure that web servers (Apache, Nginx) and application frameworks (Spring, Django, Flask) are configured to suppress detailed errors and custom 500 error pages in production.
 
 ## Prevention
+
 - [ ] **Return generic error messages to users:** Never display raw exception messages, stack traces, or detailed system errors to the end-user. A simple "An unexpected error occurred" is usually sufficient.
 - [ ] **Log detailed errors internally:** While generic messages are for users, robust internal logging is essential for debugging. Log full stack traces, request details, and any exception information to a secure, internal logging system.
 - [ ] **Use a unique error ID:** Generate a unique ID for each internal error and include it in the generic message returned to the user. This allows support staff to quickly find the corresponding detailed log entry.
@@ -119,10 +125,12 @@ def login():
 - [ ] **Configure custom error pages:** Implement custom error pages (e.g., 404 Not Found, 500 Internal Server Error) to provide a better user experience without revealing sensitive information.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Debug Mode in Production Anti-Pattern](../debug-mode-production/): Debug mode often exposes verbose error messages, making it a severe risk in production.
 - [Missing Authentication Anti-Pattern](../missing-authentication/): Generic authentication error messages are a key defense.
 
 ## References
+
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
 - [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

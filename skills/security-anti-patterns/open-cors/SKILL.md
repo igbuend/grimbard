@@ -8,12 +8,15 @@ description: "Security anti-pattern for open Cross-Origin Resource Sharing (CORS
 **Severity:** Medium
 
 ## Summary
+
 Cross-Origin Resource Sharing (CORS) is a browser security feature that controls how web pages from one domain can request resources from another domain. A misconfigured, overly permissive CORS policy is a common vulnerability. This anti-pattern occurs when a server responds with `Access-Control-Allow-Origin: *` or dynamically reflects the client's `Origin` header. This allows *any* website on the internet to make authenticated requests to your application on behalf of your users, potentially leading to data theft and unauthorized actions.
 
 ## The Anti-Pattern
+
 The anti-pattern is configuring the `Access-Control-Allow-Origin` header to a value that is too permissive, such as the wildcard (`*`) or reflecting any value sent by the client in the `Origin` header.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The server reflects any Origin header, or uses a wildcard with credentials.
 from flask import Flask, request, jsonify
@@ -52,6 +55,7 @@ def get_profile():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Maintain a strict allowlist of trusted origins.
 from flask import Flask, request, jsonify
@@ -87,6 +91,7 @@ def get_profile_secure():
 ```
 
 ## Detection
+
 - **Use browser developer tools:** Open the "Network" tab, make a cross-origin request to your API, and inspect the response headers. Look for `Access-Control-Allow-Origin`. Is it `*`? Does it match the `Origin` of your request even if that origin is untrusted?
 - **Use `curl`:** Make a request and set a custom `Origin` header to see if the server reflects it:
   `curl -H "Origin: https://evil.com" -I https://yourapp.com/api/some-endpoint`
@@ -94,6 +99,7 @@ def get_profile_secure():
 - **Review CORS configuration:** Check your application's code or framework configuration for how CORS headers are being set. Look for wildcards or reflected origins.
 
 ## Prevention
+
 - [ ] **Maintain a strict allowlist** of trusted origins. This is the most critical step.
 - [ ] **Never reflect the user-provided `Origin` header** without validating it against the allowlist first.
 - [ ] **Do not use the wildcard (`*`)** for `Access-Control-Allow-Origin` on any endpoint that requires authentication (e.g., uses cookies or `Authorization` headers). A wildcard is only safe for truly public, unauthenticated resources.
@@ -101,10 +107,12 @@ def get_profile_secure():
 - [ ] **Add the `Vary: Origin` header** to tell caches that the response is origin-dependent. This prevents a cached response intended for a trusted origin from being served to a malicious one.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Missing Security Headers Anti-Pattern](../missing-security-headers/): CORS is a key part of the broader suite of security headers an application must manage.
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): An attacker could use a permissive CORS policy to exfiltrate data stolen via an XSS attack.
 
 ## References
+
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
 - [OWASP GenAI LLM07:2025 - System Prompt Leakage](https://genai.owasp.org/llmrisk/llm07-system-prompt-leakage/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

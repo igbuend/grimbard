@@ -8,12 +8,15 @@ description: "Security anti-pattern for hardcoded credentials and secrets (CWE-7
 **Severity:** Critical
 
 ## Summary
+
 Hardcoding secrets is the practice of embedding sensitive information, such as API keys, passwords, or database credentials, directly into the source code. This is a critical vulnerability because anyone with access to the code—including developers, version control history, or attackers who gain source code access—can see the secret. AI models frequently generate code with hardcoded secrets, as they are trained on vast amounts of public code from tutorials and examples where this bad practice is common. Secrets committed to a public repository are often discovered and abused by automated bots within minutes.
 
 ## The Anti-Pattern
+
 The anti-pattern is storing any form of secret, credential, or sensitive configuration value directly in a file that is tracked by version control.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Hardcoded API keys and database credentials in the source code.
 import requests
@@ -46,6 +49,7 @@ def get_db_connection():
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Load secrets from the environment or a dedicated secrets manager.
 import os
@@ -83,12 +87,14 @@ def get_db_connection():
 ```
 
 ## Detection
+
 - **Use secret scanning tools:** Tools like `gitleaks`, `trufflehog`, or `git-secrets` can automatically scan your repository's history for patterns that match common secret formats.
 - **Search for keywords:** Manually search the codebase for keywords like `password`, `secret`, `api_key`, `token`, and `credential`.
 - **Look for high-entropy strings:** Long, random-looking strings are often API keys or private keys.
 - **Check configuration files:** Review files like `config.json`, `settings.py`, or `.env` files that have been committed to version control.
 
 ## Prevention
+
 - [ ] **Never hardcode any credentials, API keys, or secrets** in your source code.
 - [ ] **Use environment variables** to store secrets in development and other non-production environments.
 - [ ] **Use a dedicated secrets management service** for production environments (e.g., AWS Secrets Manager, HashiCorp Vault, Google Secret Manager).
@@ -97,11 +103,13 @@ def get_db_connection():
 - [ ] **Implement a secret rotation policy** to limit the impact of a compromised secret.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Weak Encryption Anti-Pattern](../weak-encryption/): Secrets, even when stored, need to be encrypted at rest.
 - [JWT Misuse Anti-Pattern](../jwt-misuse/): The secret key for signing JWTs is a common hardcoded secret.
 - [Verbose Error Messages Anti-Pattern](../verbose-error-messages/): Debug screens can leak environment variables, which may contain secrets.
 
 ## References
+
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
 - [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

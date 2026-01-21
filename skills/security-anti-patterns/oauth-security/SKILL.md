@@ -8,12 +8,15 @@ description: "Security anti-pattern for OAuth implementation vulnerabilities (CW
 **Severity:** High
 
 ## Summary
+
 OAuth 2.0 and OpenID Connect (OIDC) are powerful standards for delegated authentication and authorization, but they are complex and easy to misconfigure. This anti-pattern covers one of the most critical and common mistakes: **failing to properly implement and validate the `state` parameter**. The `state` parameter is the primary defense against Cross-Site Request Forgery (CSRF) attacks during an OAuth flow. A missing or predictable `state` parameter allows an attacker to trick a victim into logging into the attacker's account, potentially leading to account takeover.
 
 ## The Anti-Pattern
+
 The anti-pattern is initiating an OAuth flow without a `state` parameter, or using one that is predictable or not validated upon the user's return to the application.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: The OAuth flow is initiated without a `state` parameter.
 from flask import request, redirect
@@ -42,14 +45,17 @@ def oauth_callback():
     log_user_in(access_token)
     return "Logged in successfully!"
 ```
+
 **Attack Scenario:**
-1.  Attacker starts an OAuth flow with their own account at the provider.
-2.  The provider redirects the attacker back to `https://myapp.com/callback?code=ATTACKER_CODE`.
-3.  The attacker intercepts this request and pauses it. They now have a valid callback URL containing an authorization code for their own account.
-4.  The attacker tricks the victim (who is already logged into `myapp.com`) into visiting this malicious URL.
-5.  `myapp.com` receives the callback, takes the `ATTACKER_CODE`, and associates the victim's session with the attacker's provider account. The victim's account is now linked to the attacker's identity.
+
+1. Attacker starts an OAuth flow with their own account at the provider.
+2. The provider redirects the attacker back to `https://myapp.com/callback?code=ATTACKER_CODE`.
+3. The attacker intercepts this request and pauses it. They now have a valid callback URL containing an authorization code for their own account.
+4. The attacker tricks the victim (who is already logged into `myapp.com`) into visiting this malicious URL.
+5. `myapp.com` receives the callback, takes the `ATTACKER_CODE`, and associates the victim's session with the attacker's provider account. The victim's account is now linked to the attacker's identity.
 
 ### GOOD Code Example
+
 ```python
 # SECURE: A unique, unpredictable `state` is generated, stored in the session, and validated on callback.
 from flask import request, redirect, session
@@ -85,16 +91,18 @@ def oauth_callback_secure():
 ```
 
 ## Detection
+
 - **Trace the OAuth flow:** Start at the point where your application redirects to the OAuth provider.
-    - Is a `state` parameter being generated?
-    - Is it cryptographically random and unpredictable?
+  - Is a `state` parameter being generated?
+  - Is it cryptographically random and unpredictable?
 - **Examine the callback endpoint:**
-    - Does it retrieve the `state` from the incoming request?
-    - Does it compare it to a value stored in the user's session *before* the redirect?
-    - Is the comparison done in constant time (`hmac.compare_digest`) to prevent timing attacks?
-    - Is the state value single-use (i.e., deleted from the session after being checked)?
+  - Does it retrieve the `state` from the incoming request?
+  - Does it compare it to a value stored in the user's session *before* the redirect?
+  - Is the comparison done in constant time (`hmac.compare_digest`) to prevent timing attacks?
+  - Is the state value single-use (i.e., deleted from the session after being checked)?
 
 ## Prevention
+
 - [ ] **Always use a `state` parameter** in your OAuth/OIDC authorization requests.
 - [ ] **Generate a cryptographically random string** for the `state` value (at least 32 characters). Do not use predictable values like a user ID or timestamp.
 - [ ] **Bind the `state` value to the user's current session** by storing it in a session cookie before redirecting the user.
@@ -103,11 +111,13 @@ def oauth_callback_secure():
 - [ ] **For public clients (SPAs, mobile apps), use the PKCE** (Proof Key for Code Exchange) extension in addition to the `state` parameter.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Session Fixation Anti-Pattern](../session-fixation/): A successful OAuth CSRF attack is a form of session fixation.
 - [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): The `state` parameter must be generated with a cryptographically secure random number generator.
 - [Missing Authentication Anti-Pattern](../missing-authentication/): OAuth is a form of authentication, and its flows must be implemented correctly to be secure.
 
 ## References
+
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
 - [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)

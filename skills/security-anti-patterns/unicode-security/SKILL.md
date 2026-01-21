@@ -8,16 +8,20 @@ description: "Security anti-pattern for Unicode-related vulnerabilities (CWE-176
 **Severity:** Medium
 
 ## Summary
+
 Unicode, while essential for global communication, introduces a complex set of security challenges. This anti-pattern arises when an application fails to properly handle the various ways characters can be represented in Unicode, leading to vulnerabilities like username spoofing, phishing, and validation bypasses. Issues include:
-1.  **Confusable Characters (Homoglyphs):** Characters from different scripts that look identical (e.g., Latin 'a' vs. Cyrillic 'а').
-2.  **Normalization Issues:** Multiple byte sequences representing the same character (e.g., a single accented character vs. base character + combining accent).
-3.  **Zero-Width Characters:** Non-printing characters that can hide malicious content or alter string lengths.
-4.  **Bidirectional Text Overrides:** Special control characters that can reorder text display, potentially obfuscating file extensions (e.g., `exe.pdf`).
+
+1. **Confusable Characters (Homoglyphs):** Characters from different scripts that look identical (e.g., Latin 'a' vs. Cyrillic 'а').
+2. **Normalization Issues:** Multiple byte sequences representing the same character (e.g., a single accented character vs. base character + combining accent).
+3. **Zero-Width Characters:** Non-printing characters that can hide malicious content or alter string lengths.
+4. **Bidirectional Text Overrides:** Special control characters that can reorder text display, potentially obfuscating file extensions (e.g., `exe.pdf`).
 
 ## The Anti-Pattern
+
 The anti-pattern is processing, validating, or displaying user-controlled Unicode strings without performing proper normalization, confusable detection, or stripping of dangerous control characters.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Comparing strings without normalization or confusable detection.
 def authenticate_user(provided_username, password):
@@ -46,6 +50,7 @@ def authenticate_user(provided_username, password):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Normalize, filter, and compare Unicode strings consistently.
 import unicodedata
@@ -86,12 +91,14 @@ def authenticate_user_secure(provided_username, password):
 ```
 
 ## Detection
+
 - **Review string comparisons:** Look for any comparisons of user-controlled strings, especially for authentication, authorization, or access control decisions.
 - **Check input processing:** See how input strings are handled from reception to storage and display. Are normalization steps applied consistently?
 - **Test with confusable characters:** Try registering usernames or domains that use homoglyphs (e.g., Cyrillic 'a' instead of Latin 'a') for common reserved names (admin, root) or well-known brands (paypal, apple).
 - **Test with zero-width characters:** Insert zero-width characters (e.g., `\u200B`) into inputs to see if they bypass length checks or string comparisons.
 
 ## Prevention
+
 - [ ] **Normalize all Unicode input:** Convert all incoming Unicode strings to a single, consistent normalization form (typically NFC - Normalization Form C) before any validation, storage, or comparison.
 - [ ] **Strip dangerous control characters:** Remove zero-width spaces (`\u200B`), bidirectional overrides (`\u202E`), and other non-printing control characters from user input.
 - [ ] **Implement confusable detection:** For security-critical identifiers like usernames or domain names, implement checks for homoglyphs (confusable characters). This often involves converting strings to a "skeleton" form for comparison.
@@ -99,11 +106,13 @@ def authenticate_user_secure(provided_username, password):
 - [ ] **Be consistent:** Apply the same Unicode processing rules (normalization, stripping, filtering) consistently across the entire application, from input to storage to comparison and display.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [Encoding Bypass Anti-Pattern](../encoding-bypass/): Unicode issues are a specific type of encoding manipulation that can bypass security filters.
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): Failure to handle Unicode correctly is a form of improper input validation.
 - [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): Malicious Unicode characters can sometimes be used to bypass XSS filters.
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM05:2025 - Improper Output Handling](https://genai.owasp.org/llmrisk/llm05-improper-output-handling/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

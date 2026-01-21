@@ -8,12 +8,15 @@ description: "Security anti-pattern for LDAP injection vulnerabilities (CWE-90).
 **Severity:** High
 
 ## Summary
+
 LDAP Injection is a vulnerability that occurs when user-provided input is insecurely inserted into an LDAP (Lightweight Directory Access Protocol) query. Similar to SQL injection, it allows an attacker to manipulate the query's logic by injecting special characters. A successful attack can lead to authentication bypass, unauthorized data access, privilege escalation, or disclosure of the directory service's structure.
 
 ## The Anti-Pattern
+
 The anti-pattern is building LDAP filters by directly concatenating unescaped user input. The special characters in the input can alter the structure of the LDAP filter, changing its intended meaning.
 
 ### BAD Code Example
+
 ```python
 # VULNERABLE: Unescaped user input is concatenated into an LDAP filter.
 import ldap
@@ -39,6 +42,7 @@ def find_user_by_name(ldap_connection, username):
 ```
 
 ### GOOD Code Example
+
 ```python
 # SECURE: Escape user input before including it in the filter.
 import ldap
@@ -83,23 +87,27 @@ def authenticate_ldap_safe(username, password):
 ```
 
 ## Detection
+
 - **Review LDAP queries:** Look for any code that constructs LDAP search filters using string concatenation or formatting with user-controlled variables.
 - **Check for escaping:** Ensure that any variable being inserted into an LDAP filter is first passed through a proper LDAP escaping function.
 - **Search for LDAP query functions:** Identify all calls to functions like `ldap.search`, `search_s`, or similar methods in other languages, and trace the origin of the filter string.
 - **Test with special characters:** Input LDAP metacharacters like `*`, `(`, `)`, `\`, and `|` to see if they alter the query's behavior or cause an error.
 
 ## Prevention
+
 - [ ] **Always escape user input** before placing it in an LDAP filter. Use a trusted library function for this, such as `ldap.filter.escape_filter_chars` in Python.
 - [ ] **Use the BIND operation for authentication** instead of performing a search and comparing passwords. Binding is the intended mechanism for verifying credentials in LDAP.
 - [ ] **Use parameterized LDAP queries** if your library or framework supports them. This is the safest approach, as it separates the query structure from the data.
 - [ ] **Apply the Principle of Least Privilege** to the LDAP service account, ensuring it has read-only access to only the necessary parts of the directory.
 
 ## Related Security Patterns & Anti-Patterns
+
 - [SQL Injection Anti-Pattern](../sql-injection/): The same fundamental vulnerability of mixing code and data, but for SQL databases.
 - [XPath Injection Anti-Pattern](../xpath-injection/): A similar injection vulnerability targeting XML databases.
 - [Missing Input Validation Anti-Pattern](../missing-input-validation/): A root cause that enables many injection attacks.
 
 ## References
+
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)

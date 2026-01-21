@@ -102,6 +102,7 @@ renderCommentSafe(payload);
 - [OWASP GenAI LLM09:2025 - Misinformation](https://genai.owasp.org/llmrisk/llm09-misinformation/)
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
 - [CAPEC-86: XSS Through HTTP Headers](https://capec.mitre.org/data/definitions/86.html)
+- [PortSwigger: Cross Site Scripting](https://portswigger.net/web-security/cross-site-scripting)
 - [DOMPurify](https://github.com/cure53/DOMPurify)
 - [Mutation XSS Research (Cure53)](https://cure53.de/fp170.pdf)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

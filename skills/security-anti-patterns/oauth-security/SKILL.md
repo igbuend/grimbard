@@ -124,5 +124,6 @@ def oauth_callback_secure():
 - [OWASP OAuth Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OAuth_Cheat_Sheet.html)
 - [CWE-352: Cross-Site Request Forgery](https://cwe.mitre.org/data/definitions/352.html)
 - [CAPEC-103: Clickjacking](https://capec.mitre.org/data/definitions/103.html)
+- [PortSwigger: Oauth](https://portswigger.net/web-security/oauth)
 - [OAuth 2.0 Security Best Practices](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

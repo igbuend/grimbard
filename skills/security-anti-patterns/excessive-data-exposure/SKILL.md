@@ -102,4 +102,5 @@ def get_user(user_id):
 - [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
 - [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)
 - [CAPEC-37: Retrieve Embedded Sensitive Data](https://capec.mitre.org/data/definitions/37.html)
+- [PortSwigger: Information Disclosure](https://portswigger.net/web-security/information-disclosure)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -139,4 +139,5 @@ def upload_file_secure():
 - [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
 - [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
 - [CAPEC-1: Accessing Functionality Not Properly Constrained by ACLs](https://capec.mitre.org/data/definitions/1.html)
+- [PortSwigger: File Upload](https://portswigger.net/web-security/file-upload)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

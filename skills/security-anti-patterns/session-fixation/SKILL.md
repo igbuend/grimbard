@@ -133,4 +133,5 @@ def logout():
 - [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
 - [CWE-384: Session Fixation](https://cwe.mitre.org/data/definitions/384.html)
 - [CAPEC-61: Session Fixation](https://capec.mitre.org/data/definitions/61.html)
+- [PortSwigger: Authentication](https://portswigger.net/web-security/authentication)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

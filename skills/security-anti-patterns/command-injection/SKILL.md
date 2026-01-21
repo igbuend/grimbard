@@ -81,4 +81,5 @@ def ping_host(hostname):
 - [OWASP OS Command Injection Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)
 - [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)
 - [CAPEC-88: OS Command Injection](https://capec.mitre.org/data/definitions/88.html)
+- [PortSwigger: Os Command Injection](https://portswigger.net/web-security/os-command-injection)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

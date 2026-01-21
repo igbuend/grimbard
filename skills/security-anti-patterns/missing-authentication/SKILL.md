@@ -106,4 +106,5 @@ def get_user_profile_secure(current_user, user_id):
 - [OWASP Authentication Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html)
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [CAPEC-115: Authentication Bypass](https://capec.mitre.org/data/definitions/115.html)
+- [PortSwigger: Authentication](https://portswigger.net/web-security/authentication)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

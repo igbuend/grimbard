@@ -120,4 +120,5 @@ def search_secure():
 - [OWASP Rate Limiting](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html)
 - [CWE-770: Resource Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)
 - [CAPEC-49: Password Brute Forcing](https://capec.mitre.org/data/definitions/49.html)
+- [PortSwigger: Authentication](https://portswigger.net/web-security/authentication)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

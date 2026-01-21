@@ -121,4 +121,5 @@ def update_profile_dto():
 - [OWASP Mass Assignment](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
 - [CWE-915: Mass Assignment](https://cwe.mitre.org/data/definitions/915.html)
 - [CAPEC-114: Authentication Abuse](https://capec.mitre.org/data/definitions/114.html)
+- [PortSwigger: Api Testing](https://portswigger.net/web-security/api-testing)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

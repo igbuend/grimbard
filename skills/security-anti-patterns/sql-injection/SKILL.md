@@ -86,4 +86,5 @@ def get_user(db_connection, username):
 - [OWASP SQL Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html)
 - [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
 - [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)
+- [PortSwigger: Sql Injection](https://portswigger.net/web-security/sql-injection)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

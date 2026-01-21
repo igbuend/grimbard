@@ -109,4 +109,5 @@ def log_user_action_safe(user_id, action):
 - [OWASP Second Order SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
 - [CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')](https://cwe.mitre.org/data/definitions/89.html)
 - [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)
+- [PortSwigger: Sql Injection](https://portswigger.net/web-security/sql-injection)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

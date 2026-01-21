@@ -116,4 +116,5 @@ def get_db_connection():
 - [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)
 - [CAPEC-191: Read Sensitive Constants Within an Executable](https://capec.mitre.org/data/definitions/191.html)
+- [PortSwigger: Information Disclosure](https://portswigger.net/web-security/information-disclosure)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

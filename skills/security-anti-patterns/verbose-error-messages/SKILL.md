@@ -137,4 +137,5 @@ def login():
 - [OWASP Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)
 - [CWE-209: Generation of Error Message Containing Sensitive Information](https://cwe.mitre.org/data/definitions/209.html)
 - [CAPEC-54: Query System for Information](https://capec.mitre.org/data/definitions/54.html)
+- [PortSwigger: Information Disclosure](https://portswigger.net/web-security/information-disclosure)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -104,5 +104,6 @@ void process_purchase_safe(uint32_t quantity, uint32_t price_per_item) {
 - [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [CWE-190: Integer Overflow](https://cwe.mitre.org/data/definitions/190.html)
 - [CAPEC-190: Forced Integer Overflow](https://capec.mitre.org/data/definitions/190.html)
+- [PortSwigger: Logic Flaws](https://portswigger.net/web-security/logic-flaws)
 - [CERT Secure Coding - Integer Security](https://wiki.sei.cmu.edu/confluence/display/c/INT32-C.+Ensure+that+operations+on+signed+integers+do+not+result+in+overflow)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

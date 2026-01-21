@@ -157,4 +157,5 @@ def create_jwt_secure(user, secret_key):
 - [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [CAPEC-220: Client-Server Protocol Manipulation](https://capec.mitre.org/data/definitions/220.html)
+- [PortSwigger: Jwt](https://portswigger.net/web-security/jwt)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

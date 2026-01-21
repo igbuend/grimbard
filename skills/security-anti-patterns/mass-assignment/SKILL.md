@@ -175,7 +175,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
 - [OWASP Mass Assignment](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
 - [CWE-915: Mass Assignment](https://cwe.mitre.org/data/definitions/915.html)
 - [CAPEC-114: Authentication Abuse](https://capec.mitre.org/data/definitions/114.html)

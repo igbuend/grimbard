@@ -173,7 +173,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A04:2021 - Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
+- [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
 - [OWASP ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 - [CWE-1333: Inefficient Regular Expression](https://cwe.mitre.org/data/definitions/1333.html)
 - [CAPEC-492: Regular Expression Exponential Blowup](https://capec.mitre.org/data/definitions/492.html)

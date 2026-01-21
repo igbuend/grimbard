@@ -168,7 +168,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A07:2021 - Identification and Authentication Failures](https://owasp.org/Top10/A07_2021-Identification_and_Authentication_Failures/)
+- [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
 - [OWASP Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
 - [CWE-384: Session Fixation](https://cwe.mitre.org/data/definitions/384.html)
 - [CAPEC-61: Session Fixation](https://capec.mitre.org/data/definitions/61.html)

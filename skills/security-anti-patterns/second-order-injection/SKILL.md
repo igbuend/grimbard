@@ -126,7 +126,7 @@ END
 
 ## References
 
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP Second Order SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
 - [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
 - [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)

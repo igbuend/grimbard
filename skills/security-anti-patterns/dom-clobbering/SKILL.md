@@ -190,7 +190,7 @@ Test with elements having IDs matching:
 
 ## References
 
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
 - [CAPEC-588: DOM-Based XSS](https://capec.mitre.org/data/definitions/588.html)
 - [PortSwigger DOM Clobbering](https://portswigger.net/web-security/dom-based/dom-clobbering)

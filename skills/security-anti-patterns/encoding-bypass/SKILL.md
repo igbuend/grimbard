@@ -177,7 +177,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [OWASP Testing for HTTP Incoming Requests](https://owasp.org/www-project-web-security-testing-guide/)
 - [CWE-838: Inappropriate Encoding for Output Context](https://cwe.mitre.org/data/definitions/838.html)
 - [CAPEC-267: Leverage Alternate Encoding](https://capec.mitre.org/data/definitions/267.html)

@@ -150,7 +150,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
+- [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
 - [OWASP Error Handling Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Error_Handling_Cheat_Sheet.html)
 - [CWE-209: Error Message Information Exposure](https://cwe.mitre.org/data/definitions/209.html)
 - [CAPEC-54: Query System for Information](https://capec.mitre.org/data/definitions/54.html)

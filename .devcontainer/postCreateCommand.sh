@@ -29,7 +29,7 @@ pnpm setup
 export PNPM_HOME="$HOME/.local/share/pnpm"
 
 #shellcheck disable=SC1090,SC1091
-source "$HOME/.bashrc"
+source "$HOME"/.bashrc
 case ":$PATH:" in
   *":$PNPM_HOME:"*) ;;
   *) export PATH="$PNPM_HOME:$PATH" ;;

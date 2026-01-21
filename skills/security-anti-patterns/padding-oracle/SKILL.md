@@ -185,7 +185,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [CWE-649: Reliance on Obfuscation](https://cwe.mitre.org/data/definitions/649.html)
 - [CAPEC-463: Padding Oracle Crypto Attack](https://capec.mitre.org/data/definitions/463.html)
 - [Padding Oracle Attack (Vaudenay)](https://en.wikipedia.org/wiki/Padding_oracle_attack)

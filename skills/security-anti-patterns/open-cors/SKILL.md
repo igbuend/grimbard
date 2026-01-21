@@ -172,7 +172,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A05:2021 - Security Misconfiguration](https://owasp.org/Top10/A05_2021-Security_Misconfiguration/)
+- [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
 - [CWE-346: Origin Validation Error](https://cwe.mitre.org/data/definitions/346.html)
 - [CAPEC-111: JSON Hijacking](https://capec.mitre.org/data/definitions/111.html)
 - [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)

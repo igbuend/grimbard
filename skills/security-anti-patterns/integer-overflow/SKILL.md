@@ -215,7 +215,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [CWE-190: Integer Overflow](https://cwe.mitre.org/data/definitions/190.html)
 - [CAPEC-190: Forced Integer Overflow](https://capec.mitre.org/data/definitions/190.html)
 - [CERT Secure Coding - Integer Security](https://wiki.sei.cmu.edu/confluence/display/c/INT32-C.+Ensure+that+operations+on+signed+integers+do+not+result+in+overflow)

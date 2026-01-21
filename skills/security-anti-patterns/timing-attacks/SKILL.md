@@ -159,7 +159,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [OWASP Testing for Timing Attacks](https://owasp.org/www-project-web-security-testing-guide/)
 - [CWE-208: Observable Timing Discrepancy](https://cwe.mitre.org/data/definitions/208.html)
 - [CAPEC-462: Cross-Domain Search Timing](https://capec.mitre.org/data/definitions/462.html)

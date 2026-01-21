@@ -165,7 +165,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A02:2021 - Cryptographic Failures](https://owasp.org/Top10/A02_2021-Cryptographic_Failures/)
+- [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
 - [CWE-328: Reversible One-Way Hash](https://cwe.mitre.org/data/definitions/328.html)
 - [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
 - [Length Extension Attack (Wikipedia)](https://en.wikipedia.org/wiki/Length_extension_attack)

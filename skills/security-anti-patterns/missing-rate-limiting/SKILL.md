@@ -147,7 +147,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A04:2021 - Insecure Design](https://owasp.org/Top10/A04_2021-Insecure_Design/)
+- [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
 - [OWASP Rate Limiting](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html)
 - [CWE-770: Resource Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)
 - [CAPEC-49: Password Brute Forcing](https://capec.mitre.org/data/definitions/49.html)

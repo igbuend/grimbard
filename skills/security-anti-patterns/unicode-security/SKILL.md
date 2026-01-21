@@ -201,7 +201,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A03:2021 - Injection](https://owasp.org/Top10/A03_2021-Injection/)
+- [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
 - [CWE-176: Improper Handling of Unicode](https://cwe.mitre.org/data/definitions/176.html)
 - [CAPEC-71: Using Unicode Encoding to Bypass Validation](https://capec.mitre.org/data/definitions/71.html)
 - [Unicode Security Considerations](https://unicode.org/reports/tr36/)

@@ -164,7 +164,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A06:2021 - Vulnerable and Outdated Components](https://owasp.org/Top10/A06_2021-Vulnerable_and_Outdated_Components/)
+- [OWASP Top 10 A03:2025 - Software Supply Chain Failures](https://owasp.org/Top10/2025/A03_2025-Software_Supply_Chain_Failures/)
 - [CWE-1357: Reliance on Unverified Package](https://cwe.mitre.org/data/definitions/1357.html)
 - [CAPEC-538: Open-Source Library Manipulation](https://capec.mitre.org/data/definitions/538.html)
 - [USENIX Study on Package Hallucination](https://arxiv.org/abs/2406.10279)

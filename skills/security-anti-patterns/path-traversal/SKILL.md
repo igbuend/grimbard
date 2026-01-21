@@ -140,7 +140,7 @@ END FUNCTION
 
 ## References
 
-- [OWASP Top 10 A01:2021 - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
+- [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
 - [OWASP Path Traversal](https://owasp.org/www-community/attacks/Path_Traversal)
 - [CWE-22: Path Traversal](https://cwe.mitre.org/data/definitions/22.html)
 - [CAPEC-126: Path Traversal](https://capec.mitre.org/data/definitions/126.html)

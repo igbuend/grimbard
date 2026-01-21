@@ -1,189 +1,134 @@
 ---
-name: unrestricted-file-upload-anti-pattern
-description: Security anti-pattern for unrestricted file upload vulnerabilities (CWE-434). Use when generating or reviewing code that handles file uploads, processes user-submitted files, or stores uploaded content. Detects missing extension, MIME type, and size validation.
+name: "unrestricted-file-upload-anti-pattern"
+description: "Security anti-pattern for unrestricted file upload vulnerabilities (CWE-434). Use when generating or reviewing code that handles file uploads, processes user-submitted files, or stores uploaded content. Detects missing extension, MIME type, and size validation."
 ---
 
 # Unrestricted File Upload Anti-Pattern
 
 **Severity:** Critical
 
-## Risk
+## Summary
+Unrestricted file upload is a critical vulnerability that allows an attacker to upload any file type to a server, including malicious scripts or executables. This anti-pattern occurs when an application accepts user-provided files without sufficient validation of their type, content, or size. A successful attack can lead to remote code execution (RCE) by uploading a web shell, server compromise, or a denial-of-service (DoS) by filling up disk space.
 
-Unrestricted file uploads allow attackers to upload malicious files that can lead to:
+## The Anti-Pattern
+The anti-pattern is accepting and storing uploaded files from users without rigorously validating that the file is of an expected type, has safe content, and is within acceptable size limits.
 
-- Remote code execution (uploading web shells)
-- Server compromise
-- Cross-site scripting via HTML/SVG files
-- Storage exhaustion (DoS)
-- Malware distribution
+### BAD Code Example
+```python
+# VULNERABLE: No validation of file type, content, or size.
+from flask import Flask, request
+import os
 
-## BAD Pattern: No File Validation
+UPLOAD_FOLDER = '/var/www/uploads' # This directory might be accessible by the web server.
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-```pseudocode
-// VULNERABLE: Accepts any file type and size
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return 'No file part', 400
+    file = request.files['file']
+    if file.filename == '':
+        return 'No selected file', 400
 
-FUNCTION upload_file(request):
-    file = request.files.get("upload")
-
-    // No validation at all!
+    # CRITICAL FLAW: The application takes the filename as is and saves the file.
+    # An attacker can upload a file named `shell.php` with PHP code.
+    # If the `UPLOAD_FOLDER` is web-accessible and PHP is executed,
+    # the attacker achieves Remote Code Execution.
     filename = file.filename
-    file.save("/uploads/" + filename)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    return f'File {filename} uploaded successfully', 200
 
-    RETURN {success: TRUE, filename: filename}
-END FUNCTION
-
-// Attack: Upload "shell.php" with PHP code
-// Result: Web shell accessible at /uploads/shell.php
+# Attack Scenario:
+# 1. Attacker crafts a PHP file named `shell.php` containing `<?php system($_GET['cmd']); ?>`.
+# 2. Attacker uploads `shell.php` via this endpoint.
+# 3. Attacker accesses `http://your-app.com/uploads/shell.php?cmd=ls%20-la`
+#    and can now execute arbitrary commands on the server.
 ```
 
-## GOOD Pattern: Comprehensive File Validation
+### GOOD Code Example
+```python
+# SECURE: Implement a multi-layered validation approach for file uploads.
+from flask import Flask, request, jsonify
+import os
+import uuid # For generating unique filenames
+from magic import from_buffer # `python-magic` for magic byte detection
 
-```pseudocode
-// SECURE: Validate extension, MIME type, size, and content
+UPLOAD_FOLDER = '/var/www/safe_uploads' # Store files outside the web root.
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf'}
+MAX_FILE_SIZE = 5 * 1024 * 1024 # 5 MB
 
-CONSTANT MAX_FILE_SIZE = 10 * 1024 * 1024  // 10MB
-CONSTANT ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".gif", ".pdf"]
-CONSTANT ALLOWED_MIME_TYPES = [
-    "image/jpeg", "image/png", "image/gif", "application/pdf"
-]
+app = Flask(__name__)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-FUNCTION upload_file(request):
-    file = request.files.get("upload")
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-    IF file IS NULL:
-        THROW ValidationError("No file provided")
-    END IF
+@app.route('/upload/secure', methods=['POST'])
+def upload_file_secure():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
 
-    // 1. Check file size
-    IF file.size > MAX_FILE_SIZE:
-        THROW ValidationError("File too large (max 10MB)")
-    END IF
+    if file:
+        # 1. Validate file extension (allowlist approach).
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'File type not allowed'}), 400
 
-    // 2. Check extension (allowlist)
-    original_name = file.filename
-    extension = path.get_extension(original_name).lower()
-    IF extension NOT IN ALLOWED_EXTENSIONS:
-        THROW ValidationError("File type not allowed")
-    END IF
+        # 2. Validate file size.
+        file.seek(0, os.SEEK_END) # This is a valid escape sequence for a newline
+        file_length = file.tell()
+        file.seek(0) # Reset file pointer for reading
+        if file_length > MAX_FILE_SIZE:
+            return jsonify({'error': 'File too large'}), 400
 
-    // 3. Check MIME type (don't trust Content-Type header alone)
-    declared_mime = file.content_type
-    IF declared_mime NOT IN ALLOWED_MIME_TYPES:
-        THROW ValidationError("Invalid file type")
-    END IF
+        # 3. Validate actual MIME type using magic bytes (more reliable than Content-Type header).
+        file_buffer = file.read(1024) # Read a chunk for magic byte detection
+        file.seek(0) # Reset file pointer
+        actual_mime = from_buffer(file_buffer, mime=True)
+        if actual_mime not in ['image/png', 'image/jpeg', 'image/gif', 'application/pdf']:
+            return jsonify({'error': f'Invalid file content type: {actual_mime}'}), 400
 
-    // 4. Verify actual content (magic bytes)
-    actual_mime = detect_mime_type(file.content)
-    IF actual_mime NOT IN ALLOWED_MIME_TYPES:
-        log.warning("MIME type mismatch", {
-            declared: declared_mime,
-            actual: actual_mime
-        })
-        THROW ValidationError("File content doesn't match type")
-    END IF
+        # 4. Generate a unique and safe filename. Never use the original filename directly.
+        original_extension = file.filename.rsplit('.', 1)[1].lower()
+        safe_filename = str(uuid.uuid4()) + '.' + original_extension
 
-    // 5. Generate safe filename (never use original)
-    safe_filename = uuid() + extension
-
-    // 6. Save outside web root or with no-execute permissions
-    file.save(UPLOAD_DIR + "/" + safe_filename)
-
-    RETURN {success: TRUE, filename: safe_filename}
-END FUNCTION
+        # 5. Store the file in a secure location, preferably outside the web root.
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], safe_filename))
+        return jsonify({'message': f'File {safe_filename} uploaded successfully'}), 200
 ```
-
-## BAD Pattern: Extension-Only Check
-
-```pseudocode
-// VULNERABLE: Only checks extension (easily bypassed)
-
-FUNCTION upload_image_weak(request):
-    file = request.files.get("image")
-    filename = file.filename
-
-    // Bypass: "shell.php.jpg" or "shell.jpg.php"
-    IF NOT filename.ends_with(".jpg") AND NOT filename.ends_with(".png"):
-        THROW ValidationError("Only images allowed")
-    END IF
-
-    file.save("/uploads/" + filename)
-END FUNCTION
-```
-
-## GOOD Pattern: Multi-Layer Validation
-
-```pseudocode
-// SECURE: Multiple validation layers
-
-FUNCTION validate_image_upload(file):
-    // Layer 1: Extension allowlist
-    extension = path.get_extension(file.filename).lower()
-    IF extension NOT IN [".jpg", ".jpeg", ".png", ".gif"]:
-        RETURN {valid: FALSE, reason: "Invalid extension"}
-    END IF
-
-    // Layer 2: Magic bytes verification
-    magic_bytes = file.read(8)
-    IF NOT is_valid_image_header(magic_bytes):
-        RETURN {valid: FALSE, reason: "Invalid file header"}
-    END IF
-
-    // Layer 3: Try to parse as image
-    TRY:
-        image = image_library.open(file)
-        image.verify()  // Validates image structure
-    CATCH ImageError:
-        RETURN {valid: FALSE, reason: "Corrupt or invalid image"}
-    END TRY
-
-    // Layer 4: Check for embedded content
-    IF contains_script_tags(file.content):
-        RETURN {valid: FALSE, reason: "Suspicious content detected"}
-    END IF
-
-    RETURN {valid: TRUE}
-END FUNCTION
-```
-
-## File Type Magic Bytes
-
-| Type | Magic Bytes (hex) |
-|------|-------------------|
-| JPEG | `FF D8 FF` |
-| PNG | `89 50 4E 47 0D 0A 1A 0A` |
-| GIF | `47 49 46 38` |
-| PDF | `25 50 44 46` |
-| ZIP | `50 4B 03 04` |
 
 ## Detection
+- **Review file upload handlers:** Identify all endpoints that allow users to upload files.
+- **Check validation logic:** Examine how filenames, file types, and file contents are validated. Look for:
+    - Missing extension checks or using blocklists instead of allowlists.
+    - Relying solely on the `Content-Type` HTTP header, which is easily spoofed.
+    - Not checking the actual content of the file (magic bytes).
+    - Missing size limits.
+- **Inspect storage location:** Determine where uploaded files are stored. Are they in a web-accessible directory? Can executables be run from there?
 
-- Look for file upload handlers without extension validation
-- Search for user-provided filenames used directly
-- Check for missing MIME type verification
-- Review upload directories for execute permissions
+## Prevention
+- [ ] **Strict Allowlist for File Extensions:** Only allow a very small, specific set of safe file extensions (e.g., `.png`, `.jpg`, `.pdf`). Never use a blocklist.
+- [ ] **Verify Actual File Content (Magic Bytes):** Don't trust the `Content-Type` header from the client. Instead, inspect the first few bytes of the file (magic bytes) to determine its true type.
+- [ ] **Enforce File Size Limits:** Prevent DoS attacks and resource exhaustion by setting maximum file size limits.
+- [ ] **Generate Unique, Random Filenames:** Never use the user-provided filename directly. Generate a cryptographically secure random filename to prevent path traversal and overwriting existing files.
+- [ ] **Store Files Outside the Web Root:** If possible, store uploaded files in a directory that is not directly accessible by the web server. Serve them through a separate, controlled handler.
+- [ ] **Set No-Execute Permissions:** Ensure that the directory where files are uploaded has no-execute permissions to prevent web shells from running.
+- [ ] **Scan for Malware:** Integrate an antivirus or malware scanner for all uploaded files.
 
-## Prevention Checklist
-
-- [ ] Validate file extension against strict allowlist
-- [ ] Verify MIME type matches extension
-- [ ] Check magic bytes to confirm actual file type
-- [ ] Enforce maximum file size limits
-- [ ] Generate random filenames (never use user input)
-- [ ] Store uploads outside web root
-- [ ] Set no-execute permissions on upload directories
-- [ ] Scan uploads for malware
-
-## Related Patterns
-
-- [path-traversal](../path-traversal/) - Filename manipulation
-- [command-injection](../command-injection/) - Processing uploaded files
-- [xss](../xss/) - HTML/SVG uploads can contain scripts
+## Related Security Patterns & Anti-Patterns
+- [Path Traversal Anti-Pattern](../path-traversal/): Attackers can try to use directory traversal sequences (`../`) in the filename to write files to unintended locations.
+- [Command Injection Anti-Pattern](../command-injection/): If an uploaded file is later processed by a system command, it can lead to command injection.
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): Malicious HTML or SVG files can be uploaded to perform XSS attacks.
 
 ## References
-
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)
 - [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
-- [CWE-434: Unrestricted File Upload](https://cwe.mitre.org/data/definitions/434.html)
+- [CWE-434: Unrestricted Upload of File with Dangerous Type](https://cwe.mitre.org/data/definitions/434.html)
 - [CAPEC-1: Accessing Functionality Not Properly Constrained by ACLs](https://capec.mitre.org/data/definitions/1.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

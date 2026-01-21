@@ -1,155 +1,100 @@
 ---
-name: weak-password-hashing-anti-pattern
-description: Security anti-pattern for weak password hashing (CWE-327, CWE-759). Use when generating or reviewing code that stores or verifies user passwords. Detects use of MD5, SHA1, SHA256 without salt, or missing password hashing entirely. Recommends bcrypt, Argon2, or scrypt.
+name: "weak-password-hashing-anti-pattern"
+description: "Security anti-pattern for weak password hashing (CWE-327, CWE-759). Use when generating or reviewing code that stores or verifies user passwords. Detects use of MD5, SHA1, SHA256 without salt, or missing password hashing entirely. Recommends bcrypt, Argon2, or scrypt."
 ---
 
 # Weak Password Hashing Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Weak password hashing is a critical vulnerability that occurs when applications use cryptographic algorithms that are unsuitable for storing passwords. This anti-pattern often involves using fast, general-purpose hash functions (like MD5, SHA-1, or plain SHA-256) without proper salting, or by not hashing passwords at all. Attackers can exploit this to rapidly crack user passwords using pre-computed tables (rainbow tables) or brute-force attacks, especially with modern GPUs. This can lead to mass account compromise and credential stuffing across different services.
 
-AI models frequently suggest outdated password hashing (MD5, SHA-1, plain SHA-256) learned from legacy code in training data. Weak password hashing leads to:
+## The Anti-Pattern
+The anti-pattern is using cryptographic hash functions that are too fast or lack essential features like salting and adjustable work factors, making them vulnerable to offline attacks.
 
-- Mass password compromise via rainbow tables
-- Fast brute-force cracking
-- Credential stuffing across services
-- Database breach escalation
+### BAD Code Example
+```python
+# VULNERABLE: Using MD5 for password hashing.
+import hashlib
 
-A 14% failure rate for CWE-327 was documented in AI-generated code.
+def hash_password_md5(password):
+    # MD5 is a cryptographically broken hash function.
+    # It is extremely fast, and rainbow tables for MD5 are widely available.
+    return hashlib.md5(password.encode()).hexdigest()
 
-## BAD Pattern: MD5 or SHA1 for Passwords
+def verify_password_md5(password, stored_hash):
+    return hash_password_md5(password) == stored_hash
 
-```pseudocode
-// VULNERABLE: Deprecated hash algorithms
+# Another example: plain SHA-256 without salting.
+def hash_password_sha256_unsalted(password):
+    # SHA-256 is a strong hash for data integrity, but too fast for passwords.
+    # Without a salt, identical passwords result in identical hashes.
+    return hashlib.sha256(password.encode()).hexdigest()
 
-FUNCTION hash_password_weak(password):
-    // MD5 is cryptographically broken
-    RETURN md5(password)
-END FUNCTION
-
-FUNCTION hash_password_sha1(password):
-    // SHA-1 has known collision attacks
-    RETURN sha1(password)
-END FUNCTION
-
-// Problems:
-// - MD5: Collisions found in seconds, rainbow tables widely available
-// - SHA-1: Collision attacks demonstrated (SHAttered, 2017)
-// - Both: Too fast - billions of hashes per second on GPU
+# Problems:
+# - Speed: MD5/SHA-256 can compute billions of hashes per second.
+# - No Salt: Allows rainbow table attacks and reveals users with identical passwords.
+# - No Work Factor: Cannot be slowed down to resist brute-force attacks.
 ```
 
-## BAD Pattern: Plain SHA-256 Without Salt
+### GOOD Code Example
+```python
+# SECURE: Use a password-hashing algorithm designed to be slow and include a unique salt.
+import bcrypt # Or Argon2, scrypt
 
-```pseudocode
-// VULNERABLE: SHA-256 without proper password hashing
+def hash_password_secure(password):
+    # bcrypt automatically generates a unique salt for each password.
+    # The `gensalt()` function also allows specifying the work factor (rounds).
+    # A higher work factor makes hashing slower, increasing resistance to brute-force attacks.
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12))
+    return hashed_password.decode('utf-8') # Store the hashed password as a string.
 
-FUNCTION hash_password_unsalted(password):
-    // Still vulnerable: No salt, too fast
-    RETURN sha256(password)
-END FUNCTION
+def verify_password_secure(password, stored_hash):
+    # `checkpw()` safely verifies the password against the stored hash.
+    # It extracts the salt and work factor from the stored hash and performs a
+    # constant-time comparison to prevent timing attacks.
+    return bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
 
-FUNCTION hash_password_static_salt(password):
-    // Vulnerable: Same salt for all users
-    STATIC_SALT = "my_application_salt"
-    RETURN sha256(STATIC_SALT + password)
-END FUNCTION
+# Recommended algorithms (in order of current preference):
+# 1. Argon2id (best practice for new applications)
+# 2. bcrypt
+# 3. scrypt
 
-// Problems:
-// - No salt: Identical passwords have identical hashes
-// - Static salt: Rainbow tables can be precomputed for your app
-// - Fast hash: GPUs can try billions per second
-```
-
-## GOOD Pattern: bcrypt/Argon2/scrypt
-
-```pseudocode
-// SECURE: Modern password hashing algorithms
-
-FUNCTION hash_password_secure(password):
-    // Use bcrypt with cost factor
-    salt = bcrypt.generate_salt(rounds=12)  // Adjustable work factor
-    RETURN bcrypt.hash(password, salt)
-END FUNCTION
-
-FUNCTION verify_password_secure(password, stored_hash):
-    // bcrypt handles salt extraction and timing-safe comparison
-    RETURN bcrypt.verify(password, stored_hash)
-END FUNCTION
-
-// Alternative: Argon2id (recommended for new applications)
-FUNCTION hash_password_argon2(password):
-    RETURN argon2id.hash(password, {
-        memory_cost: 65536,    // 64 MB
-        time_cost: 3,          // 3 iterations
-        parallelism: 4         // 4 threads
-    })
-END FUNCTION
-```
-
-## Algorithm Comparison
-
-| Algorithm | Status | Speed | Use For |
-|-----------|--------|-------|---------|
-| MD5 | Broken | Very fast | Never for passwords |
-| SHA-1 | Broken | Very fast | Never for passwords |
-| SHA-256 | Secure* | Very fast | NOT for passwords |
-| bcrypt | Secure | Intentionally slow | Passwords |
-| Argon2id | Secure | Intentionally slow | Passwords (preferred) |
-| scrypt | Secure | Intentionally slow | Passwords |
-
-*SHA-256 is secure for integrity checks, NOT for password hashing due to speed.
-
-## Cost Factor Guidelines
-
-```pseudocode
-// Choose cost factor based on acceptable login delay
-
-// bcrypt rounds (target ~250ms on your hardware)
-FUNCTION get_bcrypt_rounds():
-    // 10 = ~100ms, 12 = ~400ms, 14 = ~1.5s
-    RETURN 12  // Reasonable default
-END FUNCTION
-
-// Argon2 parameters (target ~250ms, ~64MB memory)
-FUNCTION get_argon2_params():
-    RETURN {
-        memory_cost: 65536,  // 64 MB
-        time_cost: 3,
-        parallelism: 4
-    }
-END FUNCTION
-
-// Adjust based on server capacity and user experience
+# Always use libraries for password hashing; never implement your own.
 ```
 
 ## Detection
+- **Code Review:** Search your codebase for password hashing implementations.
+    - Look for `hashlib.md5()`, `hashlib.sha1()`, or `hashlib.sha256()` being used for passwords.
+    - Check if `bcrypt`, `argon2`, or `scrypt` libraries are used.
+    - Verify that a unique, cryptographically secure salt is generated for each password.
+- **Database Inspection:** Look at the `password` or `password_hash` column in your user database.
+    - Are the hashes all of the same length and format? (Suggests no salt or static salt).
+    - Do they start with prefixes like `$2a$` (bcrypt), `$argon2id$` (Argon2), or `$s2$` (scrypt)?
+- **Check for plaintext passwords:** Ensure that passwords are never stored in plaintext.
 
-- Search for `md5(`, `sha1(`, `sha256(` in password-related code
-- Look for password storage without bcrypt, argon2, or scrypt
-- Check for static or missing salt values
-- Review password verification for timing-safe comparison
+## Prevention
+- [ ] **Use strong, slow, adaptive password-hashing functions.**
+    - **Argon2id:** Currently the recommended algorithm for new applications.
+    - **bcrypt:** A widely used and strong algorithm.
+    - **scrypt:** Another strong algorithm.
+- [ ] **Always use a unique, cryptographically secure salt** for each password. Modern algorithms like bcrypt and Argon2 handle salt generation automatically.
+- [ ] **Adjust the work factor (cost) appropriately.** Increase the number of rounds (bcrypt) or memory/time cost (Argon2) until hashing takes about 250-500 milliseconds on your server hardware. This makes brute-forcing expensive for attackers.
+- [ ] **Never use fast, general-purpose hash functions** like MD5, SHA-1, or plain SHA-256 for passwords. These are designed for speed, not for password storage.
+- [ ] **Never store plaintext passwords.**
 
-## Prevention Checklist
-
-- [ ] Use bcrypt, Argon2id, or scrypt for all password hashing
-- [ ] Never use MD5, SHA-1, or plain SHA-256 for passwords
-- [ ] Use library-provided salt generation (don't create your own)
-- [ ] Set appropriate cost factors (bcrypt rounds, Argon2 memory)
-- [ ] Use timing-safe comparison for password verification
-- [ ] Consider Argon2id for new applications (current best practice)
-
-## Related Patterns
-
-- [hardcoded-secrets](../hardcoded-secrets/) - Don't hardcode password hashes
-- [missing-authentication](../missing-authentication/) - Proper auth implementation
-- [weak-encryption](../weak-encryption/) - Related cryptographic issues
+## Related Security Patterns & Anti-Patterns
+- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): Password hashes are sensitive data and should be protected.
+- [Missing Authentication Anti-Pattern](../missing-authentication/): Weak password hashing undermines the entire authentication process.
+- [Timing Attacks Anti-Pattern](../timing-attacks/): Proper password-hashing libraries use constant-time comparisons to prevent timing attacks during verification.
 
 ## References
-
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP Password Storage Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)
-- [CWE-327: Broken Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
+- [CWE-759: Use of a One-Way Hash without a Salt](https://cwe.mitre.org/data/definitions/759.html)
 - [CAPEC-55: Rainbow Table Password Cracking](https://capec.mitre.org/data/definitions/55.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

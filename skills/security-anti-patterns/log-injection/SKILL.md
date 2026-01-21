@@ -1,145 +1,95 @@
 ---
-name: log-injection-anti-pattern
-description: Security anti-pattern for log injection vulnerabilities (CWE-117). Use when generating or reviewing code that writes to log files, handles logging of user input, or processes log data. Detects unsanitized data in log messages enabling log forging and CRLF injection.
+name: "log-injection-anti-pattern"
+description: "Security anti-pattern for log injection vulnerabilities (CWE-117). Use when generating or reviewing code that writes to log files, handles logging of user input, or processes log data. Detects unsanitized data in log messages enabling log forging and CRLF injection."
 ---
 
 # Log Injection Anti-Pattern
 
 **Severity:** Medium
 
-## Risk
+## Summary
+Log injection, or log forging, is a vulnerability that occurs when an attacker can write arbitrary data into an application's log files. This anti-pattern arises when user-supplied input is written to logs without being sanitized. By injecting special characters, such as newlines (\n) and carriage returns (\r), an attacker can create fake log entries. This can be used to hide malicious activity, mislead system administrators, or even exploit vulnerabilities in log analysis tools.
 
-Log injection allows attackers to forge log entries, hide malicious activity, or exploit log viewers. This leads to:
+## The Anti-Pattern
+The anti-pattern is logging unsanitized user input directly, allowing an attacker to inject newline characters and forge new log lines.
 
-- Forged audit trails
-- Hidden attacks in log analysis
-- Exploitation of log viewing tools
-- CRLF injection creating fake entries
+### BAD Code Example
+```python
+# VULNERABLE: User input is logged directly without sanitization.
+import logging
 
-## BAD Pattern: Unsanitized User Input in Logs
+logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
-```pseudocode
-// VULNERABLE: User input directly in log message
+def user_login(username, ip_address):
+    # An attacker can provide a username that contains a newline character.
+    # Example: "j_smith\nINFO - Successful login for user: admin from IP: 10.0.0.1"
+    logging.info(f"Failed login attempt for user: {username} from IP: {ip_address}")
 
-FUNCTION login(request):
-    username = request.body.username
+# Attacker's input:
+# username = "j_smith\nINFO - 2023-10-27 10:00:00,000 - Successful login for user: admin"
+# ip_address = "192.168.1.100"
 
-    IF NOT authenticate(username, password):
-        // Attacker: username = "admin\nLogin successful for admin"
-        log.info("Login failed for user: " + username)
-        RETURN {success: FALSE}
-    END IF
-
-    log.info("Login successful for user: " + username)
-    RETURN {success: TRUE}
-END FUNCTION
-
-// Result in log file:
-// Login failed for user: admin
-// Login successful for admin
-// (Attacker's injected line looks legitimate!)
+# The application logs the failed login attempt.
+# The resulting log file will look like this:
+#
+# 2023-10-27 09:59:59,123 - Failed login attempt for user: j_smith
+# INFO - 2023-10-27 10:00:00,000 - Successful login for user: admin from IP: 192.168.1.100
+#
+# The attacker has successfully forged a log entry that makes it look like the 'admin' user logged in,
+# potentially covering their tracks or triggering false alerts.
 ```
 
-## GOOD Pattern: Sanitized Logging
+### GOOD Code Example
+```python
+# SECURE: Sanitize user input before logging, or use structured logging.
+import logging
+import json
 
-```pseudocode
-// SECURE: Sanitize log data and use structured logging
+# Option 1: Sanitize the input by removing or encoding control characters.
+def sanitize_for_log(input_string):
+    return input_string.replace('\n', '_').replace('\r', '_')
 
-FUNCTION sanitize_for_log(input):
-    // Remove newlines and control characters
-    result = input.replace("\n", "\\n")
-    result = result.replace("\r", "\\r")
-    result = result.replace("\t", "\\t")
-
-    // Limit length
-    IF result.length > 100:
-        result = result.substring(0, 100) + "..."
-    END IF
-
-    RETURN result
-END FUNCTION
-
-FUNCTION login(request):
-    username = request.body.username
+def user_login_sanitized(username, ip_address):
     safe_username = sanitize_for_log(username)
+    logging.info(f"Failed login attempt for user: {safe_username} from IP: {ip_address}")
 
-    IF NOT authenticate(username, password):
-        log.info("Login failed for user: " + safe_username)
-        RETURN {success: FALSE}
-    END IF
 
-    log.info("Login successful for user: " + safe_username)
-    RETURN {success: TRUE}
-END FUNCTION
+# Option 2 (Better): Use structured logging.
+# The logging library will handle the escaping of special characters automatically.
+logging.basicConfig(filename='app_structured.log', level=logging.INFO)
+
+def user_login_structured(username, ip_address):
+    log_data = {
+        "event": "login_failure",
+        "username": username, # The newline character will be escaped by the JSON formatter.
+        "ip_address": ip_address
+    }
+    logging.info(json.dumps(log_data))
+
+# The resulting log entry will be a single, valid JSON object:
+# {"event": "login_failure", "username": "j_smith\nINFO - ...", "ip_address": "192.168.1.100"}
+# Log analysis tools can safely parse this without being tricked by the newline.
 ```
-
-## GOOD Pattern: Structured Logging
-
-```pseudocode
-// BEST: Use structured logging (JSON format)
-
-FUNCTION login(request):
-    username = request.body.username
-
-    IF NOT authenticate(username, password):
-        // Structured logging prevents injection
-        log.info("Login failed", {
-            event: "login_failure",
-            username: username,  // Properly escaped in JSON
-            ip: request.client_ip,
-            timestamp: current_timestamp()
-        })
-        RETURN {success: FALSE}
-    END IF
-
-    log.info("Login successful", {
-        event: "login_success",
-        username: username,
-        ip: request.client_ip
-    })
-    RETURN {success: TRUE}
-END FUNCTION
-
-// JSON output:
-// {"level":"info","message":"Login failed","event":"login_failure",
-//  "username":"admin\nLogin successful for admin","ip":"..."}
-// Newline is properly escaped as \n in JSON
-```
-
-## Characters to Sanitize
-
-| Character | Escape To | Reason |
-|-----------|-----------|--------|
-| `\n` | `\\n` | Newline injection |
-| `\r` | `\\r` | CRLF injection |
-| `\t` | `\\t` | Format disruption |
-| `<` | `&lt;` | HTML log viewers |
-| `>` | `&gt;` | HTML log viewers |
 
 ## Detection
+- **Review logging statements:** Look for any place in the code where user-controlled input is passed directly into a logging function.
+- **Check for string formatting:** Be suspicious of string concatenation (`+`) or f-strings that combine user input into a log message without prior sanitization.
+- **Test with control characters:** Input data containing `\n`, `\r`, and other control characters to see if they are properly handled in the log output.
 
-- Look for string concatenation in log statements
-- Search for user input passed directly to log functions
-- Check for missing sanitization of logged data
-- Review logging configuration for format strings
+## Prevention
+- [ ] **Sanitize all user input** before it is written to a log. The best approach is to strip or encode newline (`\n`), carriage return (`\r`), and other control characters.
+- [ ] **Use a structured logging format** like JSON. Structured logging libraries automatically handle the escaping of special characters within data fields, making log injection impossible.
+- [ ] **Never log sensitive data** such as passwords, API keys, or personally identifiable information (PII).
+- [ ] **Limit the length of data** written to logs to prevent denial-of-service attacks where an attacker tries to fill up the disk space with enormous log entries.
 
-## Prevention Checklist
-
-- [ ] Sanitize all user input before logging
-- [ ] Remove or escape newlines, carriage returns, and control characters
-- [ ] Use structured logging (JSON) instead of text logs
-- [ ] Limit logged data length to prevent DoS
-- [ ] Never log sensitive data (passwords, tokens, PII)
-- [ ] Use parameterized logging where available
-
-## Related Patterns
-
-- [xss](../xss/) - HTML injection in log viewers
-- [missing-input-validation](../missing-input-validation/) - Root cause
+## Related Security Patterns & Anti-Patterns
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): If logs are viewed in a web browser, failing to escape HTML characters (`<`, `>`) in log entries could lead to XSS.
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): The root cause of log injection is the failure to validate and sanitize user input.
 
 ## References
-
 - [OWASP Top 10 A09:2025 - Security Logging and Alerting Failures](https://owasp.org/Top10/2025/A09_2025-Security_Logging_and_Alerting_Failures/)
+- [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Logging Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html)
 - [CWE-117: Log Injection](https://cwe.mitre.org/data/definitions/117.html)
 - [CAPEC-93: Log Injection-Tampering-Forging](https://capec.mitre.org/data/definitions/93.html)

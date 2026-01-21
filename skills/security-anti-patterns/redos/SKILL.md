@@ -1,179 +1,101 @@
 ---
-name: redos-anti-pattern
-description: Security anti-pattern for Regular Expression Denial of Service (CWE-1333). Use when generating or reviewing code that uses regex for input validation, parsing, or pattern matching. Detects catastrophic backtracking patterns with nested quantifiers.
+name: "redos-anti-pattern"
+description: "Security anti-pattern for Regular Expression Denial of Service (CWE-1333). Use when generating or reviewing code that uses regex for input validation, parsing, or pattern matching. Detects catastrophic backtracking patterns with nested quantifiers."
 ---
 
-# ReDoS (Regular Expression DoS) Anti-Pattern
+# ReDoS (Regular Expression Denial of Service) Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+A Regular Expression Denial of Service (ReDoS) is a vulnerability that occurs when a poorly written regular expression takes an extremely long time to evaluate a maliciously crafted input. This can cause the application or server to hang, consuming 100% of a CPU core for seconds or even minutes from a single request. The vulnerability is caused by a phenomenon called "catastrophic backtracking," which is common in regex patterns that have nested quantifiers (e.g., `(a+)+`) or overlapping alternations.
 
-ReDoS occurs when regex patterns with nested quantifiers or overlapping alternatives cause exponential backtracking. A single malicious input can consume 100% CPU for minutes. This leads to:
+## The Anti-Pattern
+The anti-pattern is using a regex with exponential-time complexity to validate user-provided input. A small increase in the length of the attacker's input can lead to an exponential increase in the regex engine's computation time.
 
-- Denial of service with single request
-- Server/application hang
-- Resource exhaustion
-- No rate limiting defense (one request is enough)
+### BAD Code Example
+```javascript
+// VULNERABLE: A regex with nested quantifiers used for validation.
 
-## BAD Pattern: Nested Quantifiers
+// This regex tries to validate a string composed of 'a's followed by a 'b'.
+// The `(a+)+` part is the "evil" pattern. It creates catastrophic backtracking.
+const VULNERABLE_REGEX = /^(a+)+b$/;
 
-```pseudocode
-// VULNERABLE: Nested quantifiers cause exponential backtracking
+function validateString(input) {
+    console.time('Regex Execution');
+    const result = VULNERABLE_REGEX.test(input);
+    console.timeEnd('Regex Execution');
+    return result;
+}
 
-// Email validation with ReDoS vulnerability
-VULNERABLE_EMAIL = "^([a-zA-Z0-9]+)*@[a-zA-Z0-9]+\.[a-zA-Z]+$"
+// For a normal string, it's fast.
+// validateString("aaab"); // -> true, executes in < 1ms
 
-// Attack input: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa!"
-// The regex engine backtracks exponentially trying all combinations
-// 25 'a's followed by '!' = 33 million+ combinations to try
-// 30 'a's = 1 billion+ combinations
+// But an attacker provides a string that *almost* matches.
+const malicious_input = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaab"; // 30 'a's and a 'b'
 
-// URL validation with ReDoS
-VULNERABLE_URL = "^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$"
-
-// Attack input: "http://example.com/" + "a" * 30 + "!"
-
-// Naive duplicate word finder (common tutorial example)
-DUPLICATE_WORDS = "\b(\w+)\s+\1\b"
-// Can hang on: "word word word word word word word word word word!"
-
-FUNCTION validate_input_vulnerable(input, pattern):
-    // This can hang for minutes or crash the server
-    RETURN regex.match(pattern, input)
-END FUNCTION
+// With this input, the regex engine gets stuck.
+// The `(a+)+` part can match the string of 'a's in an exponential number of ways.
+// For example, "aaa" can be matched as (a)(a)(a), (aa)(a), (a)(aa), or (aaa).
+// The engine must try every single combination before it can confirm the match.
+// For 30 'a's, this results in over 1 billion backtracking steps, freezing the process.
+validateString(malicious_input); // This will hang for a very long time.
 ```
 
-## BAD Pattern: Overlapping Alternatives
+### GOOD Code Example
+```javascript
+// SECURE: Rewrite the regex to be linear-time, or add other controls.
 
-```pseudocode
-// VULNERABLE: Overlapping character classes
+// Option 1 (Best): Fix the regex by removing the nested quantifier.
+// This version is functionally identical but has linear-time complexity.
+const SAFE_REGEX = /^a+b$/;
 
-// Pattern: (a|a)+
-// Input: "aaaaaaaaaaaaaaaaaaaaX"
-// Each 'a' can match via either alternative - exponential choices
+function validateStringSafe(input) {
+    console.time('Regex Execution');
+    // This will now fail almost instantly for the malicious input.
+    const result = SAFE_REGEX.test(input);
+    console.timeEnd('Regex Execution');
+    return result;
+}
 
-// Pattern: (.*a){10}
-// Input: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaX"
-// .* can match varying amounts, causing massive backtracking
+// Option 2: Add an input length limit as a defense-in-depth measure.
+const MAX_LENGTH = 50;
+function validateStringWithLimit(input) {
+    if (input.length > MAX_LENGTH) {
+        throw new Error("Input exceeds maximum length.");
+    }
+    // Still better to use the safe regex, but this provides a fallback.
+    return VULNERABLE_REGEX.test(input);
+}
 
-// Common vulnerable patterns:
-VULNERABLE_PATTERNS = [
-    "(a+)+",           // Nested quantifiers
-    "(a*)*",           // Nested quantifiers
-    "(a?)*",           // Nested quantifiers
-    "(a|aa)+",         // Overlapping alternatives
-    "(.*a){n}",        // Greedy with constraint
-    "([a-zA-Z]+)*",    // Nested with character class
-]
+// Option 3: Use a modern regex engine (like Google's RE2) that is designed
+// to avoid catastrophic backtracking and guarantee linear-time execution.
 ```
-
-## GOOD Pattern: Linear-Time Regex
-
-```pseudocode
-// SECURE: Avoid nested quantifiers
-
-// Instead of (a+)+ use:
-SAFE_PATTERN = "a+"  // Single quantifier
-
-// Instead of ([a-zA-Z0-9]+)* use:
-SAFE_PATTERN = "[a-zA-Z0-9]*"  // Character class with single quantifier
-
-// Safe email pattern (simplified):
-SAFE_EMAIL = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-
-// Use possessive quantifiers where available (no backtracking):
-// a++ instead of a+
-// a*+ instead of a*
-// (regex flavor dependent)
-```
-
-## GOOD Pattern: Input Length Limits
-
-```pseudocode
-// SECURE: Limit input length before regex
-
-CONSTANT MAX_EMAIL_LENGTH = 254
-CONSTANT MAX_URL_LENGTH = 2048
-
-FUNCTION validate_email_safe(input):
-    // Length check BEFORE regex
-    IF length(input) > MAX_EMAIL_LENGTH:
-        RETURN {valid: FALSE, error: "Email too long"}
-    END IF
-
-    // Now safe to apply regex (limited backtracking)
-    pattern = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-    RETURN regex.match(pattern, input)
-END FUNCTION
-```
-
-## GOOD Pattern: Timeout on Regex
-
-```pseudocode
-// SECURE: Apply timeout to regex operations
-
-FUNCTION validate_with_timeout(input, pattern, timeout_ms=100):
-    TRY:
-        result = regex.match_with_timeout(pattern, input, timeout_ms)
-        RETURN {valid: result IS NOT NULL}
-    CATCH TimeoutError:
-        log.warning("Regex timeout - possible ReDoS attempt", {input_length: length(input)})
-        RETURN {valid: FALSE, error: "Validation timeout"}
-    END TRY
-END FUNCTION
-```
-
-## Complexity Analysis
-
-```pseudocode
-// Pattern: (a+)+$
-// Input: "aaaaaaaaaaaaaaaaaaaaaaaaX"
-//
-// For 25 'a's followed by 'X':
-// - The engine tries every possible way to split the 'a's between groups
-// - Time complexity: O(2^n) where n is input length
-// - 25 chars = 33 million+ combinations to try
-// - 30 chars = 1 billion+ combinations
-// - 40 chars = 1 trillion+ combinations (server freeze)
-```
-
-## Red Flags in Regex Patterns
-
-| Pattern | Risk | Alternative |
-|---------|------|-------------|
-| `(a+)+` | Exponential | `a+` |
-| `(a*)*` | Exponential | `a*` |
-| `(a\|aa)+` | Exponential | `a+` |
-| `(.*a){n}` | Polynomial | Restructure logic |
-| `([a-z]+)*` | Exponential | `[a-z]*` |
 
 ## Detection
+- **Scan for "evil" regex patterns:** The most common red flags are nested quantifiers. Look for patterns like:
+    - `(a+)+`
+    - `(a*)*`
+    - `(a|a)+`
+    - `(a?)*`
+- **Look for alternations with overlapping patterns:** `(a|b)*` is safe, but `(a|ab)*` is not, because `ab` can be matched in two different ways.
+- **Use static analysis tools:** There are many linters and security scanners that are specifically designed to detect vulnerable regular expressions in your code (e.g., `safe-regex` for Node.js).
+- **Test with "almost matching" strings:** To test a regex, create a long string that matches the repeating part of the pattern but fails at the very end. If the execution time increases dramatically with the length of the string, it is likely vulnerable.
 
-- Search for nested quantifiers: `(pattern+)+`, `(pattern*)*`
-- Look for overlapping alternatives in groups
-- Check for `.*` followed by specific match requirements
-- Test patterns with long inputs followed by non-matching character
-- Use ReDoS detection tools (safe-regex, rxxr2)
+## Prevention
+- [ ] **Avoid nested quantifiers:** This is the most important rule. A pattern like `(a+)+` can almost always be rewritten more safely as `a+`.
+- [ ] **Be wary of alternations:** Ensure that alternations within a repeated group do not overlap (e.g., use `(a|b)` not `(a|ab)`).
+- [ ] **Limit input length:** Before applying a complex regex, always validate the length of the input string. This provides an effective, though crude, defense against ReDoS by capping the potential execution time.
+- [ ] **Use a timeout:** Some languages and libraries allow you to execute a regex match with a timeout. This can prevent a ReDoS attack from freezing a process indefinitely, although it doesn't fix the underlying vulnerable regex.
+- [ ] **Use a ReDoS-safe regex engine:** Consider using an alternative regex engine like Google's RE2, which guarantees linear-time performance and is immune to catastrophic backtracking.
 
-## Prevention Checklist
-
-- [ ] Avoid nested quantifiers (`(a+)+`, `(a*)*`, `(a?)*`)
-- [ ] Limit input length before applying regex
-- [ ] Use possessive quantifiers where available (`a++`)
-- [ ] Set timeouts on regex operations
-- [ ] Use ReDoS-safe regex libraries (RE2, rust regex)
-- [ ] Test patterns with worst-case inputs
-- [ ] Consider alternatives to regex for complex validation
-
-## Related Patterns
-
-- [missing-input-validation](../missing-input-validation/) - Length limits
-- [missing-rate-limiting](../missing-rate-limiting/) - Defense in depth
+## Related Security Patterns & Anti-Patterns
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): Failing to limit input length is a form of missing validation that makes ReDoS attacks possible.
+- [Denial of Service (DoS):](../#) ReDoS is a specific type of application-layer DoS attack.
 
 ## References
-
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)
 - [OWASP ReDoS](https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS)
 - [CWE-1333: Inefficient Regular Expression](https://cwe.mitre.org/data/definitions/1333.html)

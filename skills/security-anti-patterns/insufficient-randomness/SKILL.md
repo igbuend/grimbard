@@ -1,142 +1,83 @@
 ---
-name: insufficient-randomness-anti-pattern
-description: Security anti-pattern for insufficient randomness vulnerabilities (CWE-330). Use when generating or reviewing code that creates security tokens, session IDs, encryption keys, nonces, or any security-critical random values. Detects use of Math.random() or predictable seeds.
+name: "insufficient-randomness-anti-pattern"
+description: "Security anti-pattern for insufficient randomness vulnerabilities (CWE-330). Use when generating or reviewing code that creates security tokens, session IDs, encryption keys, nonces, or any security-critical random values. Detects use of Math.random() or predictable seeds."
 ---
 
 # Insufficient Randomness Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Insufficient randomness is a critical vulnerability that occurs when a security-sensitive value, such as a session token, password reset code, or encryption key, is generated using a predictable or non-cryptographically secure random number generator (PRNG). AI models often suggest using standard PRNGs like `Math.random()` or Python's `random` module because they are simple and common in general-purpose programming. However, these generators are not designed for security. Their output can be predicted by an attacker who observes a few values, allowing them to forge tokens, hijack sessions, or compromise cryptographic operations.
 
-Using non-cryptographic random number generators for security purposes makes values predictable. Attackers can:
+## The Anti-Pattern
+The anti-pattern is using a predictable, non-cryptographic random number generator for any value that needs to be unpredictable for security reasons.
 
-- Predict session IDs and hijack sessions
-- Forge authentication tokens
-- Recover encryption keys
-- Bypass security controls
+### BAD Code Example
+```javascript
+// VULNERABLE: Using Math.random() to generate a session token.
 
-AI models often suggest `Math.random()` or `random.random()` for security tokens because these appear frequently in tutorials.
+function generateSessionToken() {
+    let token = '';
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    // Math.random() is a standard PRNG, not a cryptographically secure one.
+    // Its output is predictable if an attacker can observe enough previous values
+    // or has some knowledge of the initial seed (which can be time-based).
+    for (let i = 0; i < 32; i++) {
+        token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
+}
 
-## BAD Pattern: Math.random() for Security
-
-```pseudocode
-// VULNERABLE: Math.random() / random.random() is predictable
-
-FUNCTION generate_session_id_weak():
-    // Vulnerable: Uses predictable PRNG (Mersenne Twister)
-    RETURN random.randint(0, 999999999)
-END FUNCTION
-
-FUNCTION generate_token_weak():
-    // Vulnerable: Using random module for security tokens
-    chars = "abcdefghijklmnopqrstuvwxyz0123456789"
-    token = ""
-    FOR i = 0 TO 32:
-        token += chars[random.randint(0, chars.length - 1)]
-    END FOR
-    RETURN token
-END FUNCTION
-
-// Problems:
-// - Math.random(): Uses predictable PRNG
-// - Internal state: Can be recovered from ~624 outputs
-// - Attacker can predict next values after observing enough outputs
+// An attacker who obtains a few of these tokens can potentially
+// reverse-engineer the PRNG's internal state and predict future tokens.
 ```
 
-## GOOD Pattern: Cryptographically Secure Random
+### GOOD Code Example
+```javascript
+// SECURE: Using a cryptographically secure pseudo-random number generator (CSPRNG).
+const crypto = require('crypto');
 
-```pseudocode
-// SECURE: Use cryptographically secure randomness
+function generateSessionToken() {
+    // `crypto.randomBytes()` generates random data using the operating system's
+    // underlying entropy sources, making it unpredictable.
+    // It is designed specifically for cryptographic use cases.
+    const buffer = crypto.randomBytes(32); // Generate 32 bytes of random data.
+    return buffer.toString('hex'); // Convert to a hex string for easy use.
+}
 
-FUNCTION generate_session_id_secure():
-    // Use secrets module (Python) or crypto.randomBytes (Node)
-    RETURN secrets.token_urlsafe(32)  // 256 bits of entropy
-END FUNCTION
-
-FUNCTION generate_token_secure():
-    // cryptographically secure hex token
-    RETURN secrets.token_hex(32)  // 256 bits as hex string
-END FUNCTION
-
-FUNCTION generate_key_secure():
-    // Use OS entropy source
-    RETURN os.urandom(32)  // 256 bits from /dev/urandom
-END FUNCTION
+// The resulting token is 64 characters long and has 256 bits of entropy,
+// making it infeasible for an attacker to guess or predict.
 ```
-
-## BAD Pattern: Time-Based Seeding
-
-```pseudocode
-// VULNERABLE: Time-based seeding is predictable
-
-FUNCTION generate_key_weak():
-    // Attacker can guess seed from approximate time
-    random.seed(current_timestamp())
-    key = random.randbytes(32)
-    RETURN key
-END FUNCTION
-
-FUNCTION generate_reset_token_weak():
-    // Vulnerable: Based on timestamp
-    seed = current_time_milliseconds()
-    random.seed(seed)
-    RETURN random.randint(100000, 999999)
-END FUNCTION
-```
-
-## GOOD Pattern: OS Entropy
-
-```pseudocode
-// SECURE: Use OS-provided entropy
-
-FUNCTION generate_key_secure():
-    // No seeding needed - uses hardware entropy
-    RETURN crypto.secure_random_bytes(32)
-END FUNCTION
-
-FUNCTION generate_reset_token_secure():
-    // Cryptographically random 6-digit code
-    RETURN secrets.randbelow(900000) + 100000
-END FUNCTION
-```
-
-## Language-Specific Secure Random APIs
-
-| Language | Secure | Insecure |
-|----------|--------|----------|
-| Python | `secrets`, `os.urandom()` | `random` |
-| JavaScript | `crypto.randomBytes()`, `crypto.getRandomValues()` | `Math.random()` |
-| Java | `SecureRandom` | `Random`, `Math.random()` |
-| Go | `crypto/rand` | `math/rand` |
-| C# | `RandomNumberGenerator` | `Random` |
-| Ruby | `SecureRandom` | `rand()` |
 
 ## Detection
+- **Search the codebase** for the use of non-cryptographic random functions in security-sensitive contexts. Look for:
+    - `Math.random()` in JavaScript.
+    - The `random` module in Python.
+    - The `java.util.Random` class in Java.
+    - `rand()` in PHP or C.
+- **Review seeding:** Look for any manual seeding of a random number generator, especially using a predictable value like the current time (`random.seed(time.time())`). CSPRNGs do not need to be manually seeded.
+- **Check token generation logic:** Examine how session IDs, password reset tokens, API keys, and other secrets are created.
 
-- Search for `Math.random()`, `random.random()`, `random.randint()` in security contexts
-- Look for `random.seed()` with time-based values
-- Check if `Random` class is used instead of `SecureRandom`
-- Review token generation, session ID creation, and key generation code
+## Prevention
+- [ ] **Always use a cryptographically secure pseudo-random number generator (CSPRNG)** for any security-related value.
+- [ ] **Know your language's CSPRNG:**
+    - **Python:** Use the `secrets` module or `os.urandom()`.
+    - **JavaScript (Node.js):** Use `crypto.randomBytes()` or `crypto.getRandomValues()`.
+    - **Java:** Use `java.security.SecureRandom`.
+    - **Go:** Use the `crypto/rand` package.
+    - **C#:** Use `System.Security.Cryptography.RandomNumberGenerator`.
+- [ ] **Ensure sufficient entropy:** Generate at least 128 bits (16 bytes) of randomness for tokens and unique identifiers. Use 256 bits (32 bytes) for encryption keys.
+- [ ] **Never seed a CSPRNG manually.** They are designed to automatically draw entropy from the operating system.
 
-## Prevention Checklist
-
-- [ ] Use cryptographically secure random for all security tokens
-- [ ] Never use `Math.random()` or language `random` module for security
-- [ ] Generate at least 128 bits (16 bytes) of randomness for tokens
-- [ ] Use 256 bits for encryption keys
-- [ ] Don't seed RNG with time - use OS entropy
-- [ ] Verify your random source draws from OS entropy pool
-
-## Related Patterns
-
-- [session-fixation](../session-fixation/) - Session ID generation
-- [hardcoded-secrets](../hardcoded-secrets/) - Key management
-- [weak-encryption](../weak-encryption/) - Encryption key requirements
+## Related Security Patterns & Anti-Patterns
+- [Session Fixation Anti-Pattern](../session-fixation/): Secure session ID generation is a key defense against session fixation.
+- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): If an encryption key is generated with insufficient randomness, it's as bad as hardcoding a weak key.
+- [Weak Encryption Anti-Pattern](../weak-encryption/): The security of an encryption algorithm relies on the unpredictability of its key.
 
 ## References
-
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [CWE-330: Insufficiently Random Values](https://cwe.mitre.org/data/definitions/330.html)
 - [CAPEC-112: Brute Force](https://capec.mitre.org/data/definitions/112.html)

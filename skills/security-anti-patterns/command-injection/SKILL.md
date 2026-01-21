@@ -1,111 +1,74 @@
 ---
-name: command-injection-anti-pattern
-description: Security anti-pattern for OS command injection vulnerabilities (CWE-78). Use when generating or reviewing code that executes shell commands, runs system processes, or handles user input in command-line operations. Detects shell string concatenation and recommends argument arrays.
+name: "command-injection-anti-pattern"
+description: "Security anti-pattern for OS Command Injection vulnerabilities (CWE-78). Use when generating or reviewing code that executes shell commands, runs system processes, or handles user input in command-line operations. Detects shell string concatenation and recommends argument arrays."
 ---
 
 # Command Injection Anti-Pattern
 
 **Severity:** Critical
 
-## Risk
+## Summary
+Command injection is a critical vulnerability that allows attackers to execute arbitrary operating system commands by manipulating user input. This anti-pattern arises when an application constructs and executes shell commands by concatenating user-provided data into a command string. This is a common and dangerous practice often found in AI-generated code. A successful attack can lead to complete system compromise, data exfiltration, malware installation, and lateral movement within a network.
 
-Command injection allows attackers to execute arbitrary OS commands by manipulating user input passed to shell commands. This can lead to:
+## The Anti-Pattern
+The command injection anti-pattern occurs when user input is insecurely embedded within a command string that is executed by a shell interpreter. The shell cannot distinguish between the intended command and the attacker's injected commands.
 
-- Complete system compromise
-- Data exfiltration
-- Malware installation
-- Lateral movement in networks
+### BAD Code Example
+```python
+# VULNERABLE: Shell command with user input
+import os
 
-AI models frequently generate vulnerable shell command concatenation from tutorial examples in training data.
-
-## BAD Pattern
-
-```pseudocode
-// VULNERABLE: Shell command with user input
-
-FUNCTION ping_host(hostname):
-    // User controls shell command
+def ping_host(hostname):
+    # User input is directly concatenated into the command string.
+    # An attacker can inject malicious commands separated by a semicolon or other shell metacharacters.
     command = "ping -c 4 " + hostname
-    RETURN shell.execute(command)
-END FUNCTION
+    os.system(command)
 
-FUNCTION convert_file(input_path, output_format):
-    // Multiple injection points
-    command = "convert " + input_path + " output." + output_format
-    RETURN shell.execute(command)
-END FUNCTION
-
-// Attack: hostname = "google.com; rm -rf /"
-// Result: ping -c 4 google.com; rm -rf /
-// This executes the ping AND deletes the filesystem
-
-// Attack: hostname = "$(cat /etc/passwd)"
-// Result: Command substitution exposes sensitive files
+# Example of a successful attack:
+# hostname = "google.com; rm -rf /"
+# Resulting command: "ping -c 4 google.com; rm -rf /"
+# This executes the ping and then attempts to delete the entire filesystem.
 ```
 
-## GOOD Pattern
+### GOOD Code Example
+```python
+# SECURE: Use argument arrays, avoid shell
+import subprocess
 
-```pseudocode
-// SECURE: Use argument arrays, avoid shell
+def ping_host(hostname):
+    # Input should be validated against an allowlist of characters or a specific format.
+    # For simplicity, this example proceeds directly to safe execution.
 
-FUNCTION ping_host(hostname):
-    // Validate input format first
-    IF NOT is_valid_hostname(hostname):
-        THROW Error("Invalid hostname format")
-    END IF
+    # The command and its arguments are passed as a list.
+    # The underlying OS API executes the command directly without invoking a shell,
+    # so shell metacharacters in `hostname` are treated as a literal string.
+    try:
+        subprocess.run(["ping", "-c", "4", hostname], check=True, shell=False)
+    except subprocess.CalledProcessError as e:
+        print(f"Error executing ping: {e}")
 
-    // Arguments passed as array, no shell interpolation
-    RETURN process.execute(["ping", "-c", "4", hostname], shell=FALSE)
-END FUNCTION
-
-FUNCTION convert_file(input_path, output_format):
-    // Validate allowed formats (allowlist)
-    allowed_formats = ["png", "jpg", "gif", "webp"]
-    IF output_format NOT IN allowed_formats:
-        THROW Error("Invalid output format")
-    END IF
-
-    // Validate path is within allowed directory
-    IF NOT path.is_within(input_path, UPLOAD_DIRECTORY):
-        THROW Error("Invalid file path")
-    END IF
-
-    output_path = path.join(OUTPUT_DIR, "output." + output_format)
-    RETURN process.execute(["convert", input_path, output_path], shell=FALSE)
-END FUNCTION
-
-// Helper: Validate hostname format
-FUNCTION is_valid_hostname(hostname):
-    // Only allow alphanumeric, dots, and hyphens
-    pattern = "^[a-zA-Z0-9][a-zA-Z0-9.-]{0,253}[a-zA-Z0-9]$"
-    RETURN regex.match(pattern, hostname)
-END FUNCTION
 ```
 
 ## Detection
+- Look for the use of functions that execute shell commands, such as `os.system()`, `subprocess.popen()`, or `subprocess.run()` with `shell=True`.
+- Search for string concatenation (`+`), f-strings, or template literals used to build command strings that include user input.
+- Review any code where user-controlled variables are passed into functions that execute system commands.
 
-- Look for `shell=True`, `system()`, `exec()`, `popen()`, backticks, or `$()` with user input
-- Search for string concatenation building command strings
-- Check for user input passed to subprocess/process execution functions
-- Review any code that dynamically constructs shell commands
+## Prevention
+- [ ] **Use argument arrays** instead of shell strings (e.g., `subprocess.run(["command", "arg1", "arg2"], shell=False)`).
+- [ ] **Never pass `shell=True`** with user-controlled input to execution functions.
+- [ ] **Validate all input** against a strict allowlist of known-good values or formats.
+- [ ] **Use language-specific libraries or APIs** instead of external shell commands whenever possible.
+- [ ] **Apply the Principle of Least Privilege** to the process executing the command, restricting its permissions to the absolute minimum required.
 
-## Prevention Checklist
-
-- [ ] Use argument arrays instead of shell strings (e.g., `subprocess.run([...], shell=False)`)
-- [ ] Never pass `shell=True` with user-controlled input
-- [ ] Validate all input against strict allowlists
-- [ ] Use libraries/APIs instead of shell commands when possible
-- [ ] Apply principle of least privilege to process execution
-
-## Related Patterns
-
-- [sql-injection](../sql-injection/) - Similar injection pattern for databases
-- [path-traversal](../path-traversal/) - Often combined with command injection
-- [missing-input-validation](../missing-input-validation/) - Root cause enabler
+## Related Security Patterns & Anti-Patterns
+- [SQL Injection Anti-Pattern](../sql-injection/): A similar injection pattern targeting databases.
+- [Path Traversal Anti-Pattern](../path-traversal/): Often combined with command injection to access or create files in unintended locations.
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): A fundamental weakness that enables command injection.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP OS Command Injection Defense Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OS_Command_Injection_Defense_Cheat_Sheet.html)
 - [CWE-78: OS Command Injection](https://cwe.mitre.org/data/definitions/78.html)

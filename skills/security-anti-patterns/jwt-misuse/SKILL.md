@@ -1,211 +1,144 @@
 ---
-name: jwt-misuse-anti-pattern
-description: Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Use when generating or reviewing code that creates, validates, or uses JSON Web Tokens. Detects none algorithm attacks, weak secrets, sensitive data in payloads, and missing expiration.
+name: "jwt-misuse-anti-pattern"
+description: "Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Use when generating or reviewing code that creates, validates, or uses JSON Web Tokens. Detects 'none' algorithm attacks, weak secrets, sensitive data in payloads, and missing expiration."
 ---
 
 # JWT Misuse Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+JSON Web Tokens (JWTs) are a common standard for creating access tokens, but they are frequently misused, leading to significant security vulnerabilities. This anti-pattern covers several common JWT implementation flaws often seen in AI-generated code, including accepting the "none" algorithm, using weak secrets, storing sensitive data in the payload, and failing to set an expiration time. These mistakes can lead to authentication bypass, token forgery, and sensitive data exposure.
 
-JWTs are frequently misused in AI-generated code due to outdated tutorials in training data. Common mistakes include accepting the "none" algorithm, using weak secrets, storing sensitive data in payloads (which are only base64-encoded, not encrypted), and missing expiration. This leads to:
+## The Anti-Patterns and Solutions
 
-- Authentication bypass via algorithm confusion
-- Token forgery with weak secrets
-- Data exposure from readable payloads
-- Permanent access with non-expiring tokens
+### 1. Algorithm Confusion ("none" Algorithm Attack)
+A critical vulnerability where a library accepts any algorithm specified in the token's header. An attacker can change the algorithm to "none" and remove the signature, causing the library to validate the token without any cryptographic checks.
 
-## BAD Pattern: None Algorithm Attack
+#### BAD Code Example
+```python
+# VULNERABLE: Accepts whatever algorithm is in the header
+import jwt
 
-```pseudocode
-// VULNERABLE: Accepts whatever algorithm is in the header
-
-FUNCTION verify_jwt_vulnerable(token):
-    // Attacker can set alg: "none" to bypass signature verification
-    decoded = jwt.decode(token, SECRET_KEY)
-    RETURN decoded
-END FUNCTION
-
-// Attack: Attacker modifies header to {"alg": "none"} and removes signature
-// Result: Token validates without any cryptographic verification
+def verify_jwt_vulnerable(token, secret_key):
+    # If the token's header is {"alg": "none"}, the library may bypass signature verification entirely.
+    try:
+        decoded = jwt.decode(token, secret_key, algorithms=None) # algorithms=None or not specified
+        return decoded
+    except jwt.PyJWTError as e:
+        print(f"JWT verification failed: {e}")
+        return None
 ```
 
-## GOOD Pattern: Explicit Algorithm Verification
+#### GOOD Code Example
+```python
+# SECURE: Explicitly specify allowed algorithms
+import jwt
 
-```pseudocode
-// SECURE: Explicitly specify allowed algorithms
-
-FUNCTION verify_jwt_secure(token):
-    TRY:
-        // CRITICAL: Only accept expected algorithms
-        decoded = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        RETURN decoded
-    CATCH JWTError AS e:
-        log.warning("JWT verification failed", {error: e.message})
-        RETURN NULL
-    END TRY
-END FUNCTION
+def verify_jwt_secure(token, secret_key):
+    # CRITICAL: Always specify the exact algorithm(s) you expect.
+    # The library will now reject any token that does not use one of the specified algorithms.
+    try:
+        decoded = jwt.decode(token, secret_key, algorithms=["HS256", "RS256"])
+        return decoded
+    except jwt.PyJWTError as e:
+        print(f"JWT verification failed: {e}")
+        return None
 ```
 
-## BAD Pattern: Weak Secret
+### 2. Weak Secret
+Using a weak, predictable, or hardcoded secret for symmetric signing algorithms (like HS256) makes it possible for an attacker to brute-force the secret and forge valid tokens.
 
-```pseudocode
-// VULNERABLE: Weak or short secret key
+#### BAD Code Example
+```python
+# VULNERABLE: Weak or short secret key
+import jwt
 
-CONSTANT JWT_SECRET = "secret123"  // Easily brute-forced!
-CONSTANT JWT_SECRET = "password"   // Common word
-CONSTANT JWT_SECRET = "jwt-key"    // Too short
+JWT_SECRET = "secret123"  # Easily brute-forced!
 
-FUNCTION create_jwt(user_id):
-    payload = {user_id: user_id}
-    RETURN jwt.encode(payload, JWT_SECRET, algorithm="HS256")
-END FUNCTION
+def create_jwt(user_id):
+    payload = {"user_id": user_id}
+    return jwt.encode(payload, JWT_SECRET, algorithm="HS256")
 ```
 
-## GOOD Pattern: Strong Secret
+#### GOOD Code Example
+```python
+# SECURE: Strong, centrally managed secret
+import jwt
+import os
 
-```pseudocode
-// SECURE: Strong secret from environment
+# Load a strong, randomly generated secret from environment variables or a secret manager.
+JWT_SECRET = os.environ.get("JWT_SECRET")
 
-CONSTANT JWT_SECRET = environment.get("JWT_SECRET")  // From secret manager
+def initialize():
+    if not JWT_SECRET or len(JWT_SECRET) < 32:
+        raise ValueError("JWT_SECRET must be at least 256 bits (32 chars) for HS256")
 
-FUNCTION initialize():
-    // Validate secret strength at startup
-    IF JWT_SECRET IS NULL OR JWT_SECRET.length < 32:
-        THROW Error("JWT_SECRET must be at least 256 bits (32 chars)")
-    END IF
-END FUNCTION
-
-// For production: Use asymmetric keys (RS256, ES256)
-FUNCTION create_jwt_asymmetric(user_id):
-    private_key = load_private_key("jwt_private.pem")
-    payload = {sub: user_id, exp: current_time() + 3600}
-    RETURN jwt.encode(payload, private_key, algorithm="RS256")
-END FUNCTION
+# For production, consider asymmetric keys (e.g., RS256) where the private key is kept secret
+# and the public key can be safely distributed for verification.
+def create_jwt_asymmetric(user_id, private_key):
+    payload = {"sub": user_id}
+    return jwt.encode(payload, private_key, algorithm="RS256")
 ```
 
-## BAD Pattern: Sensitive Data in Payload
+### 3. Sensitive Data in Payload
+The JWT payload is Base64Url-encoded, not encrypted. Anyone who intercepts the token can easily decode and read the data it contains. Storing sensitive information like PII, passwords, or internal data in the payload is a major security risk.
 
-```pseudocode
-// VULNERABLE: Sensitive data in JWT payload
-// JWTs are base64-encoded, NOT encrypted - anyone can read the payload!
+#### BAD Code Example
+```python
+# VULNERABLE: Sensitive data in JWT payload
+import jwt
 
-FUNCTION create_jwt_exposed(user):
+def create_jwt_with_pii(user, secret_key):
     payload = {
-        user_id: user.id,
-        email: user.email,
-        ssn: user.social_security_number,  // PII exposed!
-        credit_card: user.card_number,      // Payment data exposed!
-        password_hash: user.password_hash,  // Never put this in JWT!
-        internal_notes: user.admin_notes    // Internal data leaked!
+        "user_id": user.id,
+        "email": user.email,
+        "ssn": user.social_security_number,  # PII EXPOSED!
+        "password_hash": user.password_hash # CRITICAL RISK!
     }
-    RETURN jwt.encode(payload, SECRET_KEY)
-END FUNCTION
+    return jwt.encode(payload, secret_key, algorithm="HS256")
 ```
 
-## GOOD Pattern: Minimal Non-Sensitive Claims
+#### GOOD Code Example
+```python
+# SECURE: Minimal, non-sensitive claims
+import jwt
+import time
 
-```pseudocode
-// SECURE: Only non-sensitive data in payload
-
-FUNCTION create_jwt_secure(user):
-    now = current_time()
-
+def create_jwt_secure(user, secret_key):
     payload = {
-        // Standard claims
-        sub: user.id,           // Subject (user ID only)
-        iat: now,               // Issued at
-        exp: now + 3600,        // Expiration (1 hour for access tokens)
-        nbf: now,               // Not before
-
-        // Custom claims (non-sensitive only)
-        role: user.role         // Roles are OK
-        // Never include: passwords, PII, payment info, internal data
+        "sub": user.id,          # Subject (user ID) - standard and non-sensitive
+        "iat": int(time.time()), # Issued at - standard
+        "exp": int(time.time()) + 3600, # Expiration (1 hour) - standard
+        "role": user.role        # Non-sensitive custom claim
     }
-
-    RETURN jwt.encode(payload, JWT_SECRET, algorithm="HS256")
-END FUNCTION
-```
-
-## BAD Pattern: No Expiration
-
-```pseudocode
-// VULNERABLE: No expiration or very long expiration
-
-FUNCTION create_jwt_no_expiry(user_id):
-    payload = {user_id: user_id}  // No exp claim!
-    RETURN jwt.encode(payload, SECRET_KEY)
-END FUNCTION
-
-FUNCTION create_jwt_long_expiry(user_id):
-    payload = {
-        user_id: user_id,
-        exp: current_time() + (365 * 24 * 3600)  // 1 year - too long!
-    }
-    RETURN jwt.encode(payload, SECRET_KEY)
-END FUNCTION
-```
-
-## GOOD Pattern: Appropriate Expiration with Refresh
-
-```pseudocode
-// SECURE: Short-lived access tokens with refresh tokens
-
-FUNCTION create_tokens(user_id):
-    now = current_time()
-
-    // Access token: short-lived (15 min - 1 hour)
-    access_payload = {
-        sub: user_id,
-        type: "access",
-        exp: now + 900  // 15 minutes
-    }
-    access_token = jwt.encode(access_payload, JWT_SECRET, algorithm="HS256")
-
-    // Refresh token: longer-lived, stored securely
-    refresh_payload = {
-        sub: user_id,
-        type: "refresh",
-        exp: now + (7 * 24 * 3600),  // 7 days
-        jti: generate_unique_id()     // Token ID for revocation
-    }
-    refresh_token = jwt.encode(refresh_payload, JWT_SECRET, algorithm="HS256")
-
-    // Store refresh token ID for revocation capability
-    store_refresh_token(user_id, refresh_payload.jti)
-
-    RETURN {access_token, refresh_token}
-END FUNCTION
+    # Never include passwords, PII, payment info, or internal data.
+    # The server should fetch this data from a secure database using the user ID from the token.
+    return jwt.encode(payload, secret_key, algorithm="HS256")
 ```
 
 ## Detection
+- Review calls to `jwt.decode()` and ensure the `algorithms` parameter is explicitly set to a list of expected algorithms.
+- Search for hardcoded or weak JWT secrets (e.g., `"secret"`, `"password"`, short keys).
+- Inspect the data being added to the JWT payload for any sensitive information (PII, credentials, etc.).
+- Check for the absence of the `exp` (expiration) claim when creating tokens.
 
-- Look for `jwt.decode()` without explicit `algorithms` parameter
-- Search for JWT secrets that are hardcoded or short
-- Check JWT payloads for sensitive data (PII, credentials, internal info)
-- Review for missing `exp` claim or very long expiration times
-- Check for algorithm confusion (HS256 vs RS256 key confusion)
+## Prevention
+- [ ] **Always specify allowed algorithms** explicitly during token verification.
+- [ ] **Use strong, centrally managed secrets** (at least 256 bits for HS256) or prefer asymmetric algorithms (RS256/ES256) for production systems.
+- [ ] **Never store sensitive data** in JWT payloads. The payload is readable by anyone.
+- [ ] **Always include an `exp` claim** with a reasonably short lifetime for access tokens.
+- [ ] **Implement a token refresh mechanism** for sessions that need to last longer than the access token's lifetime.
+- [ ] **Consider implementing a token revocation list** to invalidate tokens for compromised accounts.
 
-## Prevention Checklist
-
-- [ ] Always specify allowed algorithms explicitly in decode
-- [ ] Use secrets of at least 256 bits (32 characters) for HS256
-- [ ] Consider asymmetric algorithms (RS256, ES256) for production
-- [ ] Never store sensitive data in JWT payloads
-- [ ] Always include `exp` claim with reasonable duration
-- [ ] Implement token refresh mechanism for long sessions
-- [ ] Store refresh token IDs for revocation capability
-
-## Related Patterns
-
-- [hardcoded-secrets](../hardcoded-secrets/) - JWT secrets often hardcoded
-- [session-fixation](../session-fixation/) - Alternative session approaches
-- [insufficient-randomness](../insufficient-randomness/) - Token ID generation
+## Related Security Patterns & Anti-Patterns
+- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): JWT secrets are a common type of hardcoded secret.
+- [Session Fixation Anti-Pattern](../session-fixation/): Provides context on alternative session management strategies.
+- [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): Relevant if generating unique token identifiers (`jti`).
 
 ## References
-
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
+- [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP JWT Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)

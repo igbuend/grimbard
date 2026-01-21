@@ -1,176 +1,96 @@
 ---
-name: excessive-data-exposure-anti-pattern
-description: Security anti-pattern for excessive data exposure (CWE-200). Use when generating or reviewing API responses, database queries, or data serialization. Detects returning more data than necessary including internal fields, sensitive attributes, and related records.
+name: "excessive-data-exposure-anti-pattern"
+description: "Security anti-pattern for excessive data exposure (CWE-200). Use when generating or reviewing API responses, database queries, or data serialization. Detects returning more data than necessary including internal fields, sensitive attributes, and related records."
 ---
 
 # Excessive Data Exposure Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Excessive Data Exposure is a common vulnerability where an application, particularly an API, reveals more information than is necessary for the client to function. This anti-pattern often occurs when an API endpoint returns a raw database object or a model class directly, without filtering out sensitive or internal fields. Even if the client-side UI hides this data, an attacker can easily intercept the API response to access it, leading to the exposure of personal information (PII), credentials, and internal system details.
 
-APIs that return entire database objects expose sensitive fields that clients don't need:
+## The Anti-Pattern
+The anti-pattern is to serialize and return an entire object from a database or internal model, assuming the client will pick what it needs. This sends all properties of the object, including sensitive ones, over the wire.
 
-- Internal IDs and implementation details
-- Password hashes and security tokens
-- PII (emails, addresses, phone numbers)
-- Related records with sensitive data
-- Admin-only fields
+### BAD Code Example
+```python
+# VULNERABLE: Returns the entire raw database user object.
+from flask import jsonify
 
-## BAD Pattern: Return Entire Objects
+class User:
+    def __init__(self, id, username, email, password_hash, ssn, is_admin):
+        self.id = id
+        self.username = username
+        self.email = email
+        self.password_hash = password_hash
+        self.ssn = ssn
+        self.is_admin = is_admin
 
-```pseudocode
-// VULNERABLE: Returns all database fields
+    def to_dict(self):
+        # This method dumps all object properties, including sensitive ones.
+        return self.__dict__
 
-FUNCTION get_user(request):
-    user_id = request.params.id
-    user = database.find_user(user_id)
+@app.route("/api/users/<int:user_id>")
+def get_user(user_id):
+    user = find_user_by_id(user_id) # Imagine this retrieves a User object.
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    // Returns EVERYTHING including sensitive fields
-    RETURN user
-
-    // Response includes:
-    // {
-    //   id: 123,
-    //   username: "john",
-    //   email: "john@example.com",
-    //   password_hash: "$2b$12$...",  // Exposed!
-    //   ssn: "123-45-6789",           // Exposed!
-    //   created_at: "...",
-    //   internal_notes: "...",         // Exposed!
-    //   api_key: "sk_..."              // Exposed!
-    // }
-END FUNCTION
-
-FUNCTION list_orders(request):
-    orders = database.query("SELECT * FROM orders")
-    // Returns all fields from all related tables
-    RETURN orders.with_relations(["user", "payments", "shipping"])
-END FUNCTION
+    # The entire object is serialized and returned, exposing password_hash, ssn, etc.
+    return jsonify(user.to_dict())
 ```
 
-## GOOD Pattern: DTOs with Explicit Fields
+### GOOD Code Example
+```python
+# SECURE: Use a Data Transfer Object (DTO) to explicitly define the API response structure.
+from flask import jsonify
 
-```pseudocode
-// SECURE: Return only needed fields via DTO
+class User: # Same User class as before
+    # ...
+    pass
 
-CLASS UserPublicDTO:
-    FIELDS: id, username, avatar_url, created_at
+class UserPublicDTO:
+    def __init__(self, id, username):
+        self.id = id
+        self.username = username
 
-    FUNCTION from_user(user):
-        RETURN new UserPublicDTO({
-            id: user.id,
-            username: user.username,
-            avatar_url: user.avatar_url,
-            created_at: user.created_at
-        })
-    END FUNCTION
-END CLASS
+    @staticmethod
+    def from_model(user):
+        return UserPublicDTO(id=user.id, username=user.username)
 
-CLASS UserPrivateDTO:  // For user viewing their own profile
-    FIELDS: id, username, email, avatar_url, created_at
+@app.route("/api/users/<int:user_id>")
+def get_user(user_id):
+    user = find_user_by_id(user_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-    FUNCTION from_user(user):
-        RETURN new UserPrivateDTO({
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            avatar_url: user.avatar_url,
-            created_at: user.created_at
-        })
-    END FUNCTION
-END CLASS
-
-FUNCTION get_user(request):
-    user_id = request.params.id
-    user = database.find_user(user_id)
-    current_user = request.authenticated_user
-
-    // Return appropriate DTO based on who's asking
-    IF current_user.id == user_id:
-        RETURN UserPrivateDTO.from_user(user)
-    ELSE:
-        RETURN UserPublicDTO.from_user(user)
-    END IF
-END FUNCTION
+    # The User object is transformed into a safe DTO.
+    # Only the `id` and `username` fields are included in the response.
+    user_dto = UserPublicDTO.from_model(user)
+    return jsonify(user_dto.__dict__)
 ```
-
-## BAD Pattern: Filtering Client-Side
-
-```pseudocode
-// VULNERABLE: Sending all data, expecting client to filter
-
-FUNCTION get_users_admin(request):
-    users = database.get_all_users()
-
-    // Returns all users with all fields
-    // "Client will only show what it needs"
-    RETURN users
-
-    // Problem: Attacker intercepts response and gets everything
-END FUNCTION
-```
-
-## GOOD Pattern: Server-Side Filtering
-
-```pseudocode
-// SECURE: Only return permitted fields
-
-FUNCTION get_users_admin(request):
-    current_user = request.authenticated_user
-
-    // Check authorization
-    IF NOT current_user.is_admin:
-        RETURN error_response(403, "Admin access required")
-    END IF
-
-    // Query only needed fields
-    users = database.query(
-        "SELECT id, username, email, role, created_at FROM users"
-    )
-
-    // Transform to DTOs
-    RETURN users.map(u => UserAdminDTO.from_user(u))
-END FUNCTION
-```
-
-## Field Visibility Matrix
-
-| Field | Public | Authenticated | Admin |
-|-------|--------|---------------|-------|
-| `id` | Yes | Yes | Yes |
-| `username` | Yes | Yes | Yes |
-| `email` | No | Own only | Yes |
-| `password_hash` | No | No | No |
-| `api_key` | No | Own only | No |
-| `internal_notes` | No | No | Yes |
-| `ssn` | No | No | No |
 
 ## Detection
+- **Review API responses:** Look for endpoints that return large, complex JSON objects. Check if these objects contain fields that are not used by the front-end application or that seem internal or sensitive (e.g., `passwordHash`, `ssn`, `internalNotes`).
+- **Analyze database queries:** Search for `SELECT *` queries that feed directly into API responses.
+- **Inspect serialization logic:** Look for generic `.toJSON()` or `serialize()` methods on model objects that dump all properties without a filter.
 
-- Look for `SELECT *` in database queries
-- Search for returning raw model objects in API responses
-- Check for `.to_json()` or `.serialize()` on full models
-- Review responses for sensitive field names
+## Prevention
+- [ ] **Use Data Transfer Objects (DTOs)** or ViewModels with an explicit allowlist of fields for every API response.
+- [ ] **Never return raw database or ORM objects** directly from an API endpoint.
+- [ ] **Select only the required columns** in your database queries (`SELECT id, username FROM ...` instead of `SELECT *`).
+- [ ] **Implement field-level authorization** based on the user's permissions. For example, a user might see their own email address, but other users cannot.
+- [ ] **Filter on the server, not the client.** Never rely on the client-side application to filter out sensitive data.
+- [ ] **Define different DTOs for different access levels** (e.g., a `UserPublicDTO` for public profiles and a `UserPrivateDTO` for a user viewing their own data).
 
-## Prevention Checklist
-
-- [ ] Use DTOs/ViewModels with explicit field allowlists
-- [ ] Never return raw database objects
-- [ ] Select only needed columns in queries
-- [ ] Implement field-level authorization
-- [ ] Review API responses for sensitive data
-- [ ] Use different DTOs for different access levels
-- [ ] Filter on server, not client
-
-## Related Patterns
-
-- [missing-authentication](../missing-authentication/) - Access control
-- [mass-assignment](../mass-assignment/) - Inverse problem (input)
+## Related Security Patterns & Anti-Patterns
+- [Missing Authentication Anti-Pattern](../missing-authentication/): If an endpoint is missing authentication, excessive data exposure becomes even more dangerous.
+- [Mass Assignment Anti-Pattern](../mass-assignment/): The inverse of this problem, where an API accepts more data than it should, leading to unauthorized modifications.
 
 ## References
-
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
+- [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
 - [CWE-200: Information Exposure](https://cwe.mitre.org/data/definitions/200.html)
 - [CAPEC-37: Retrieve Embedded Sensitive Data](https://capec.mitre.org/data/definitions/37.html)

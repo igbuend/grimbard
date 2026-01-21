@@ -1,221 +1,99 @@
 ---
-name: integer-overflow-anti-pattern
-description: Security anti-pattern for integer overflow vulnerabilities (CWE-190). Use when generating or reviewing code that performs arithmetic on user-controlled values, handles sizes/quantities, or calculates prices/amounts. Detects overflow in validated inputs.
+name: "integer-overflow-anti-pattern"
+description: "Security anti-pattern for integer overflow vulnerabilities (CWE-190). Use when generating or reviewing code that performs arithmetic on user-controlled values, handles sizes/quantities, or calculates prices/amounts. Detects overflow in validated inputs."
 ---
 
 # Integer Overflow Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+An integer overflow occurs when an arithmetic operation, such as addition or multiplication, results in a number that is too large to be stored in the available memory space for that data type. Instead of causing an error, the value often "wraps around," becoming a very small or negative number. This anti-pattern is particularly dangerous when user-controlled inputs, which may be individually valid, are combined in a calculation. Attackers can exploit this to bypass security checks, cause buffer overflows, or manipulate financial transactions.
 
-Integer overflow occurs when arithmetic operations exceed the maximum (or minimum) value for an integer type, causing wraparound. Individual values may pass validation, but their combination overflows. This leads to:
+## The Anti-Pattern
+The anti-pattern is performing arithmetic operations on user-controlled inputs without first checking if the operation could exceed the maximum value for the integer type. Validation of the individual inputs is not sufficient.
 
-- Financial manipulation (paying $0 for large orders)
-- Buffer allocation errors
-- Access control bypass
-- Denial of service
+### BAD Code Example
+```c
+// VULNERABLE: Individual values are checked, but their multiplication can overflow.
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-## BAD Pattern: Validation Passes, Computation Overflows
+void process_purchase(uint32_t quantity, uint32_t price_per_item) {
+    // Both inputs are validated and seem reasonable on their own.
+    if (quantity > 1000) {
+        printf("Error: Quantity too high.\n");
+        return;
+    }
+    if (price_per_item > 100000) {
+        printf("Error: Price per item too high.\n");
+        return;
+    }
 
-```pseudocode
-// VULNERABLE: Individual values valid, multiplication overflows
+    // Attacker sets `quantity = 50000` and `price_per_item = 100000`.
+    // Both might pass initial checks if those checks are weak.
+    // The expected total is 5,000,000,000.
+    // The maximum value for a 32-bit unsigned integer is 4,294,967,295.
+    uint32_t total_cost = quantity * price_per_item; // OVERFLOW!
 
-FUNCTION vulnerable_purchase(quantity, price):
-    // Validate individual ranges - both pass!
-    IF quantity < 0 OR quantity > 1000000:
-        RETURN error("Invalid quantity")
-    END IF
-    IF price < 0 OR price > 1000000:
-        RETURN error("Invalid price")
-    END IF
-
-    // Both pass validation, but multiplication overflows!
-    // quantity = 999999, price = 999999
-    // total = 999998000001 (exceeds 32-bit signed integer max: 2147483647)
-    total = quantity * price  // OVERFLOW!
-
-    // In 32-bit signed: wraps to negative or small number
-    // Customer charged wrong amount
-    charge_customer(total)
-END FUNCTION
+    // The `total_cost` wraps around to a small number (705,032,704 in this case).
+    // The attacker is charged a fraction of the real price.
+    printf("Charging customer: %u\n", total_cost);
+    charge_customer(total_cost);
+}
 ```
 
-## BAD Pattern: Size Calculation Overflow
+### GOOD Code Example
+```c
+// SECURE: Check for potential overflow before performing the multiplication.
+#include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-```pseudocode
-// VULNERABLE: Buffer size calculation overflows
+void process_purchase_safe(uint32_t quantity, uint32_t price_per_item) {
+    if (quantity > 1000) {
+        printf("Error: Quantity too high.\n");
+        return;
+    }
+    if (price_per_item > 100000) {
+        printf("Error: Price per item too high.\n");
+        return;
+    }
 
-FUNCTION vulnerable_allocate(width, height, bytes_per_pixel):
-    // Each value looks reasonable
-    IF width > 10000 OR height > 10000:
-        RETURN error("Image too large")
-    END IF
+    // Pre-condition check: before multiplying, verify if the result would exceed the maximum value.
+    if (price_per_item > 0 && quantity > UINT32_MAX / price_per_item) {
+        printf("Error: Potential overflow detected. Transaction cancelled.\n");
+        return;
+    }
 
-    // But multiplication can overflow
-    // width=5000, height=5000, bytes_per_pixel=4
-    // size = 5000 * 5000 * 4 = 100,000,000 (OK in 32-bit)
-    // width=50000, height=50000, bytes_per_pixel=4
-    // size = 50000 * 50000 * 4 = 10,000,000,000 (overflows 32-bit)
-    size = width * height * bytes_per_pixel
+    // The multiplication is now safe to perform.
+    uint32_t total_cost = quantity * price_per_item;
 
-    // Small buffer allocated due to overflow
-    buffer = allocate(size)
-
-    // Write to buffer causes heap overflow
-    process_image(buffer, width, height)
-END FUNCTION
+    printf("Charging customer: %u\n", total_cost);
+    charge_customer(total_cost);
+}
 ```
-
-## BAD Pattern: Array Index Calculation
-
-```pseudocode
-// VULNERABLE: Index calculation wraps around
-
-FUNCTION vulnerable_array_access(base_index, offset):
-    // Both values validated individually
-    IF base_index < 0 OR base_index > MAX_INDEX:
-        RETURN error("Invalid index")
-    END IF
-    IF offset < 0 OR offset > MAX_OFFSET:
-        RETURN error("Invalid offset")
-    END IF
-
-    // Addition can overflow
-    final_index = base_index + offset  // Might wrap to small/negative value
-
-    // Out-of-bounds access
-    RETURN array[final_index]
-END FUNCTION
-```
-
-## GOOD Pattern: Check Before Computation
-
-```pseudocode
-// SECURE: Check for overflow before computing
-
-FUNCTION secure_purchase(quantity, price):
-    // Validate individual ranges
-    IF NOT is_valid_integer(quantity, 1, 1000):
-        RETURN error("Invalid quantity")
-    END IF
-    IF NOT is_valid_integer(price, 1, 10000000):  // in cents
-        RETURN error("Invalid price")
-    END IF
-
-    // Check multiplication won't overflow BEFORE computing
-    MAX_SAFE_TOTAL = 2147483647  // 32-bit signed max
-
-    IF quantity > MAX_SAFE_TOTAL / price:
-        RETURN error("Order total too large")
-    END IF
-
-    // Now safe to compute
-    total = quantity * price
-
-    // Additional business validation
-    IF total > MAX_ALLOWED_TRANSACTION:
-        RETURN error("Transaction exceeds limit")
-    END IF
-
-    charge_customer(total)
-END FUNCTION
-```
-
-## GOOD Pattern: Use Arbitrary Precision
-
-```pseudocode
-// SECURE: Use arbitrary precision for money
-
-FUNCTION secure_purchase_decimal(quantity, price):
-    // Convert to arbitrary precision decimal
-    quantity_decimal = Decimal(quantity)
-    price_decimal = Decimal(price)
-
-    // No overflow possible with arbitrary precision
-    total = quantity_decimal * price_decimal
-
-    IF total > Decimal(MAX_ALLOWED_TRANSACTION):
-        RETURN error("Transaction exceeds limit")
-    END IF
-
-    charge_customer(total)
-END FUNCTION
-```
-
-## GOOD Pattern: Safe Arithmetic Functions
-
-```pseudocode
-// SECURE: Use safe arithmetic functions that check overflow
-
-FUNCTION safe_multiply(a, b):
-    // Check for overflow before multiplication
-    IF a > 0 AND b > 0 AND a > MAX_INT / b:
-        THROW OverflowError("Multiplication would overflow")
-    END IF
-    IF a < 0 AND b < 0 AND a < MAX_INT / b:
-        THROW OverflowError("Multiplication would overflow")
-    END IF
-    IF a > 0 AND b < 0 AND b < MIN_INT / a:
-        THROW OverflowError("Multiplication would overflow")
-    END IF
-    IF a < 0 AND b > 0 AND a < MIN_INT / b:
-        THROW OverflowError("Multiplication would overflow")
-    END IF
-
-    RETURN a * b
-END FUNCTION
-
-FUNCTION safe_add(a, b):
-    IF b > 0 AND a > MAX_INT - b:
-        THROW OverflowError("Addition would overflow")
-    END IF
-    IF b < 0 AND a < MIN_INT - b:
-        THROW OverflowError("Addition would underflow")
-    END IF
-
-    RETURN a + b
-END FUNCTION
-```
-
-## Integer Limits by Type
-
-| Type | Min | Max |
-|------|-----|-----|
-| int8 | -128 | 127 |
-| uint8 | 0 | 255 |
-| int16 | -32,768 | 32,767 |
-| uint16 | 0 | 65,535 |
-| int32 | -2,147,483,648 | 2,147,483,647 |
-| uint32 | 0 | 4,294,967,295 |
-| int64 | -9.2e18 | 9.2e18 |
 
 ## Detection
+- **Review arithmetic operations:** Look for any code where two or more user-controlled numerical inputs are added, multiplied, or otherwise combined.
+- **Check validation logic:** Ensure that validation doesn't just check the range of individual inputs but also considers the potential result of their combination.
+- **Test with boundary values:** Use the maximum value for a given integer type (e.g., `2,147,483,647` for a 32-bit signed integer) in your tests to see how the application handles it.
+- **Use static analysis tools:** Many static code analysis (SAST) tools can detect potential integer overflow conditions.
 
-- Look for multiplication/addition of user-controlled values
-- Check if overflow is considered in validation
-- Review size/length calculations
-- Test with MAX_INT, MAX_INT-1, boundary values
-- Test combinations that multiply to overflow
+## Prevention
+- [ ] **Check before you calculate:** Before performing an arithmetic operation, check if it will result in an overflow. For multiplication (`a * b`), the check is `if (a > MAX_INT / b)`. For addition (`a + b`), it's `if (a > MAX_INT - b)`.
+- [ ] **Use a larger data type:** If you expect large numbers, use a 64-bit integer (`long long` in C, `long` in Java) instead of a 32-bit one.
+- [ ] **Use arbitrary-precision libraries:** For financial calculations where precision is critical, use a library that handles numbers of arbitrary size (e.g., `BigDecimal` in Java, `decimal` in Python).
+- [ ] **Use compiler-level protections:** Some modern compilers provide flags (like `-ftrapv` in GCC/Clang) that can detect and abort on signed integer overflows.
 
-## Prevention Checklist
-
-- [ ] Check for potential overflow BEFORE arithmetic operations
-- [ ] Use safe arithmetic functions that detect overflow
-- [ ] Consider arbitrary precision for financial calculations
-- [ ] Set business limits lower than technical limits
-- [ ] Use appropriate integer sizes (64-bit for large values)
-- [ ] Test with boundary values and overflow-inducing combinations
-- [ ] Be aware of signed vs unsigned wraparound differences
-
-## Related Patterns
-
-- [missing-input-validation](../missing-input-validation/) - Validation alone isn't enough
-- [type-confusion](../type-confusion/) - Related numeric issues
+## Related Security Patterns & Anti-Patterns
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): While input validation is necessary, it is not sufficient on its own to prevent integer overflows.
+- [Type Confusion Anti-Pattern](../type-confusion/): Incorrect assumptions about data types can lead to a variety of numeric vulnerabilities, including overflows.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [CWE-190: Integer Overflow](https://cwe.mitre.org/data/definitions/190.html)
 - [CAPEC-190: Forced Integer Overflow](https://capec.mitre.org/data/definitions/190.html)
 - [CERT Secure Coding - Integer Security](https://wiki.sei.cmu.edu/confluence/display/c/INT32-C.+Ensure+that+operations+on+signed+integers+do+not+result+in+overflow)

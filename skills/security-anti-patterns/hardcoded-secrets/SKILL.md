@@ -1,160 +1,109 @@
 ---
-name: hardcoded-secrets-anti-pattern
-description: Security anti-pattern for hardcoded credentials and secrets (CWE-798). Use when generating or reviewing code that handles API keys, passwords, database credentials, encryption keys, or any sensitive configuration. Detects embedded secrets and recommends environment variables or secret managers.
+name: "hardcoded-secrets-anti-pattern"
+description: "Security anti-pattern for hardcoded credentials and secrets (CWE-798). Use when generating or reviewing code that handles API keys, passwords, database credentials, encryption keys, or any sensitive configuration. Detects embedded secrets and recommends environment variables or secret managers."
 ---
 
 # Hardcoded Secrets Anti-Pattern
 
 **Severity:** Critical
 
-## Risk
+## Summary
+Hardcoding secrets is the practice of embedding sensitive information, such as API keys, passwords, or database credentials, directly into the source code. This is a critical vulnerability because anyone with access to the code—including developers, version control history, or attackers who gain source code access—can see the secret. AI models frequently generate code with hardcoded secrets, as they are trained on vast amounts of public code from tutorials and examples where this bad practice is common. Secrets committed to a public repository are often discovered and abused by automated bots within minutes.
 
-Secrets committed to version control are scraped within minutes by automated bots. AI frequently generates code with embedded credentials from tutorial examples in training data. This leads to:
+## The Anti-Pattern
+The anti-pattern is storing any form of secret, credential, or sensitive configuration value directly in a file that is tracked by version control.
 
-- Cloud resource abuse (crypto mining, spam)
-- Data breaches and exfiltration
-- Account takeover
-- Significant financial costs
+### BAD Code Example
+```python
+# VULNERABLE: Hardcoded API keys and database credentials in the source code.
+import requests
+import psycopg2
 
-Over 6 million secrets were detected on GitHub in 2023.
+# 1. Hardcoded API Key
+API_KEY = "sk-live-123abc456def789ghi"
 
-## BAD Pattern: Hardcoded API Keys and Passwords
+def get_weather(city):
+    url = f"https://api.weatherprovider.com/v1/current?city={city}"
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+    response = requests.get(url, headers=headers)
+    return response.json()
 
-```pseudocode
-// VULNERABLE: Hardcoded API keys and passwords
+# 2. Hardcoded Database Password
+DB_HOST = "localhost"
+DB_USER = "admin"
+DB_PASSWORD = "my_super_secret_password_123" # Exposed in the code
+DB_NAME = "main_db"
 
-CONSTANT API_KEY = "sk-abcd1234efgh5678ijkl9012mnop3456"
-CONSTANT DB_PASSWORD = "super_secret_password"
-CONSTANT AWS_ACCESS_KEY = "AKIAIOSFODNN7EXAMPLE"
-CONSTANT AWS_SECRET_KEY = "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
-
-FUNCTION call_api(endpoint):
-    headers = {"Authorization": "Bearer " + API_KEY}
-    RETURN http.get(endpoint, headers)
-END FUNCTION
+def get_db_connection():
+    # The password is right here for any attacker to see.
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    return conn
 ```
 
-## GOOD Pattern: Environment Variables
+### GOOD Code Example
+```python
+# SECURE: Load secrets from the environment or a dedicated secrets manager.
+import os
+import requests
+import psycopg2
 
-```pseudocode
-// SECURE: Environment variables
+# 1. API key loaded from an environment variable.
+API_KEY = os.environ.get("WEATHER_API_KEY")
 
-FUNCTION call_api(endpoint):
-    api_key = environment.get("API_KEY")
+def get_weather(city):
+    if not API_KEY:
+        raise ValueError("WEATHER_API_KEY environment variable not set.")
+    url = f"https://api.weatherprovider.com/v1/current?city={city}"
+    headers = {"Authorization": f"Bearer {API_KEY}"}
+    response = requests.get(url, headers=headers)
+    return response.json()
 
-    IF api_key IS NULL:
-        THROW Error("API_KEY environment variable required")
-    END IF
+# 2. Database credentials loaded from environment variables.
+DB_HOST = os.environ.get("DB_HOST", "localhost")
+DB_USER = os.environ.get("DB_USER")
+DB_PASSWORD = os.environ.get("DB_PASSWORD")
+DB_NAME = os.environ.get("DB_NAME")
 
-    headers = {"Authorization": "Bearer " + api_key}
-    RETURN http.get(endpoint, headers)
-END FUNCTION
-```
-
-## BAD Pattern: Credentials in Config Files
-
-```pseudocode
-// VULNERABLE: Credentials in config committed to repo
-// config.json (tracked in git)
-{
-    "database_url": "postgresql://admin:password123@localhost:5432/mydb",
-    "redis_password": "redis_secret_123"
-}
-```
-
-## GOOD Pattern: External Secret Management
-
-```pseudocode
-// SECURE: Config without secrets
-// config.json (safe to commit)
-{
-    "database_host": "localhost",
-    "database_port": 5432,
-    "database_name": "mydb"
-}
-
-FUNCTION connect_database():
-    config = load_json("config.json")
-
-    // Credentials from environment or secret manager
-    db_user = environment.get("DB_USER")
-    db_password = environment.get("DB_PASSWORD")
-
-    IF db_user IS NULL OR db_password IS NULL:
-        THROW Error("Database credentials not configured")
-    END IF
-
-    url = build_connection_url(config, db_user, db_password)
-    RETURN database.connect(url)
-END FUNCTION
-```
-
-## BAD Pattern: Secrets in Client-Side Code
-
-```pseudocode
-// VULNERABLE: Secrets exposed in frontend JavaScript
-// frontend.js (served to browser)
-CONSTANT STRIPE_SECRET_KEY = "sk_live_abc123..."  // Visible in DevTools!
-
-FUNCTION charge_card(card_number, amount):
-    RETURN http.post("https://api.stripe.com/charges", {
-        api_key: STRIPE_SECRET_KEY,
-        card: card_number,
-        amount: amount
-    })
-END FUNCTION
-```
-
-## GOOD Pattern: Backend Proxy
-
-```pseudocode
-// SECURE: Backend proxy for sensitive operations
-// frontend.js
-FUNCTION charge_card(card_token, amount):
-    // Only send public token, backend handles secret key
-    RETURN http.post("/api/charges", {
-        token: card_token,
-        amount: amount
-    })
-END FUNCTION
-
-// backend.js (server-side only)
-FUNCTION handle_charge(request):
-    stripe_key = environment.get("STRIPE_SECRET_KEY")
-    RETURN stripe.charges.create({
-        api_key: stripe_key,
-        source: request.token,
-        amount: request.amount
-    })
-END FUNCTION
+def get_db_connection():
+    # The application will fail safely if secrets are not configured in the environment.
+    if not all([DB_USER, DB_PASSWORD, DB_NAME]):
+        raise ValueError("Database environment variables are not fully configured.")
+    conn = psycopg2.connect(
+        host=DB_HOST,
+        database=DB_NAME,
+        user=DB_USER,
+        password=DB_PASSWORD
+    )
+    return conn
 ```
 
 ## Detection
+- **Use secret scanning tools:** Tools like `gitleaks`, `trufflehog`, or `git-secrets` can automatically scan your repository's history for patterns that match common secret formats.
+- **Search for keywords:** Manually search the codebase for keywords like `password`, `secret`, `api_key`, `token`, and `credential`.
+- **Look for high-entropy strings:** Long, random-looking strings are often API keys or private keys.
+- **Check configuration files:** Review files like `config.json`, `settings.py`, or `.env` files that have been committed to version control.
 
-- Search for patterns: `password`, `secret`, `api_key`, `token`, `credential` in source code
-- Look for base64-encoded strings that might be keys
-- Check for AWS key patterns: `AKIA...`, `sk_live_`, `sk_test_`
-- Review configuration files for embedded credentials
-- Use secret scanning tools (gitleaks, trufflehog, git-secrets)
+## Prevention
+- [ ] **Never hardcode any credentials, API keys, or secrets** in your source code.
+- [ ] **Use environment variables** to store secrets in development and other non-production environments.
+- [ ] **Use a dedicated secrets management service** for production environments (e.g., AWS Secrets Manager, HashiCorp Vault, Google Secret Manager).
+- [ ] **Add a `.env` file** (or similar) to your `.gitignore` to prevent accidental commits of local development secrets.
+- [ ] **Integrate secret scanning tools** into your CI/CD pipeline and pre-commit hooks to block commits that contain secrets.
+- [ ] **Implement a secret rotation policy** to limit the impact of a compromised secret.
 
-## Prevention Checklist
-
-- [ ] Never hardcode credentials, API keys, or secrets in source code
-- [ ] Use environment variables for all sensitive configuration
-- [ ] Add secret patterns to `.gitignore` and pre-commit hooks
-- [ ] Use a secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.)
-- [ ] Implement secret rotation capabilities
-- [ ] Scan repositories for accidentally committed secrets
-
-## Related Patterns
-
-- [weak-encryption](../weak-encryption/) - Secrets need proper encryption at rest
-- [jwt-misuse](../jwt-misuse/) - JWT secrets are often hardcoded
-- [insufficient-randomness](../insufficient-randomness/) - Generating secure secrets
+## Related Security Patterns & Anti-Patterns
+- [Weak Encryption Anti-Pattern](../weak-encryption/): Secrets, even when stored, need to be encrypted at rest.
+- [JWT Misuse Anti-Pattern](../jwt-misuse/): The secret key for signing JWTs is a common hardcoded secret.
+- [Verbose Error Messages Anti-Pattern](../verbose-error-messages/): Debug screens can leak environment variables, which may contain secrets.
 
 ## References
-
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
+- [OWASP GenAI LLM02:2025 - Sensitive Information Disclosure](https://genai.owasp.org/llmrisk/llm02-sensitive-information-disclosure/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP Secrets Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html)
 - [CWE-798: Use of Hard-coded Credentials](https://cwe.mitre.org/data/definitions/798.html)

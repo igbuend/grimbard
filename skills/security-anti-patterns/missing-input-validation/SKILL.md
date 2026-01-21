@@ -1,181 +1,103 @@
 ---
-name: missing-input-validation-anti-pattern
-description: Security anti-pattern for missing input validation (CWE-20). Use when generating or reviewing code that processes user input, form data, API parameters, or external data. Detects client-only validation, missing type checks, and absent length limits. Foundation vulnerability enabling most attack classes.
+name: "missing-input-validation-anti-pattern"
+description: "Security anti-pattern for missing input validation (CWE-20). Use when generating or reviewing code that processes user input, form data, API parameters, or external data. Detects client-only validation, missing type checks, and absent length limits. Foundation vulnerability enabling most attack classes."
 ---
 
 # Missing Input Validation Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Missing input validation is one of the most common and fundamental security vulnerabilities. It occurs when an application fails to properly validate data received from a user or another external source before using it. This is the root cause of most major web application vulnerabilities, including SQL Injection, Cross-Site Scripting (XSS), Command Injection, and Path Traversal. An application must treat all incoming data as untrusted and validate it against a strict set of rules for type, length, format, and range.
 
-Input validation failures are foundational vulnerabilities enabling most other attack classes including injection, XSS, and DoS. AI-generated code frequently relies solely on client-side validation (trivially bypassed) or omits validation entirely. This leads to:
+## The Anti-Pattern
+The anti-pattern is trusting any input from an external source without validating it on the server-side. This includes relying on client-side validation, which can be easily bypassed by an attacker.
 
-- Injection attacks (SQL, command, XSS)
-- Type confusion vulnerabilities
-- Denial of service via large inputs
-- Business logic bypass
+### BAD Code Example
+```python
+# VULNERABLE: The application trusts user input completely, leading to SQL Injection.
+from flask import request
+import sqlite3
 
-## BAD Pattern: Client-Side Only Validation
+@app.route("/api/products")
+def search_products():
+    # The 'category' parameter is taken directly from the URL query string.
+    category = request.args.get("category")
 
-```pseudocode
-// VULNERABLE: Only validates in browser
+    # The input is not validated or sanitized. It is concatenated directly into a SQL query.
+    # This is the classic setup for SQL Injection.
+    db = sqlite3.connect("database.db")
+    cursor = db.cursor()
+    query = f"SELECT id, name, price FROM products WHERE category = '{category}'"
 
-// Frontend JavaScript
-FUNCTION validate_form_client_only():
-    email = document.getElementById("email").value
-    IF NOT email.includes("@"):
-        show_error("Invalid email")
-        RETURN FALSE
-    END IF
-    form.submit()
-END FUNCTION
-
-// Backend - NO validation!
-FUNCTION create_user(request):
-    // Trusts client-side validation completely
-    email = request.body.email
-    database.insert("users", {email: email})
-END FUNCTION
-
-// Attack: curl -X POST /api/users -d '{"email":"not-an-email"}'
+    # Attacker's request: /api/products?category=' OR 1=1 --
+    # The resulting query becomes: "SELECT ... FROM products WHERE category = '' OR 1=1 --'"
+    # This will return ALL products in the database, bypassing the filter.
+    cursor.execute(query)
+    products = cursor.fetchall()
+    return {"products": products}
 ```
 
-## GOOD Pattern: Server-Side Validation
+### GOOD Code Example
+```python
+# SECURE: All input is validated on the server against a strict allowlist.
+from flask import request
+import sqlite3
 
-```pseudocode
-// SECURE: Validates all input server-side
+# Define a strict allowlist of known-good values for the 'category' parameter.
+ALLOWED_CATEGORIES = {"electronics", "books", "clothing", "homegoods"}
 
-FUNCTION create_user(request):
-    validation_errors = []
+@app.route("/api/products/safe")
+def search_products_safe():
+    category = request.args.get("category")
 
-    // Email validation
-    email = request.body.email
-    IF typeof(email) != "string":
-        validation_errors.append("Email must be a string")
-    ELSE IF NOT regex.match("^[^@]+@[^@]+\.[^@]+$", email):
-        validation_errors.append("Invalid email format")
-    ELSE IF email.length > 254:
-        validation_errors.append("Email too long")
-    END IF
+    # 1. VALIDATE EXISTENCE: Check if the parameter was provided.
+    if not category:
+        return {"error": "Category parameter is required."}, 400
 
-    IF validation_errors.length > 0:
-        RETURN {success: FALSE, errors: validation_errors}
-    END IF
+    # 2. VALIDATE AGAINST ALLOWLIST: Check if the input is one of the expected values.
+    #    This is the strongest form of input validation.
+    if category not in ALLOWED_CATEGORIES:
+        return {"error": "Invalid category specified."}, 400
 
-    database.insert("users", {email: email})
-    RETURN {success: TRUE}
-END FUNCTION
+    # 3. USE PARAMETERIZED QUERIES: Even after validation, use safe database APIs
+    #    to prevent any possibility of injection.
+    db = sqlite3.connect("database.db")
+    cursor = db.cursor()
+    # The '?' placeholder ensures the input is treated as data, not code.
+    query = "SELECT id, name, price FROM products WHERE category = ?"
+    cursor.execute(query, (category,))
+    products = cursor.fetchall()
+    return {"products": products}
 ```
-
-## BAD Pattern: Missing Type Checking
-
-```pseudocode
-// VULNERABLE: No type validation
-
-FUNCTION process_payment(request):
-    amount = request.body.amount  // Could be string, array, object!
-    total = amount * quantity     // Type coercion issues
-    charge_card(user, total)
-END FUNCTION
-
-// Attack: {"amount": {"$gt": 0}} - NoSQL injection possible
-```
-
-## GOOD Pattern: Strict Type Validation
-
-```pseudocode
-// SECURE: Explicit type checking
-
-FUNCTION process_payment(request):
-    amount = request.body.amount
-
-    IF typeof(amount) != "number":
-        THROW ValidationError("Amount must be a number")
-    END IF
-    IF NOT is_finite(amount) OR is_nan(amount):
-        THROW ValidationError("Amount must be a valid number")
-    END IF
-    IF amount <= 0:
-        THROW ValidationError("Amount must be positive")
-    END IF
-
-    total = amount * quantity
-    charge_card(user, total)
-END FUNCTION
-```
-
-## BAD Pattern: No Length Limits
-
-```pseudocode
-// VULNERABLE: No length limits - DoS possible
-
-FUNCTION create_post(request):
-    title = request.body.title    // Could be 1GB!
-    content = request.body.content
-    database.insert("posts", {title, content})
-END FUNCTION
-```
-
-## GOOD Pattern: Enforce Length Limits
-
-```pseudocode
-// SECURE: Length limits on all inputs
-
-CONSTANT MAX_TITLE = 200
-CONSTANT MAX_CONTENT = 50000
-
-FUNCTION create_post(request):
-    title = request.body.title
-    content = request.body.content
-
-    IF title.length > MAX_TITLE:
-        THROW ValidationError("Title exceeds " + MAX_TITLE + " characters")
-    END IF
-    IF content.length > MAX_CONTENT:
-        THROW ValidationError("Content exceeds " + MAX_CONTENT + " characters")
-    END IF
-
-    database.insert("posts", {title, content})
-END FUNCTION
-```
-
-## Validation Checklist
-
-| Check | Example |
-|-------|---------|
-| Type | `typeof(value) == "string"` |
-| Length | `value.length <= 200` |
-| Format | `regex.match(pattern, value)` |
-| Range | `value >= 0 AND value <= 100` |
-| Allowlist | `value IN allowed_values` |
-| Required | `value IS NOT NULL` |
 
 ## Detection
+- **Trace user input:** For every piece of data that comes from an HTTP request (URL parameters, POST body, headers, cookies), follow it through the code and verify that it is validated before it is used.
+- **Look for client-side-only validation:** Check if `required` attributes in HTML or JavaScript validation functions are the only form of validation. If there's no equivalent check on the server, it's vulnerable.
+- **Search for missing checks:** Look for code that handles input without checking its type, length, format, or range.
 
-- Look for request parameters used without validation
-- Search for client-side validation without server-side equivalent
-- Check for missing type assertions on input data
-- Review for absent length limits on strings and arrays
+## Prevention
+The "Validate, then Act" principle must be applied to all incoming data.
 
-## Prevention Checklist
+- [ ] **Validate everything on the server:** Client-side validation is for user experience only; it provides no security.
+- [ ] **Be strict with what you accept (Allowlist):** It is always better to have a list of known-good inputs (an allowlist) than to try to block known-bad inputs (a blocklist).
+- [ ] **Implement a multi-layered validation strategy:**
+    - **Type:** Ensure the data is the expected type (e.g., a number, not a string).
+    - **Length:** Enforce minimum and maximum lengths to prevent buffer overflows and denial-of-service.
+    - **Format:** For data like email addresses or phone numbers, check that it conforms to the expected format (e.g., using a regular expression).
+    - **Range:** For numerical data, check that it falls within an expected range.
+- [ ] **Use a schema validation library:** For complex inputs like JSON or XML, use a library (like Pydantic, JSON Schema, or Marshmallow) to define and enforce the structure of the incoming data.
 
-- [ ] Validate ALL input server-side (client-side is UX only)
-- [ ] Check type, length, format, and range for every input
-- [ ] Use schema validation libraries for complex structures
-- [ ] Set maximum length limits to prevent DoS
-- [ ] Use allowlists over denylists when possible
-- [ ] Configure request body size limits at framework level
-
-## Related Patterns
-
-- [sql-injection](../sql-injection/) - Enabled by missing validation
-- [xss](../xss/) - Enabled by missing validation
-- [path-traversal](../path-traversal/) - Enabled by missing validation
+## Related Security Patterns & Anti-Patterns
+Missing input validation is the root cause of most major vulnerability classes.
+- [SQL Injection Anti-Pattern](../sql-injection/)
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/)
+- [Command Injection Anti-Pattern](../command-injection/)
+- [Path Traversal Anti-Pattern](../path-traversal/)
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM05:2025 - Improper Output Handling](https://genai.owasp.org/llmrisk/llm05-improper-output-handling/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Input Validation Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html)
 - [CWE-20: Improper Input Validation](https://cwe.mitre.org/data/definitions/20.html)

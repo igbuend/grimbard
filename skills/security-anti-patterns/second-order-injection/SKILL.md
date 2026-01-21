@@ -1,133 +1,104 @@
 ---
-name: second-order-injection-anti-pattern
-description: Security anti-pattern for second-order injection vulnerabilities (CWE-89 variant). Use when generating or reviewing code that retrieves data from databases, caches, or storage and uses it in subsequent queries or commands. Detects trusted internal data used unsafely.
+name: "second-order-injection-anti-pattern"
+description: "Security anti-pattern for second-order injection vulnerabilities (CWE-89 variant). Use when generating or reviewing code that retrieves data from databases, caches, or storage and uses it in subsequent queries or commands. Detects trusted internal data used unsafely."
 ---
 
 # Second-Order Injection Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Second-order injection (also known as "stored injection") is a type of injection vulnerability where a malicious payload is first stored in a trusted data store (like a database or log file) and then retrieved and executed later in an insecure context. The initial storage might appear secure because the data is properly parameterized or escaped when it's first saved. However, when the data is later retrieved and used in a dynamic query or command without re-sanitization, the malicious payload is activated. This makes second-order injection particularly insidious and difficult to detect, as the injection point and the execution point are separated in time and often in different parts of the codebase.
 
-Second-order injection occurs when data is stored safely but used unsafely later. The initial storage uses parameterized queries (safe), but subsequent code retrieves and uses that data in dynamic queries (unsafe). This leads to:
+## The Anti-Pattern
+The anti-pattern is treating data retrieved from a "trusted" source (like your own database) as inherently safe, and then using it in a dynamic query or command without proper re-sanitization or parameterization.
 
-- Delayed exploitation (attack payload triggers later)
-- Bypassing input validation (data comes from "trusted" database)
-- Difficult detection (initial storage looks secure)
-- Background job compromise
+### BAD Code Example
+```python
+# VULNERABLE: Data is stored safely, but later retrieved and used unsafely.
+import sqlite3
 
-## BAD Pattern: Stored Data Used Unsafely
+db = sqlite3.connect("app.db")
+db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+db.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, action TEXT, user_email TEXT)")
 
-```pseudocode
-// VULNERABLE: Data stored safely but used unsafely later
+# Step 1: User Registration (Appears Safe)
+def register_user(name, email):
+    # This uses a parameterized query, so it's safe against direct SQL injection.
+    # Attacker's email input: "bad@example.com' UNION SELECT password FROM users -- "
+    # This input is safely stored as a string in the 'email' column.
+    db.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
+    db.commit()
 
-// Step 1: User creates profile (looks safe)
-FUNCTION create_profile(user_id, display_name):
-    // Parameterized - SAFE for initial storage
-    query = "INSERT INTO profiles (user_id, display_name) VALUES (?, ?)"
-    database.execute(query, [user_id, display_name])
-    // Attacker sets display_name = "admin'--"
-END FUNCTION
+# Step 2: Logging User Action (Later Use - VULNERABLE)
+def log_user_action(user_id, action):
+    # Retrieve user email from the database.
+    cursor = db.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+    user_email = cursor.fetchone()[0] # Assume we get "bad@example.com' UNION SELECT password FROM users -- "
 
-// Step 2: Background job uses stored data UNSAFELY
-FUNCTION generate_report_for_user(user_id):
-    // Get the stored display name
-    profile = database.execute("SELECT display_name FROM profiles WHERE user_id = ?", [user_id])
-    display_name = profile.display_name
-    // "admin'--" retrieved from database
+    # CRITICAL FLAW: The user_email is now concatenated into a new SQL query for logging.
+    # The application "trusts" the data because it came from its own database.
+    log_query = f"INSERT INTO logs (action, user_email) VALUES ('{action}', '{user_email}')"
 
-    // VULNERABLE: Trusting data from database
-    report_query = "INSERT INTO reports (title) VALUES ('Report for " + display_name + "')"
-    database.execute(report_query)
-    // Result: INSERT INTO reports (title) VALUES ('Report for admin'--')
-END FUNCTION
+    # The final query becomes:
+    # INSERT INTO logs (action, user_email) VALUES ('view_profile', 'bad@example.com' UNION SELECT password FROM users -- ')
+    # The attacker's injected SQL now runs, potentially exposing passwords or other sensitive data from the 'users' table.
+    db.execute(log_query)
+    db.commit()
+
+# Scenario:
+# 1. Attacker registers with a specially crafted email.
+# 2. Attacker performs an action that triggers the logging function.
+# 3. The malicious payload in the email is executed in the logging query.
 ```
 
-## BAD Pattern: Stored Procedure with Dynamic SQL
+### GOOD Code Example
+```python
+# SECURE: All data used in SQL queries is parameterized, regardless of its source.
+import sqlite3
 
-```pseudocode
-// VULNERABLE: Dynamic SQL inside stored procedure
+db = sqlite3.connect("app_safe.db")
+db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
+db.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, action TEXT, user_email TEXT)")
 
-// Stored Procedure Definition (in database)
-CREATE PROCEDURE search_users(search_term VARCHAR(100))
-BEGIN
-    // VULNERABLE: Dynamic SQL construction
-    SET @query = CONCAT('SELECT * FROM users WHERE name LIKE ''%', search_term, '%''');
-    PREPARE stmt FROM @query;
-    EXECUTE stmt;
-END
+# Step 1: User Registration (Safe)
+def register_user_safe(name, email):
+    db.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
+    db.commit()
 
-// Application code looks safe...
-FUNCTION search_users(term):
-    RETURN database.call_procedure("search_users", [term])
-    // But injection still occurs inside the procedure!
-END FUNCTION
+# Step 2: Logging User Action (Also Safe)
+def log_user_action_safe(user_id, action):
+    cursor = db.execute("SELECT email FROM users WHERE id = ?", (user_id,))
+    user_email = cursor.fetchone()[0]
+
+    # SECURE: Even though `user_email` came from the database, it is still treated
+    # as untrusted input and passed as a parameter to the INSERT query.
+    db.execute("INSERT INTO logs (action, user_email) VALUES (?, ?)", (action, user_email))
+    db.commit()
 ```
-
-## GOOD Pattern: Parameterize All Queries
-
-```pseudocode
-// SECURE: Parameterize ALL queries, even with "internal" data
-
-FUNCTION generate_report_for_user_safe(user_id):
-    profile = database.execute("SELECT display_name FROM profiles WHERE user_id = ?", [user_id])
-
-    // Still parameterize even though data is from database
-    report_query = "INSERT INTO reports (title) VALUES (?)"
-    title = "Report for " + profile.display_name
-    database.execute(report_query, [title])
-END FUNCTION
-
-// SECURE: Parameterized stored procedures
-CREATE PROCEDURE search_users_safe(search_term VARCHAR(100))
-BEGIN
-    // Use parameterization within procedure
-    SELECT * FROM users WHERE name LIKE CONCAT('%', search_term, '%');
-    // Or use prepared statement properly
-    SET @query = 'SELECT * FROM users WHERE name LIKE ?';
-    SET @search = CONCAT('%', search_term, '%');
-    PREPARE stmt FROM @query;
-    EXECUTE stmt USING @search;
-END
-```
-
-## Common Second-Order Scenarios
-
-| Scenario | Initial Store | Later Use |
-|----------|---------------|-----------|
-| User profile | Safe INSERT | Unsafe report generation |
-| Log entries | Safe log write | Unsafe log analysis query |
-| Configuration | Safe config save | Unsafe dynamic query building |
-| Cached data | Safe cache write | Unsafe cache value interpolation |
-| Message queues | Safe enqueue | Unsafe message processing |
 
 ## Detection
+- **Audit data flows:** Systematically track data from its entry point (user input) through its storage and subsequent retrieval and use.
+- **Identify dynamic query/command construction:** Look for any code that builds SQL queries, shell commands, or other interpretive language statements by concatenating strings that include variables whose values originated from user input, even if they were stored in a database.
+- **Review stored procedures:** If your application uses stored procedures, examine their definitions for any dynamic SQL that might use input parameters without proper escaping or parameterization.
+- **Consider background jobs/asynchronous tasks:** Pay special attention to components that process data in the background, as they might retrieve stored data and use it in new, insecure contexts.
 
-- Audit all code paths where database data is used in subsequent queries
-- Search for string concatenation using variables retrieved from database
-- Review stored procedures for dynamic SQL construction
-- Check background jobs and scheduled tasks for query building
-- Look for patterns where "internal" or "trusted" data sources are used in queries
+## Prevention
+- [ ] **Parameterize all queries:** This is the most crucial defense. Always use parameterized queries or prepared statements for *all* database interactions, regardless of whether the data comes directly from user input or from your own database.
+- [ ] **Never trust data:** Data retrieved from your own database, cache, or any other internal store should still be considered "tainted" if its ultimate origin was untrusted user input. Apply the same validation and sanitization rules as if it were fresh input.
+- [ ] **Use ORMs (Object-Relational Mappers) consistently:** When used correctly, ORMs help prevent injection by automatically parameterizing queries. Ensure you're not using any "raw query" features of your ORM that might bypass its built-in protections.
+- [ ] **Sanitize output before display:** While not directly preventing second-order injection, it's a good practice to escape data before rendering it in HTML or other contexts to prevent XSS.
 
-## Prevention Checklist
-
-- [ ] Parameterize ALL queries, including those using data from databases
-- [ ] Never trust data just because it came from your own database
-- [ ] Review stored procedures for dynamic SQL construction
-- [ ] Audit background jobs and async processors for injection points
-- [ ] Apply the same injection defenses to internal data flows
-- [ ] Use ORMs consistently throughout the application
-
-## Related Patterns
-
-- [sql-injection](../sql-injection/) - Primary injection pattern
-- [command-injection](../command-injection/) - Similar second-order risks
-- [log-injection](../log-injection/) - Log data can be second-order source
+## Related Security Patterns & Anti-Patterns
+- [SQL Injection Anti-Pattern](../sql-injection/): Second-order SQL injection is a variant of this fundamental vulnerability.
+- [Command Injection Anti-Pattern](../command-injection/): Similar second-order risks exist when data stored safely is later used in an insecure shell command.
+- [Log Injection Anti-Pattern](../log-injection/): Log files can be a vector for second-order attacks if logged data is later used in an insecure context (e.g., parsing logs with a vulnerable regex).
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Second Order SQL Injection](https://owasp.org/www-community/attacks/SQL_Injection)
-- [CWE-89: SQL Injection](https://cwe.mitre.org/data/definitions/89.html)
+- [CWE-89: Improper Neutralization of Special Elements used in an SQL Command ('SQL Injection')](https://cwe.mitre.org/data/definitions/89.html)
 - [CAPEC-66: SQL Injection](https://capec.mitre.org/data/definitions/66.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

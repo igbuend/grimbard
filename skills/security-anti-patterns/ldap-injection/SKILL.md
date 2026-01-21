@@ -1,120 +1,107 @@
 ---
-name: ldap-injection-anti-pattern
-description: Security anti-pattern for LDAP injection vulnerabilities (CWE-90). Use when generating or reviewing code that constructs LDAP filters, queries directory services, or handles user input in LDAP operations. Detects unescaped special characters in LDAP filters.
+name: "ldap-injection-anti-pattern"
+description: "Security anti-pattern for LDAP injection vulnerabilities (CWE-90). Use when generating or reviewing code that constructs LDAP filters, queries directory services, or handles user input in LDAP operations. Detects unescaped special characters in LDAP filters."
 ---
 
 # LDAP Injection Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+LDAP Injection is a vulnerability that occurs when user-provided input is insecurely inserted into an LDAP (Lightweight Directory Access Protocol) query. Similar to SQL injection, it allows an attacker to manipulate the query's logic by injecting special characters. A successful attack can lead to authentication bypass, unauthorized data access, privilege escalation, or disclosure of the directory service's structure.
 
-LDAP injection allows attackers to modify LDAP queries by injecting special characters, potentially bypassing authentication or accessing unauthorized data. This can lead to:
+## The Anti-Pattern
+The anti-pattern is building LDAP filters by directly concatenating unescaped user input. The special characters in the input can alter the structure of the LDAP filter, changing its intended meaning.
 
-- Authentication bypass
-- Unauthorized data access
-- Information disclosure about directory structure
-- Privilege escalation
+### BAD Code Example
+```python
+# VULNERABLE: Unescaped user input is concatenated into an LDAP filter.
+import ldap
 
-## BAD Pattern
+def find_user_by_name(ldap_connection, username):
+    # The username is directly inserted into the filter string.
+    # An attacker can inject special LDAP characters like '*', '(', ')', or '|'.
+    search_filter = f"(uid={username})"
 
-```pseudocode
-// VULNERABLE: Unescaped LDAP filters
-
-FUNCTION find_user_by_name(username):
-    // User input directly in LDAP filter
-    filter = "(uid=" + username + ")"
-    RETURN ldap.search("ou=users,dc=example,dc=com", filter)
-END FUNCTION
-
-FUNCTION authenticate_ldap(username, password):
-    // Both fields injectable
-    filter = "(&(uid=" + username + ")(userPassword=" + password + "))"
-    results = ldap.search(BASE_DN, filter)
-    RETURN results.count > 0
-END FUNCTION
-
-// Attack: username = "*)(uid=*))(|(uid=*"
-// Result: (uid=*)(uid=*))(|(uid=*)
-// This can return all users or bypass authentication
-
-// Attack: username = "*"
-// Result: (uid=*) - matches all users
+    # Attacker's input for `username`: 'admin*)(uid=*)'
+    # The resulting filter becomes: '(uid=admin*)(uid=*)'
+    # This can return unintended records or bypass security checks.
+    try:
+        results = ldap_connection.search_s(
+            "ou=users,dc=example,dc=com",
+            ldap.SCOPE_SUBTREE,
+            search_filter
+        )
+        return results
+    except ldap.LDAPError as e:
+        print(f"LDAP search failed: {e}")
+        return None
 ```
 
-## GOOD Pattern
+### GOOD Code Example
+```python
+# SECURE: Escape user input before including it in the filter.
+import ldap
+from ldap.filter import escape_filter_chars
 
-```pseudocode
-// SECURE: Escape LDAP special characters
+def find_user_by_name_safe(ldap_connection, username):
+    # All user-supplied input must be properly escaped to neutralize special characters.
+    # The `ldap.filter.escape_filter_chars` function handles this securely.
+    safe_username = escape_filter_chars(username)
+    search_filter = f"(uid={safe_username})"
 
-FUNCTION escape_ldap(input):
-    // Escape LDAP special characters: * ( ) \ NUL
-    result = input
-    result = result.replace("\\", "\\5c")  // Backslash first!
-    result = result.replace("*", "\\2a")
-    result = result.replace("(", "\\28")
-    result = result.replace(")", "\\29")
-    result = result.replace("\0", "\\00")
-    RETURN result
-END FUNCTION
+    # If the attacker tries the same input ('admin*)(uid=*)'), the escaped filter
+    # will become: '(uid=admin\2a\28uid=\2a\29)'
+    # This will search for a user with that literal, harmless name.
+    try:
+        results = ldap_connection.search_s(
+            "ou=users,dc=example,dc=com",
+            ldap.SCOPE_SUBTREE,
+            search_filter
+        )
+        return results
+    except ldap.LDAPError as e:
+        print(f"LDAP search failed: {e}")
+        return None
 
-FUNCTION find_user_by_name(username):
-    // Input is escaped before use
-    safe_username = escape_ldap(username)
-    filter = "(uid=" + safe_username + ")"
-    RETURN ldap.search("ou=users,dc=example,dc=com", filter)
-END FUNCTION
-
-FUNCTION authenticate_ldap(username, password):
-    // Better: Use LDAP bind for authentication instead of filter
-    user_dn = "uid=" + escape_ldap(username) + ",ou=users,dc=example,dc=com"
-
-    TRY:
-        connection = ldap.bind(user_dn, password)
-        connection.close()
-        RETURN TRUE
-    CATCH LDAPError:
-        RETURN FALSE
-    END TRY
-END FUNCTION
+# For authentication, it's even better to avoid search filters entirely and use the BIND operation.
+def authenticate_ldap_safe(username, password):
+    safe_username = escape_filter_chars(username)
+    user_dn = f"uid={safe_username},ou=users,dc=example,dc=com"
+    try:
+        # Attempt to bind to the directory as the user.
+        # This is the standard, secure way to verify credentials.
+        conn = ldap.initialize("ldap://ldap.example.com")
+        conn.simple_bind_s(user_dn, password)
+        conn.unbind_s()
+        return True # Bind successful, authentication passed.
+    except ldap.INVALID_CREDENTIALS:
+        return False # Bind failed, invalid credentials.
+    except ldap.LDAPError as e:
+        print(f"LDAP error: {e}")
+        return False
 ```
-
-## LDAP Special Characters
-
-Characters that must be escaped in LDAP filters:
-
-| Character | Hex Escape |
-|-----------|------------|
-| `*` | `\2a` |
-| `(` | `\28` |
-| `)` | `\29` |
-| `\` | `\5c` |
-| `NUL` | `\00` |
 
 ## Detection
+- **Review LDAP queries:** Look for any code that constructs LDAP search filters using string concatenation or formatting with user-controlled variables.
+- **Check for escaping:** Ensure that any variable being inserted into an LDAP filter is first passed through a proper LDAP escaping function.
+- **Search for LDAP query functions:** Identify all calls to functions like `ldap.search`, `search_s`, or similar methods in other languages, and trace the origin of the filter string.
+- **Test with special characters:** Input LDAP metacharacters like `*`, `(`, `)`, `\`, and `|` to see if they alter the query's behavior or cause an error.
 
-- Look for string concatenation in LDAP filter construction
-- Search for `ldap.search()`, `ldap.filter()`, or similar calls with user input
-- Check for unescaped `*`, `(`, `)`, or `\` in filter strings
-- Review authentication code that uses LDAP filters instead of bind
+## Prevention
+- [ ] **Always escape user input** before placing it in an LDAP filter. Use a trusted library function for this, such as `ldap.filter.escape_filter_chars` in Python.
+- [ ] **Use the BIND operation for authentication** instead of performing a search and comparing passwords. Binding is the intended mechanism for verifying credentials in LDAP.
+- [ ] **Use parameterized LDAP queries** if your library or framework supports them. This is the safest approach, as it separates the query structure from the data.
+- [ ] **Apply the Principle of Least Privilege** to the LDAP service account, ensuring it has read-only access to only the necessary parts of the directory.
 
-## Prevention Checklist
-
-- [ ] Escape all LDAP special characters in user input
-- [ ] Use LDAP bind for authentication instead of search filters
-- [ ] Validate input against allowlist of expected characters
-- [ ] Use parameterized LDAP queries if your library supports them
-- [ ] Apply principle of least privilege to LDAP service accounts
-
-## Related Patterns
-
-- [sql-injection](../sql-injection/) - Similar injection pattern for databases
-- [xpath-injection](../xpath-injection/) - Similar injection for XML queries
-- [missing-authentication](../missing-authentication/) - Often the target of LDAP injection
+## Related Security Patterns & Anti-Patterns
+- [SQL Injection Anti-Pattern](../sql-injection/): The same fundamental vulnerability of mixing code and data, but for SQL databases.
+- [XPath Injection Anti-Pattern](../xpath-injection/): A similar injection vulnerability targeting XML databases.
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): A root cause that enables many injection attacks.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM01:2025 - Prompt Injection](https://genai.owasp.org/llmrisk/llm01-prompt-injection/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP LDAP Injection Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/LDAP_Injection_Prevention_Cheat_Sheet.html)
 - [CWE-90: LDAP Injection](https://cwe.mitre.org/data/definitions/90.html)

@@ -1,180 +1,114 @@
 ---
-name: open-cors-anti-pattern
-description: Security anti-pattern for overly permissive CORS (CWE-346). Use when generating or reviewing code that configures CORS headers, handles cross-origin requests, or sets up API access policies. Detects wildcard origins and credential exposure risks.
+name: "open-cors-anti-pattern"
+description: "Security anti-pattern for open Cross-Origin Resource Sharing (CORS) policies (CWE-942). Use when generating or reviewing server configurations, API backends, or any code that sets CORS headers. Detects overly permissive Access-Control-Allow-Origin headers, including wildcard, null origin, and reflected origin."
 ---
 
-# Open CORS Anti-Pattern
+# Open CORS Policy Anti-Pattern
 
 **Severity:** Medium
 
-## Risk
+## Summary
+Cross-Origin Resource Sharing (CORS) is a browser security feature that controls how web pages from one domain can request resources from another domain. A misconfigured, overly permissive CORS policy is a common vulnerability. This anti-pattern occurs when a server responds with `Access-Control-Allow-Origin: *` or dynamically reflects the client's `Origin` header. This allows *any* website on the internet to make authenticated requests to your application on behalf of your users, potentially leading to data theft and unauthorized actions.
 
-Overly permissive CORS allows malicious websites to make authenticated requests to your API:
+## The Anti-Pattern
+The anti-pattern is configuring the `Access-Control-Allow-Origin` header to a value that is too permissive, such as the wildcard (`*`) or reflecting any value sent by the client in the `Origin` header.
 
-- Cross-site data theft
-- CSRF-like attacks
-- Credential leakage
-- Session hijacking via JavaScript
+### BAD Code Example
+```python
+# VULNERABLE: The server reflects any Origin header, or uses a wildcard with credentials.
+from flask import Flask, request, jsonify
 
-## BAD Pattern: Wildcard CORS
+app = Flask(__name__)
 
-```pseudocode
-// VULNERABLE: Allows any origin
+@app.after_request
+def add_cors_headers(response):
+    # DANGEROUS: Reflecting the Origin header.
+    # An attacker's site (https://evil.com) can now make requests.
+    origin = request.headers.get('Origin')
+    if origin:
+        response.headers['Access-Control-Allow-Origin'] = origin
 
-FUNCTION configure_cors():
-    // Allows ANY website to make requests
-    server.set_header("Access-Control-Allow-Origin", "*")
-    server.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-    server.set_header("Access-Control-Allow-Headers", "*")
-END FUNCTION
+    # DANGEROUS: Wildcard `*` combined with `Allow-Credentials`.
+    # Most browsers block this, but it's a critical misconfiguration.
+    # response.headers['Access-Control-Allow-Origin'] = '*'
+    # response.headers['Access-Control-Allow-Credentials'] = 'true'
 
-// Problem: evil.com can now call your API from user's browser
+    return response
+
+@app.route("/api/user/profile")
+def get_profile():
+    # This endpoint is intended to be called by your frontend application.
+    # It relies on the user's session cookie for authentication.
+    user = get_user_from_session()
+    return jsonify(user.to_dict())
+
+# Attack Scenario:
+# 1. A logged-in user of your site visits https://evil.com.
+# 2. A script on evil.com makes a `fetch` request to `https://yourapp.com/api/user/profile`.
+# 3. Because of the permissive CORS policy, the browser allows this request,
+#    and importantly, it attaches the user's session cookie.
+# 4. Your server receives a valid, authenticated request and responds with the user's sensitive profile data.
+# 5. The script on evil.com now has the user's data and can send it to the attacker.
 ```
 
-## BAD Pattern: Credentials with Wildcard
+### GOOD Code Example
+```python
+# SECURE: Maintain a strict allowlist of trusted origins.
+from flask import Flask, request, jsonify
 
-```pseudocode
-// VULNERABLE: Wildcard with credentials (browser will reject, but shows misunderstanding)
+app = Flask(__name__)
 
-FUNCTION configure_cors_broken():
-    // This combination is invalid and dangerous intent
-    server.set_header("Access-Control-Allow-Origin", "*")
-    server.set_header("Access-Control-Allow-Credentials", "true")
+# Define a strict allowlist of origins that are permitted to access your API.
+ALLOWED_ORIGINS = {
+    "https://www.yourapp.com",
+    "https://yourapp.com",
+    "https://staging.yourapp.com"
+}
 
-    // If you "fix" by reflecting origin, you create a bigger problem
-END FUNCTION
+@app.after_request
+def add_secure_cors_headers(response):
+    origin = request.headers.get('Origin')
+    if origin in ALLOWED_ORIGINS:
+        # Only set the header if the origin is in the trusted list.
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        # Vary header tells caches that the response depends on the Origin.
+        response.headers['Vary'] = 'Origin'
+    return response
+
+@app.route("/api/user/profile")
+def get_profile_secure():
+    user = get_user_from_session()
+    return jsonify(user.to_dict())
+
+# Now, when a script from https://evil.com tries to make a request,
+# the `origin` is not in the `ALLOWED_ORIGINS` set, so no CORS headers are sent.
+# The browser's same-origin policy blocks the request, protecting the user's data.
 ```
-
-## BAD Pattern: Reflecting Origin Without Validation
-
-```pseudocode
-// VULNERABLE: Reflects any origin - same as wildcard but allows credentials
-
-FUNCTION handle_request(request):
-    origin = request.get_header("Origin")
-
-    // Reflects whatever origin is sent - allows ANY site
-    response.set_header("Access-Control-Allow-Origin", origin)
-    response.set_header("Access-Control-Allow-Credentials", "true")
-
-    // evil.com can now make authenticated requests!
-END FUNCTION
-```
-
-## GOOD Pattern: Allowlist of Origins
-
-```pseudocode
-// SECURE: Only allow specific trusted origins
-
-CONSTANT ALLOWED_ORIGINS = [
-    "https://myapp.com",
-    "https://www.myapp.com",
-    "https://admin.myapp.com"
-]
-
-FUNCTION handle_cors(request, response):
-    origin = request.get_header("Origin")
-
-    IF origin IN ALLOWED_ORIGINS:
-        response.set_header("Access-Control-Allow-Origin", origin)
-        response.set_header("Access-Control-Allow-Credentials", "true")
-        response.set_header("Access-Control-Allow-Methods", "GET, POST, PUT")
-        response.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.set_header("Access-Control-Max-Age", "86400")
-    END IF
-
-    // If origin not in allowlist, don't set CORS headers
-    // Browser will block the request
-END FUNCTION
-
-// Handle preflight OPTIONS requests
-FUNCTION handle_preflight(request, response):
-    origin = request.get_header("Origin")
-
-    IF origin IN ALLOWED_ORIGINS:
-        response.set_header("Access-Control-Allow-Origin", origin)
-        response.set_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE")
-        response.set_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-        response.set_header("Access-Control-Max-Age", "86400")
-        RETURN response_with_status(204)
-    END IF
-
-    RETURN response_with_status(403)
-END FUNCTION
-```
-
-## GOOD Pattern: Dynamic Origin Validation
-
-```pseudocode
-// SECURE: Validate origin against patterns
-
-FUNCTION is_valid_origin(origin):
-    IF origin IS NULL:
-        RETURN FALSE
-    END IF
-
-    // Parse origin
-    TRY:
-        parsed = url_parse(origin)
-    CATCH:
-        RETURN FALSE
-    END TRY
-
-    // Must be HTTPS in production
-    IF environment == "production" AND parsed.protocol != "https:":
-        RETURN FALSE
-    END IF
-
-    // Check against allowed domains
-    allowed_domains = ["myapp.com", "mycompany.com"]
-
-    FOR domain IN allowed_domains:
-        IF parsed.host == domain OR parsed.host.ends_with("." + domain):
-            RETURN TRUE
-        END IF
-    END FOR
-
-    RETURN FALSE
-END FUNCTION
-```
-
-## CORS Headers Reference
-
-| Header | Purpose | Secure Value |
-|--------|---------|--------------|
-| `Access-Control-Allow-Origin` | Allowed origins | Specific origin, not `*` |
-| `Access-Control-Allow-Credentials` | Allow cookies | `true` only with specific origin |
-| `Access-Control-Allow-Methods` | Allowed methods | Only needed methods |
-| `Access-Control-Allow-Headers` | Allowed headers | Specific list |
-| `Access-Control-Max-Age` | Preflight cache | `86400` (24 hours) |
 
 ## Detection
+- **Use browser developer tools:** Open the "Network" tab, make a cross-origin request to your API, and inspect the response headers. Look for `Access-Control-Allow-Origin`. Is it `*`? Does it match the `Origin` of your request even if that origin is untrusted?
+- **Use `curl`:** Make a request and set a custom `Origin` header to see if the server reflects it:
+  `curl -H "Origin: https://evil.com" -I https://yourapp.com/api/some-endpoint`
+  Check if the response contains `Access-Control-Allow-Origin: https://evil.com`.
+- **Review CORS configuration:** Check your application's code or framework configuration for how CORS headers are being set. Look for wildcards or reflected origins.
 
-- Search for `Access-Control-Allow-Origin: *`
-- Look for origin reflection without validation
-- Check for credentials enabled with permissive origins
-- Review CORS middleware configuration
+## Prevention
+- [ ] **Maintain a strict allowlist** of trusted origins. This is the most critical step.
+- [ ] **Never reflect the user-provided `Origin` header** without validating it against the allowlist first.
+- [ ] **Do not use the wildcard (`*`)** for `Access-Control-Allow-Origin` on any endpoint that requires authentication (e.g., uses cookies or `Authorization` headers). A wildcard is only safe for truly public, unauthenticated resources.
+- [ ] **Set `Access-Control-Allow-Credentials` to `true`** only when necessary and only for origins on your allowlist.
+- [ ] **Add the `Vary: Origin` header** to tell caches that the response is origin-dependent. This prevents a cached response intended for a trusted origin from being served to a malicious one.
 
-## Prevention Checklist
-
-- [ ] Use explicit allowlist of trusted origins
-- [ ] Never use wildcard `*` with credentials
-- [ ] Validate origins against allowlist, not blocklist
-- [ ] Use HTTPS for all allowed origins in production
-- [ ] Restrict allowed methods to what's needed
-- [ ] Set reasonable preflight cache duration
-- [ ] Log rejected CORS requests for monitoring
-
-## Related Patterns
-
-- [missing-security-headers](../missing-security-headers/) - Related header configuration
-- [missing-authentication](../missing-authentication/) - CORS with auth
+## Related Security Patterns & Anti-Patterns
+- [Missing Security Headers Anti-Pattern](../missing-security-headers/): CORS is a key part of the broader suite of security headers an application must manage.
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): An attacker could use a permissive CORS policy to exfiltrate data stolen via an XSS attack.
 
 ## References
-
 - [OWASP Top 10 A02:2025 - Security Misconfiguration](https://owasp.org/Top10/2025/A02_2025-Security_Misconfiguration/)
+- [OWASP GenAI LLM07:2025 - System Prompt Leakage](https://genai.owasp.org/llmrisk/llm07-system-prompt-leakage/)
 - [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
-- [CWE-346: Origin Validation Error](https://cwe.mitre.org/data/definitions/346.html)
-- [CAPEC-111: JSON Hijacking](https://capec.mitre.org/data/definitions/111.html)
-- [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
+- [OWASP CORS Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Origin_Resource_Sharing_Cheat_Sheet.html)
+- [CWE-942: Permissive Cross-domain Policy with Untrusted Domains](https://cwe.mitre.org/data/definitions/942.html)
+- [PortSwigger - CORS Vulnerabilities](https://portswigger.net/web-security/cors)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

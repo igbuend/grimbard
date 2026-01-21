@@ -1,153 +1,113 @@
 ---
-name: missing-rate-limiting-anti-pattern
-description: Security anti-pattern for missing rate limiting (CWE-770). Use when generating or reviewing API endpoints, authentication systems, or public-facing services. Detects absence of request throttling enabling brute force, credential stuffing, and DoS attacks.
+name: "missing-rate-limiting-anti-pattern"
+description: "Security anti-pattern for missing rate limiting (CWE-770). Use when generating or reviewing API endpoints, authentication systems, or public-facing services. Detects absence of request throttling enabling brute force, credential stuffing, and DoS attacks."
 ---
 
 # Missing Rate Limiting Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Missing rate limiting is a vulnerability where an application fails to restrict the number of times an action can be performed within a given timeframe. This allows an attacker to make an unlimited number of requests to a specific endpoint, which can be abused for various attacks. The most common abuses include brute-forcing credentials on a login page, scraping sensitive data from an API, or causing a denial-of-service (DoS) by overwhelming the application with resource-intensive requests.
 
-Missing rate limiting allows attackers to abuse endpoints without restriction:
+## The Anti-Pattern
+The anti-pattern is exposing any endpoint—especially authentication or resource-intensive ones—to the internet without any mechanism to control how frequently it can be called by a single user or IP address.
 
-- Brute force password attacks
-- Credential stuffing
-- API abuse and scraping
-- Denial of service
-- Resource exhaustion
+### BAD Code Example
+```python
+# VULNERABLE: The login endpoint has no rate limiting.
+from flask import request, jsonify
 
-## BAD Pattern: No Rate Limiting
+@app.route("/api/login", methods=["POST"])
+def login():
+    username = request.form.get("username")
+    password = request.form.get("password")
 
-```pseudocode
-// VULNERABLE: Unlimited requests allowed
+    # This endpoint can be called thousands of times per minute from the same IP address.
+    # An attacker can use a password list to perform a brute-force or credential stuffing attack,
+    # trying millions of passwords against a single user account until they find the right one.
+    if check_credentials(username, password):
+        return jsonify({"status": "success", "token": generate_token(username)})
+    else:
+        return jsonify({"status": "failed"}), 401
 
-FUNCTION login(request):
-    username = request.body.username
-    password = request.body.password
-
-    // No rate limiting - attackers can try unlimited passwords
-    user = database.find_user(username)
-    IF user AND bcrypt.verify(password, user.password_hash):
-        RETURN {success: TRUE, token: generate_token(user)}
-    END IF
-
-    RETURN {success: FALSE, error: "Invalid credentials"}
-END FUNCTION
-
-FUNCTION api_search(request):
-    query = request.params.q
-
-    // No rate limiting - enables scraping and DoS
-    results = database.search(query)
-    RETURN results
-END FUNCTION
+# Another example: A search endpoint without rate limiting.
+@app.route("/api/search")
+def search():
+    query = request.args.get("q")
+    # An attacker could write a script to rapidly hit this endpoint, scraping all
+    # the site's data or causing a DoS by making the database do heavy work.
+    results = perform_complex_search(query)
+    return jsonify(results)
 ```
 
-## GOOD Pattern: IP and Account Rate Limiting
+### GOOD Code Example
+```python
+# SECURE: Implement rate limiting using middleware and a tracking backend like Redis.
+from flask import request, jsonify
+from redis import Redis
+from functools import wraps
 
-```pseudocode
-// SECURE: Multiple rate limiting layers
+redis = Redis()
 
-FUNCTION login(request):
-    client_ip = request.get_client_ip()
-    username = request.body.username
+def rate_limit(limit, per, scope_func):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            key = f"rate-limit:{scope_func(request)}:{request.endpoint}"
+            # Increment the count for the current key.
+            # Set it to expire after `per` seconds on the first request in the window.
+            p = redis.pipeline()
+            p.incr(key)
+            p.expire(key, per)
+            count = p.execute()[0]
 
-    // Layer 1: IP-based rate limiting
-    IF is_ip_rate_limited(client_ip, limit=10, window=900):
-        log.warning("IP rate limited", {ip: client_ip})
-        RETURN error_response(429, "Too many attempts, try again later")
-    END IF
+            if count > limit:
+                return jsonify({"error": "Rate limit exceeded"}), 429 # 429 Too Many Requests
 
-    // Layer 2: Account-based rate limiting
-    IF is_account_rate_limited(username, limit=5, window=300):
-        log.warning("Account rate limited", {username: username})
-        RETURN error_response(429, "Account temporarily locked")
-    END IF
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
-    user = database.find_user(username)
-    IF user IS NULL OR NOT bcrypt.verify(password, user.password_hash):
-        record_failed_attempt(client_ip, username)
-        RETURN {success: FALSE, error: "Invalid credentials"}
-    END IF
+# Define a function to get the identifier for the rate limit scope (e.g., IP address).
+def get_ip(request):
+    return request.remote_addr
 
-    clear_rate_limit(client_ip, username)
-    RETURN {success: TRUE, token: generate_token(user)}
-END FUNCTION
+# Apply different rate limits to different endpoints.
+@app.route("/api/login", methods=["POST"])
+@rate_limit(limit=10, per=60*5, scope_func=get_ip) # 10 requests per 5 minutes per IP.
+def login_secure():
+    # ... login logic ...
+    pass
 
-// Rate limiting implementation
-FUNCTION is_ip_rate_limited(ip, limit, window):
-    key = "rate_limit:ip:" + ip
-    count = redis.incr(key)
-
-    IF count == 1:
-        redis.expire(key, window)
-    END IF
-
-    RETURN count > limit
-END FUNCTION
+@app.route("/api/search")
+@rate_limit(limit=100, per=60, scope_func=get_ip) # 100 requests per minute per IP.
+def search_secure():
+    # ... search logic ...
+    pass
 ```
-
-## Rate Limiting Algorithms
-
-| Algorithm | Description | Use Case |
-|-----------|-------------|----------|
-| Fixed Window | Count per time window | Simple, memory efficient |
-| Sliding Window | Smooth rate over time | More accurate |
-| Token Bucket | Burst + sustained rate | API rate limiting |
-| Leaky Bucket | Constant output rate | Traffic smoothing |
-
-## Common Rate Limits
-
-| Endpoint | Suggested Limit |
-|----------|-----------------|
-| Login | 5-10 per 15 minutes per IP |
-| Password reset | 3 per hour per email |
-| API calls | 100-1000 per hour per key |
-| Registration | 5 per hour per IP |
-| File upload | 10 per hour per user |
 
 ## Detection
+- **Review public endpoints:** Examine all endpoints that can be accessed without authentication. Do they have rate limiting?
+- **Check authentication endpoints:** Specifically look at login, password reset, and registration endpoints. These are prime targets for brute-force attacks if not rate-limited.
+- **Analyze API design:** For public APIs, check if there is a documented rate-limiting policy (e.g., in the API documentation).
+- **Perform testing:** Write a simple script to hit a single endpoint in a tight loop. If you don't receive a `429 Too Many Requests` status code after a certain number of attempts, the endpoint is likely missing rate limiting.
 
-- Look for endpoints without rate limiting middleware
-- Search for authentication code without attempt tracking
-- Check for APIs without request quotas
-- Review for missing 429 (Too Many Requests) responses
+## Prevention
+- [ ] **Implement IP-based rate limiting** on all public-facing endpoints, especially authentication and other sensitive ones.
+- [ ] **Implement user/account-based rate limiting** for authenticated users to prevent a single user from abusing the system.
+- [ ] **Use an appropriate algorithm:** Common choices are Token Bucket, Leaky Bucket, or Fixed/Sliding Window counters. Most modern web frameworks have middleware or libraries for this.
+- [ ] **Return a `429 Too Many Requests` status code** when a limit is exceeded. Include a `Retry-After` header to tell the client when they can try again.
+- [ ] **Log rate limit violations:** This can help you identify and respond to potential attacks.
+- [ ] **For login endpoints, consider account lockouts** after a certain number of failed attempts as an additional layer of defense.
 
-## Prevention Checklist
-
-- [ ] Implement IP-based rate limiting for all public endpoints
-- [ ] Add account-based rate limiting for authentication
-- [ ] Use progressive delays/lockouts for repeated failures
-- [ ] Set API quotas based on authentication level
-- [ ] Return 429 status code with Retry-After header
-- [ ] Log rate limit violations for security monitoring
-- [ ] Consider CAPTCHA after rate limit threshold
-
-## Response Headers
-
-```pseudocode
-// Include rate limit information in responses
-
-FUNCTION add_rate_limit_headers(response, limit, remaining, reset):
-    response.set_header("X-RateLimit-Limit", limit)
-    response.set_header("X-RateLimit-Remaining", remaining)
-    response.set_header("X-RateLimit-Reset", reset)
-
-    IF remaining == 0:
-        response.set_header("Retry-After", reset - current_time())
-    END IF
-END FUNCTION
-```
-
-## Related Patterns
-
-- [missing-authentication](../missing-authentication/) - Auth-specific rate limiting
-- [missing-input-validation](../missing-input-validation/) - Input size limits
+## Related Security Patterns & Anti-Patterns
+- [Missing Authentication Anti-Pattern](../missing-authentication/): Endpoints that are missing authentication are at even greater risk if they also lack rate limiting.
+- [Denial of Service (DoS):](../#) Missing rate limiting is a primary cause of application-layer DoS vulnerabilities.
 
 ## References
-
 - [OWASP Top 10 A06:2025 - Insecure Design](https://owasp.org/Top10/2025/A06_2025-Insecure_Design/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API4:2023 - Unrestricted Resource Consumption](https://owasp.org/API-Security/editions/2023/en/0xa4-unrestricted-resource-consumption/)
 - [OWASP Rate Limiting](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html)
 - [CWE-770: Resource Allocation Without Limits](https://cwe.mitre.org/data/definitions/770.html)

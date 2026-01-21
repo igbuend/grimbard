@@ -1,183 +1,96 @@
 ---
-name: encoding-bypass-anti-pattern
-description: Security anti-pattern for encoding bypass vulnerabilities (CWE-838). Use when generating or reviewing code that handles URL encoding, Unicode normalization, or character set conversions before security validation. Detects validation before normalization and double-encoding issues.
+name: "encoding-bypass-anti-pattern"
+description: "Security anti-pattern for encoding bypass vulnerabilities (CWE-838). Use when generating or reviewing code that handles URL encoding, Unicode normalization, or character set conversions before security validation. Detects validation before normalization and double-encoding issues."
 ---
 
 # Encoding Bypass Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Encoding bypass vulnerabilities occur when an application's security checks can be evaded by using alternate or multiple encodings for malicious input. This anti-pattern typically happens when data is validated *before* it is fully decoded or normalized. An attacker can submit a payload that appears safe in its encoded form but becomes malicious after the application processes it. This can lead to the bypass of web application firewalls (WAFs), input filters, and other security mechanisms, enabling attacks like XSS and SQL Injection.
 
-Encoding bypass attacks exploit the order of operations between encoding/decoding and security validation. When validation happens before normalization, attackers can sneak malicious payloads through using alternate encodings. This leads to:
+## The Anti-Pattern
+The core of this anti-pattern is a flawed order of operations: **Validate then Decode/Normalize**. Security checks are performed on encoded or non-canonical data, and the application later uses a decoded or normalized version of that same data, re-introducing the vulnerability.
 
-- WAF and filter bypass
-- Injection attacks through encoded payloads
-- XSS through character encoding tricks
-- Authentication bypass via Unicode confusables
+### BAD Code Example
+```python
+# VULNERABLE: Validation happens before Unicode normalization.
+import unicodedata
 
-## BAD Pattern: Double-Encoding Bypass
+def is_safe_username(username):
+    # This check is flawed because it doesn't account for Unicode variants.
+    if '<' in username or '>' in username:
+        return False
+    return True
 
-```pseudocode
-// VULNERABLE: Double-encoding bypasses single decode + validation
+def create_user_profile(username):
+    if not is_safe_username(username):
+        raise ValueError("Invalid characters in username.")
 
-FUNCTION search_with_filter(term):
-    // Application URL-decodes once
-    decoded = url_decode(term)  // %2527 -> %27
+    # The application later normalizes the username for display or storage.
+    # The full-width less-than sign '＜' (U+FF1C) was not caught by the check.
+    # It gets normalized into the standard '<' (U+003C), enabling XSS.
+    normalized_username = unicodedata.normalize('NFKC', username)
 
-    // WAF or validation sees %27, not single quote
-    IF contains_dangerous_chars(decoded):
-        THROW ValidationError("Invalid characters")
-    END IF
+    # This will render the malicious script tag.
+    return f"<div>Welcome, {normalized_username}</div>"
 
-    // Later, another decode happens (framework, database driver, etc.)
-    // %27 -> '
-
-    query = "SELECT * FROM items WHERE name = '" + decoded + "'"
-    // Injection succeeds with original input: %2527 (double-encoded ')
-END FUNCTION
+# Attacker's input: '＜script＞alert(1)＜/script＞'
+# is_safe_username returns True.
+# The normalized output becomes '<div>Welcome, <script>alert(1)</script></div>'
 ```
 
-## BAD Pattern: Validation Before Unicode Normalization
+### GOOD Code Example
+```python
+# SECURE: Normalize then validate.
+import unicodedata
 
-```pseudocode
-// VULNERABLE: Unicode normalization happens AFTER validation
+def is_safe_username(username):
+    # This check is now effective because it runs on the canonical form of the input.
+    if '<' in username or '>' in username:
+        return False
+    return True
 
-FUNCTION filter_username(username):
-    // Check for dangerous characters
-    IF "'" IN username OR '"' IN username:
-        THROW ValidationError("Invalid characters")
-    END IF
+def create_user_profile(username):
+    # First, normalize the input to its canonical form.
+    normalized_username = unicodedata.normalize('NFKC', username)
 
-    // VULNERABLE: Unicode normalization happens AFTER validation
-    normalized = unicode_normalize(username)
-    // 'ʼ' (U+02BC MODIFIER LETTER APOSTROPHE) might normalize to "'" (U+0027)
-    // 'ＡＢＣ' (fullwidth) normalizes to 'ABC'
+    # Then, perform the security validation on the normalized data.
+    if not is_safe_username(normalized_username):
+        raise ValueError("Invalid characters in username.")
 
-    query = "SELECT * FROM users WHERE username = '" + normalized + "'"
-    // Attack: username = "adminʼ--" bypasses check, normalizes to "admin'--"
-END FUNCTION
+    # Now it's safe to use the normalized username.
+    return f"<div>Welcome, {normalized_username}</div>"
 ```
-
-## BAD Pattern: Character Set Confusion
-
-```pseudocode
-// VULNERABLE: Mixed character set handling
-
-FUNCTION process_input(request):
-    // Input declared as UTF-8 but actually contains Latin-1
-    input = request.body  // Browser sends mixed encoding
-
-    // Validation assumes UTF-8
-    IF NOT is_valid_utf8(input):
-        // Might skip validation or misinterpret bytes
-        input = force_utf8(input)  // Lossy conversion
-    END IF
-
-    // Dangerous characters may slip through encoding confusion
-    RETURN process(input)
-END FUNCTION
-```
-
-## GOOD Pattern: Parameterization Makes Encoding Irrelevant
-
-```pseudocode
-// SECURE: Parameterization - encoding doesn't matter
-
-FUNCTION search_safe(term):
-    // Encoding doesn't matter - it's just data
-    query = "SELECT * FROM items WHERE name = ?"
-    RETURN database.execute(query, [term])
-END FUNCTION
-```
-
-## GOOD Pattern: Normalize Then Validate
-
-```pseudocode
-// SECURE: Validate AFTER all normalization
-
-FUNCTION filter_username_safe(username):
-    // Step 1: Decode all encodings first
-    decoded = url_decode(username)
-
-    // Step 2: Normalize Unicode
-    normalized = unicode_normalize(decoded, form="NFC")
-
-    // Step 3: Convert to consistent character set
-    canonical = to_ascii_safe(normalized)  // or validate UTF-8
-
-    // Step 4: THEN validate
-    IF NOT is_valid_username_chars(canonical):
-        THROW ValidationError("Invalid characters")
-    END IF
-
-    // Step 5: Use with parameterization anyway
-    query = "SELECT * FROM users WHERE username = ?"
-    RETURN database.execute(query, [canonical])
-END FUNCTION
-```
-
-## GOOD Pattern: Strict Encoding Validation
-
-```pseudocode
-// SECURE: Reject ambiguous encodings entirely
-
-FUNCTION process_input_safe(request):
-    // Enforce strict UTF-8
-    IF NOT is_strict_utf8(request.body):
-        THROW ValidationError("Invalid encoding - must be UTF-8")
-    END IF
-
-    // Reject overlong encodings (UTF-8 attack vector)
-    IF contains_overlong_encoding(request.body):
-        THROW ValidationError("Invalid UTF-8 encoding")
-    END IF
-
-    // Now safe to process
-    RETURN process(request.body)
-END FUNCTION
-```
-
-## Common Encoding Bypass Techniques
-
-| Technique | Example | Decoded |
-|-----------|---------|---------|
-| URL encoding | `%27` | `'` |
-| Double URL encoding | `%2527` | `%27` -> `'` |
-| Unicode | `\u0027` | `'` |
-| HTML entities | `&#39;` or `&#x27;` | `'` |
-| Overlong UTF-8 | `%c0%a7` | `/` (invalid encoding) |
-| Fullwidth | `'` (U+FF07) | May normalize to `'` |
-| Homoglyphs | `ʼ` (U+02BC) | Looks like `'` |
 
 ## Detection
+- **Review the order of operations:** Check if security validation (e.g., checking for bad characters, path traversal patterns) occurs before or after decoding (e.g., URL decoding, Base64 decoding) and normalization (e.g., Unicode normalization).
+- **Test with multiple encodings:** Send payloads with various encodings to see if they bypass filters. Common techniques include:
+    - **URL encoding:** `%3c` for `<`
+    - **Double URL encoding:** `%253c` for `<`
+    - **Unicode escape sequences:** `\u003c` for `<`
+    - **HTML entities:** `&#60;` for `<`
+    - **Full-width and other Unicode variants:** `＜` (U+FF1C) for `<`
+- Look for places where data is decoded more than once in the request pipeline.
 
-- Test with various encoded payloads (`%27`, `%2527`, Unicode variants)
-- Check if validation happens before or after decoding/normalization
-- Look for multiple decode operations in the request pipeline
-- Review character set handling and conversion code
-- Test with homoglyphs and Unicode confusables
+## Prevention
+- [ ] **Normalize/decode before validation:** Always bring data to its simplest, canonical form before performing any security checks on it.
+- [ ] **Use parameterized queries (for SQL)** and other safe APIs that handle encoding internally. This is the best defense against injection attacks.
+- [ ] **Enforce strict character encoding** for all input (e.g., reject any data that is not valid UTF-8).
+- [ ] **Be aware of implicit decoding** performed by your web framework or libraries and ensure your validation logic runs after it.
+- [ ] **Canonicalize paths** and URLs before validating them to prevent path traversal attacks.
 
-## Prevention Checklist
-
-- [ ] Always normalize/decode BEFORE validation
-- [ ] Use parameterized queries (makes encoding irrelevant for SQL)
-- [ ] Enforce strict character encoding (reject invalid UTF-8)
-- [ ] Canonicalize paths and URLs before validation
-- [ ] Be aware of framework auto-decoding behavior
-- [ ] Test with double-encoded and Unicode payloads
-- [ ] Consider using allowlists for acceptable characters
-
-## Related Patterns
-
-- [sql-injection](../sql-injection/) - Primary target of encoding bypass
-- [xss](../xss/) - XSS through encoding tricks
-- [path-traversal](../path-traversal/) - Path encoding bypass
-- [unicode-security](../unicode-security/) - Related Unicode issues
+## Related Security Patterns & Anti-Patterns
+- [SQL Injection Anti-Pattern](../sql-injection/): A common goal of encoding bypass attacks.
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): Often enabled by bypassing filters with encoded payloads.
+- [Path Traversal Anti-Pattern](../path-traversal/): Can be achieved by using encoded representations of `../`.
+- [Unicode Security Anti-Pattern](../unicode-security/): A collection of issues related to handling Unicode securely.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM05:2025 - Improper Output Handling](https://genai.owasp.org/llmrisk/llm05-improper-output-handling/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [OWASP Testing for HTTP Incoming Requests](https://owasp.org/www-project-web-security-testing-guide/)
 - [CWE-838: Inappropriate Encoding for Output Context](https://cwe.mitre.org/data/definitions/838.html)
 - [CAPEC-267: Leverage Alternate Encoding](https://capec.mitre.org/data/definitions/267.html)

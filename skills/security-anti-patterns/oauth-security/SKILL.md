@@ -1,220 +1,115 @@
 ---
-name: oauth-security-anti-pattern
-description: Security anti-pattern for OAuth implementation vulnerabilities (CWE-352, CWE-287). Use when generating or reviewing OAuth/OIDC authentication flows, state parameter handling, or token exchange. Detects missing CSRF protection and insecure redirect handling.
+name: "oauth-security-anti-pattern"
+description: "Security anti-pattern for OAuth implementation vulnerabilities (CWE-352, CWE-287). Use when generating or reviewing OAuth/OIDC authentication flows, state parameter handling, or token exchange. Detects missing CSRF protection and insecure redirect handling."
 ---
 
 # OAuth Security Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+OAuth 2.0 and OpenID Connect (OIDC) are powerful standards for delegated authentication and authorization, but they are complex and easy to misconfigure. This anti-pattern covers one of the most critical and common mistakes: **failing to properly implement and validate the `state` parameter**. The `state` parameter is the primary defense against Cross-Site Request Forgery (CSRF) attacks during an OAuth flow. A missing or predictable `state` parameter allows an attacker to trick a victim into logging into the attacker's account, potentially leading to account takeover.
 
-OAuth implementations frequently contain CSRF vulnerabilities, predictable state parameters, and missing validations. AI-generated code often produces minimal OAuth flows missing critical security controls. This leads to:
+## The Anti-Pattern
+The anti-pattern is initiating an OAuth flow without a `state` parameter, or using one that is predictable or not validated upon the user's return to the application.
 
-- Account takeover via CSRF
-- Authorization code interception
-- Session fixation through OAuth
-- Token theft and replay
+### BAD Code Example
+```python
+# VULNERABLE: The OAuth flow is initiated without a `state` parameter.
+from flask import request, redirect
 
-## BAD Pattern: Missing State Parameter
+OAUTH_PROVIDER_URL = "https://provider.com/auth"
+CLIENT_ID = "my-client-id"
+CALLBACK_URL = "https://myapp.com/callback"
 
-```pseudocode
-// VULNERABLE: No state parameter - CSRF possible
+@app.route("/login/provider")
+def oauth_login():
+    # The application redirects the user to the OAuth provider.
+    # CRITICAL FLAW: There is no `state` parameter to prevent CSRF.
+    auth_url = (f"{OAUTH_PROVIDER_URL}?client_id={CLIENT_ID}"
+                f"&redirect_uri={CALLBACK_URL}&response_type=code")
+    return redirect(auth_url)
 
-FUNCTION initiate_oauth_vulnerable():
-    redirect_url = OAUTH_PROVIDER_URL +
-        "?client_id=" + CLIENT_ID +
-        "&redirect_uri=" + CALLBACK_URL +
-        "&scope=email profile"
-    RETURN redirect(redirect_url)
-END FUNCTION
-
-// Attack: Attacker initiates OAuth flow, gets callback URL
-// Tricks victim into visiting callback URL
-// Victim's account linked to attacker's OAuth identity
+@app.route("/callback")
+def oauth_callback():
+    # The user is redirected back here from the provider.
+    # The application receives the authorization code but has no way to verify
+    # if this callback corresponds to a flow the user actually initiated.
+    auth_code = request.args.get("code")
+    # The application proceeds to exchange the code for tokens and logs the user in.
+    # An attacker can exploit this to link the victim's session to their (the attacker's) account.
+    access_token = exchange_code_for_token(auth_code)
+    log_user_in(access_token)
+    return "Logged in successfully!"
 ```
+**Attack Scenario:**
+1.  Attacker starts an OAuth flow with their own account at the provider.
+2.  The provider redirects the attacker back to `https://myapp.com/callback?code=ATTACKER_CODE`.
+3.  The attacker intercepts this request and pauses it. They now have a valid callback URL containing an authorization code for their own account.
+4.  The attacker tricks the victim (who is already logged into `myapp.com`) into visiting this malicious URL.
+5.  `myapp.com` receives the callback, takes the `ATTACKER_CODE`, and associates the victim's session with the attacker's provider account. The victim's account is now linked to the attacker's identity.
 
-## BAD Pattern: Predictable State
+### GOOD Code Example
+```python
+# SECURE: A unique, unpredictable `state` is generated, stored in the session, and validated on callback.
+from flask import request, redirect, session
+import secrets
 
-```pseudocode
-// VULNERABLE: Predictable state parameter
+@app.route("/login/provider/secure")
+def oauth_login_secure():
+    # 1. Generate a cryptographically random, unpredictable value for `state`.
+    state = secrets.token_urlsafe(32)
+    # 2. Store this value in the user's session.
+    session['oauth_state'] = state
 
-FUNCTION initiate_oauth_weak_state():
-    state = to_string(current_timestamp())  // Predictable!
-    // Or: state = md5(user_id)  // Also predictable
-    // Or: state = session_id  // Reusable across sessions
+    auth_url = (f"{OAUTH_PROVIDER_URL}?client_id={CLIENT_ID}"
+                f"&redirect_uri={CALLBACK_URL}&response_type=code"
+                f"&state={state}") # 3. Send the state to the provider.
+    return redirect(auth_url)
 
-    store_state(state)
-    redirect_url = OAUTH_PROVIDER_URL +
-        "?client_id=" + CLIENT_ID +
-        "&state=" + state +
-        "&redirect_uri=" + CALLBACK_URL
-    RETURN redirect(redirect_url)
-END FUNCTION
+@app.route("/callback/secure")
+def oauth_callback_secure():
+    # 4. The provider returns the `state` value in the callback.
+    received_state = request.args.get("state")
+    auth_code = request.args.get("code")
+
+    # 5. CRITICAL VALIDATION: Check that the returned state matches the one from the session.
+    stored_state = session.pop('oauth_state', None)
+    if stored_state is None or not secrets.compare_digest(stored_state, received_state):
+        return "Invalid state parameter. CSRF attack detected.", 403
+
+    # If the state is valid, it's safe to proceed.
+    access_token = exchange_code_for_token(auth_code)
+    log_user_in(access_token)
+    return "Logged in successfully!"
 ```
-
-## BAD Pattern: State Not Validated
-
-```pseudocode
-// VULNERABLE: State parameter ignored on callback
-
-FUNCTION handle_callback_vulnerable(request):
-    code = request.query.code
-    // state parameter completely ignored!
-
-    tokens = exchange_code_for_tokens(code)
-    RETURN login_with_tokens(tokens)
-END FUNCTION
-```
-
-## BAD Pattern: State Reuse
-
-```pseudocode
-// VULNERABLE: State not invalidated after use
-
-FUNCTION handle_callback_reuse_vulnerable(request):
-    code = request.query.code
-    state = request.query.state
-
-    IF is_valid_state(state):  // Just checks existence
-        // State NOT deleted - can be reused!
-        tokens = exchange_code_for_tokens(code)
-        RETURN login_with_tokens(tokens)
-    END IF
-
-    RETURN error("Invalid state")
-END FUNCTION
-```
-
-## GOOD Pattern: Complete OAuth Implementation
-
-```pseudocode
-// SECURE: Full OAuth with all protections
-
-FUNCTION initiate_oauth_secure(request):
-    // Generate cryptographically random state
-    state = generate_secure_random(32)
-
-    // Bind state to user's session (CSRF protection)
-    request.session.oauth_state = state
-    request.session.oauth_state_created_at = current_timestamp()
-
-    // Include nonce for ID token validation (OIDC)
-    nonce = generate_secure_random(32)
-    request.session.oauth_nonce = nonce
-
-    redirect_url = OAUTH_PROVIDER_URL +
-        "?client_id=" + CLIENT_ID +
-        "&response_type=code" +
-        "&redirect_uri=" + url_encode(CALLBACK_URL) +
-        "&scope=" + url_encode("openid email profile") +
-        "&state=" + state +
-        "&nonce=" + nonce
-
-    RETURN redirect(redirect_url)
-END FUNCTION
-
-FUNCTION handle_callback_secure(request):
-    code = request.query.code
-    state = request.query.state
-    error = request.query.error
-
-    // Check for OAuth error
-    IF error:
-        log_oauth_error(error, request.query.error_description)
-        RETURN redirect("/login?error=oauth_failed")
-    END IF
-
-    // Validate state exists
-    IF NOT state:
-        RETURN error("Missing state parameter")
-    END IF
-
-    stored_state = request.session.oauth_state
-    state_created_at = request.session.oauth_state_created_at
-
-    // Constant-time comparison prevents timing attacks
-    IF NOT constant_time_equals(state, stored_state):
-        log_security_event("OAuth state mismatch", request)
-        RETURN error("Invalid state")
-    END IF
-
-    // Check state expiry (5 minutes max)
-    IF current_timestamp() - state_created_at > 300:
-        RETURN error("OAuth session expired")
-    END IF
-
-    // Clear state immediately (one-time use)
-    DELETE request.session.oauth_state
-    DELETE request.session.oauth_state_created_at
-
-    // Exchange code for tokens
-    token_response = exchange_code_for_tokens(code, CALLBACK_URL)
-
-    IF NOT token_response.id_token:
-        RETURN error("Missing ID token")
-    END IF
-
-    // Validate ID token including nonce
-    id_token = verify_id_token(token_response.id_token, {
-        audience: CLIENT_ID,
-        nonce: request.session.oauth_nonce
-    })
-
-    DELETE request.session.oauth_nonce
-
-    IF NOT id_token.valid:
-        RETURN error("Invalid ID token")
-    END IF
-
-    // Create authenticated session
-    user = find_or_create_user_from_oauth(id_token.payload)
-    create_authenticated_session(request, user)
-
-    RETURN redirect("/dashboard")
-END FUNCTION
-```
-
-## OAuth Security Checklist
-
-| Check | Requirement |
-|-------|-------------|
-| State parameter | Cryptographically random, session-bound |
-| State validation | Constant-time comparison |
-| State lifetime | Short expiry (5-10 minutes) |
-| State usage | Single-use, deleted after callback |
-| Nonce (OIDC) | Random, verified in ID token |
-| Redirect URI | Exact match, not pattern |
-| PKCE | Required for public clients |
 
 ## Detection
+- **Trace the OAuth flow:** Start at the point where your application redirects to the OAuth provider.
+    - Is a `state` parameter being generated?
+    - Is it cryptographically random and unpredictable?
+- **Examine the callback endpoint:**
+    - Does it retrieve the `state` from the incoming request?
+    - Does it compare it to a value stored in the user's session *before* the redirect?
+    - Is the comparison done in constant time (`hmac.compare_digest`) to prevent timing attacks?
+    - Is the state value single-use (i.e., deleted from the session after being checked)?
 
-- Search for OAuth redirects without state parameter
-- Check if state is validated on callback
-- Look for predictable state generation (timestamps, hashes of user data)
-- Verify state is deleted after successful use
-- Check for PKCE implementation in SPAs/mobile apps
+## Prevention
+- [ ] **Always use a `state` parameter** in your OAuth/OIDC authorization requests.
+- [ ] **Generate a cryptographically random string** for the `state` value (at least 32 characters). Do not use predictable values like a user ID or timestamp.
+- [ ] **Bind the `state` value to the user's current session** by storing it in a session cookie before redirecting the user.
+- [ ] **On the callback, strictly compare** the `state` parameter from the request with the value stored in the session. Reject the request if they do not match.
+- [ ] **Make the `state` value single-use.** Once it has been validated, immediately remove it from the session to prevent replay attacks.
+- [ ] **For public clients (SPAs, mobile apps), use the PKCE** (Proof Key for Code Exchange) extension in addition to the `state` parameter.
 
-## Prevention Checklist
-
-- [ ] Generate cryptographically random state (32+ bytes)
-- [ ] Bind state to user session
-- [ ] Validate state with constant-time comparison
-- [ ] Delete state after single use
-- [ ] Set short expiry for state (5-10 minutes)
-- [ ] Use PKCE for public clients (SPAs, mobile apps)
-- [ ] Validate redirect_uri exactly matches registered URI
-- [ ] Verify ID token nonce for OIDC flows
-
-## Related Patterns
-
-- [session-fixation](../session-fixation/) - OAuth can cause session fixation
-- [missing-authentication](../missing-authentication/) - OAuth is authentication
-- [insufficient-randomness](../insufficient-randomness/) - State generation
+## Related Security Patterns & Anti-Patterns
+- [Session Fixation Anti-Pattern](../session-fixation/): A successful OAuth CSRF attack is a form of session fixation.
+- [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): The `state` parameter must be generated with a cryptographically secure random number generator.
+- [Missing Authentication Anti-Pattern](../missing-authentication/): OAuth is a form of authentication, and its flows must be implemented correctly to be secure.
 
 ## References
-
 - [OWASP Top 10 A07:2025 - Authentication Failures](https://owasp.org/Top10/2025/A07_2025-Authentication_Failures/)
+- [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP OAuth Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/OAuth_Cheat_Sheet.html)
 - [CWE-352: Cross-Site Request Forgery](https://cwe.mitre.org/data/definitions/352.html)

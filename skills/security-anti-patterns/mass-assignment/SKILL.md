@@ -1,181 +1,114 @@
 ---
-name: mass-assignment-anti-pattern
-description: Security anti-pattern for mass assignment vulnerabilities (CWE-915). Use when generating or reviewing code that creates or updates objects from user input, form handling, or API request processing. Detects uncontrolled property binding enabling privilege escalation.
+name: "mass-assignment-anti-pattern"
+description: "Security anti-pattern for mass assignment vulnerabilities (CWE-915). Use when generating or reviewing code that creates or updates objects from user input, form handling, or API request processing. Detects uncontrolled property binding enabling privilege escalation."
 ---
 
 # Mass Assignment Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Mass assignment (also known as "autobinding") is a vulnerability that occurs when a web framework automatically binds incoming HTTP request parameters to variables or objects in the application's code. This is a convenient feature, but it becomes a vulnerability when an attacker can inject and set properties they are not supposed to control. The most common example is an attacker submitting a request with a field like `"isAdmin": true` and having the application blindly save it, escalating their privileges.
 
-Mass assignment allows attackers to modify object properties they shouldn't have access to by adding extra fields to requests:
+## The Anti-Pattern
+The anti-pattern is directly using a dictionary of user-provided data to create or update a database model without first filtering for allowed properties.
 
-- Privilege escalation (setting `is_admin: true`)
-- Price manipulation (setting `price: 0`)
-- Account takeover (changing `user_id` or `email`)
-- Bypassing business logic
+### BAD Code Example
+```python
+# VULNERABLE: The incoming request data is used directly to update the user model.
+from flask import request
+from db import User, session
 
-## BAD Pattern: Direct Object Assignment
+@app.route("/api/users/me", methods=["POST"])
+def update_profile():
+    # Assume user is already authenticated.
+    user = get_current_user()
 
-```pseudocode
-// VULNERABLE: All request fields assigned to object
+    # Attacker crafts a JSON body:
+    # {
+    #   "email": "new.email@example.com",
+    #   "is_admin": true
+    # }
+    request_data = request.get_json()
 
-FUNCTION create_user(request):
-    // Attacker sends: {"username": "john", "is_admin": true}
-    user = new User(request.body)  // is_admin gets set!
-    database.save(user)
-    RETURN user
-END FUNCTION
+    # Many ORMs allow updating an object from a dictionary.
+    # If the User model has an `is_admin` property, it will be updated here.
+    for key, value in request_data.items():
+        setattr(user, key, value) # Direct, unsafe assignment.
 
-FUNCTION update_order(request):
-    order_id = request.params.id
-    order = database.find_order(order_id)
+    session.commit()
+    return {"message": "Profile updated."}
 
-    // Attacker sends: {"status": "shipped", "total_price": 0}
-    order.update(request.body)  // Price modified!
-    database.save(order)
-    RETURN order
-END FUNCTION
+# The attacker has just made themselves an administrator.
 ```
 
-## GOOD Pattern: Explicit Field Allowlist
+### GOOD Code Example
+```python
+# SECURE: Use a Data Transfer Object (DTO) or an explicit allowlist to control which fields can be updated.
+from flask import request
+from db import User, session
 
-```pseudocode
-// SECURE: Only allowed fields can be set
+# Option 1: Use an allowlist of fields.
+ALLOWED_UPDATE_FIELDS = {"email", "first_name", "last_name"}
 
-CONSTANT USER_ALLOWED_FIELDS = ["username", "email", "password", "avatar"]
-CONSTANT ORDER_UPDATE_FIELDS = ["shipping_address", "notes"]
+@app.route("/api/users/me", methods=["POST"])
+def update_profile_allowlist():
+    user = get_current_user()
+    request_data = request.get_json()
 
-FUNCTION create_user(request):
-    // Only pick allowed fields
-    user_data = pick(request.body, USER_ALLOWED_FIELDS)
+    for key, value in request_data.items():
+        # Only update the attribute if it's in our explicit allowlist.
+        if key in ALLOWED_UPDATE_FIELDS:
+            setattr(user, key, value)
 
-    // Explicitly set defaults for sensitive fields
-    user = new User(user_data)
-    user.is_admin = FALSE  // Always false on creation
-    user.role = "user"     // Always default role
+    session.commit()
+    return {"message": "Profile updated."}
 
-    database.save(user)
-    RETURN user
-END FUNCTION
 
-FUNCTION update_order(request):
-    order_id = request.params.id
-    order = database.find_order(order_id)
+# Option 2 (Better): Use a DTO or schema to define and validate the input.
+from pydantic import BaseModel, EmailStr
 
-    // Authorization check
-    IF order.user_id != request.authenticated_user.id:
-        RETURN error_response(403, "Not your order")
-    END IF
+class UserUpdateDTO(BaseModel):
+    # This class defines the *only* fields that can be submitted.
+    # The `is_admin` field is not here, so it can't be set by the user.
+    email: EmailStr
+    first_name: str
+    last_name: str
 
-    // Only allow specific fields to be updated
-    update_data = pick(request.body, ORDER_UPDATE_FIELDS)
-    order.update(update_data)
+@app.route("/api/users/me/dto", methods=["POST"])
+def update_profile_dto():
+    user = get_current_user()
+    try:
+        # Pydantic will raise a validation error if extra fields like `is_admin` are present.
+        update_data = UserUpdateDTO(**request.get_json())
+    except ValidationError as e:
+        return {"error": str(e)}, 400
 
-    database.save(order)
-    RETURN order
-END FUNCTION
-
-FUNCTION pick(object, allowed_keys):
-    result = {}
-    FOR key IN allowed_keys:
-        IF key IN object:
-            result[key] = object[key]
-        END IF
-    END FOR
-    RETURN result
-END FUNCTION
+    user.email = update_data.email
+    user.first_name = update_data.first_name
+    user.last_name = update_data.last_name
+    session.commit()
+    return {"message": "Profile updated."}
 ```
-
-## BAD Pattern: Blocklist Approach
-
-```pseudocode
-// VULNERABLE: Blocklist is incomplete and error-prone
-
-CONSTANT BLOCKED_FIELDS = ["is_admin", "role"]
-
-FUNCTION update_user(request):
-    // New sensitive fields get forgotten
-    // What about: "admin", "administrator", "isAdmin", "permissions"?
-    update_data = omit(request.body, BLOCKED_FIELDS)
-    user.update(update_data)
-END FUNCTION
-```
-
-## GOOD Pattern: Strong Typing with DTOs
-
-```pseudocode
-// SECURE: DTOs define exactly what can be set
-
-CLASS CreateUserDTO:
-    FIELDS:
-        username: String, required, max_length=50
-        email: String, required, format=email
-        password: String, required, min_length=12
-
-    // No is_admin, role, or other sensitive fields
-END CLASS
-
-CLASS UpdateUserDTO:
-    FIELDS:
-        email: String, optional, format=email
-        avatar_url: String, optional, format=url
-
-    // Cannot update username, role, etc.
-END CLASS
-
-FUNCTION create_user(request):
-    // Validate and parse only defined fields
-    dto = CreateUserDTO.parse(request.body)
-
-    user = new User()
-    user.username = dto.username
-    user.email = dto.email
-    user.password_hash = bcrypt.hash(dto.password)
-    user.is_admin = FALSE  // Set explicitly
-    user.role = "user"     // Set explicitly
-
-    database.save(user)
-    RETURN UserResponseDTO.from(user)
-END FUNCTION
-```
-
-## Common Mass Assignment Targets
-
-| Field | Attack |
-|-------|--------|
-| `is_admin`, `admin`, `role` | Privilege escalation |
-| `price`, `amount`, `total` | Financial manipulation |
-| `user_id`, `owner_id` | Ownership takeover |
-| `verified`, `active` | Status bypass |
-| `created_at`, `updated_at` | Log tampering |
-| `password_hash` | Direct password change |
 
 ## Detection
+- **Review update/create logic:** Look for any code that takes a user-provided dictionary or object (`request.body`, `params`, etc.) and uses it to directly populate a model (e.g., `user.update(params)`, `new User(params)`).
+- **Check for "allowlists" vs. "blocklists":** Code that tries to *remove* bad keys (a blocklist, e.g., `del params['is_admin']`) is insecure. A new sensitive property could be added to the model later and forgotten in the blocklist. Secure code uses an *allowlist* to only accept known-good keys.
+- **Test API endpoints:** Send requests to `POST` or `PUT` endpoints with extra, unauthorized fields in the JSON body (e.g., `is_admin`, `role`, `account_balance`) and see if the values are reflected in the API's response or the database.
 
-- Look for `Model(request.body)` or `Model(**request)` patterns
-- Search for `.update(request.body)` or `.assign(params)`
-- Check for missing field allowlists in create/update operations
-- Review for blocklist approaches (omit instead of pick)
+## Prevention
+- [ ] **Use an allowlist approach:** Never use a blocklist to filter incoming data. Always use an allowlist of properties that are permitted to be set by the user.
+- [ ] **Use Data Transfer Objects (DTOs)** or dedicated input schemas to strictly define the expected request body. This is the most robust solution.
+- [ ] **Set sensitive properties explicitly** in your code, outside of any mass assignment operation (e.g., `new_user.is_admin = False`).
+- [ ] **Be aware of framework features:** Some frameworks have built-in protections against mass assignment. Understand how to use them correctly.
 
-## Prevention Checklist
-
-- [ ] Use explicit field allowlists (never blocklists)
-- [ ] Define DTOs for each create/update operation
-- [ ] Set sensitive fields explicitly in code
-- [ ] Use strong typing to define allowed properties
-- [ ] Validate input against schema before assignment
-- [ ] Different DTOs for different user roles
-
-## Related Patterns
-
-- [excessive-data-exposure](../excessive-data-exposure/) - Output equivalent
-- [missing-authentication](../missing-authentication/) - Authorization checks
+## Related Security Patterns & Anti-Patterns
+- [Excessive Data Exposure Anti-Pattern](../excessive-data-exposure/): The inverse of mass assignment. Instead of accepting too much data, the application returns too much data.
+- [Missing Authentication Anti-Pattern](../missing-authentication/): If an endpoint is also missing proper authentication, mass assignment becomes even more dangerous, as an unauthenticated user could modify any object.
 
 ## References
-
 - [OWASP Top 10 A01:2025 - Broken Access Control](https://owasp.org/Top10/2025/A01_2025-Broken_Access_Control/)
+- [OWASP GenAI LLM06:2025 - Excessive Agency](https://genai.owasp.org/llmrisk/llm06-excessive-agency/)
 - [OWASP API Security API3:2023 - Broken Object Property Level Authorization](https://owasp.org/API-Security/editions/2023/en/0xa3-broken-object-property-level-authorization/)
 - [OWASP Mass Assignment](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
 - [CWE-915: Mass Assignment](https://cwe.mitre.org/data/definitions/915.html)

@@ -1,171 +1,93 @@
 ---
-name: length-extension-attacks-anti-pattern
-description: Security anti-pattern for hash length extension vulnerabilities (CWE-328). Use when generating or reviewing code that uses hash(secret + message) for authentication, API signatures, or integrity verification. Detects Merkle-Damgard hash misuse.
+name: "length-extension-attacks-anti-pattern"
+description: "Security anti-pattern for hash length extension vulnerabilities (CWE-328). Use when generating or reviewing code that uses hash(secret + message) for authentication, API signatures, or integrity verification. Detects Merkle-Damgard hash misuse."
 ---
 
 # Length Extension Attacks Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+A hash length extension attack is a cryptographic vulnerability that affects certain hash functions, including MD5, SHA-1, and SHA-256. The vulnerability stems from their internal structure (the Merkle-Damgård construction). If an attacker knows the hash of `secret + message` and the length of the `secret`, they can calculate the hash of `secret + message + padding + attacker_data` *without knowing the secret itself*. This allows them to append data to a signed message and generate a valid new signature, completely breaking the integrity and authentication of the message.
 
-Length extension attacks exploit Merkle-Damgard hash constructions (MD5, SHA-1, SHA-256) where knowing `hash(secret + message)` and the length of `secret` allows computing `hash(secret + message + padding + attacker_data)` without knowing the secret. This leads to:
+## The Anti-Pattern
+The anti-pattern is using a vulnerable hash function (like SHA-256) in the construction `hash(secret + message)` to create a message authentication code (MAC).
 
-- Authentication token forgery
-- API signature bypass
-- Parameter tampering
-- Integrity check bypass
+### BAD Code Example
+```python
+# VULNERABLE: Using hash(secret + message) for a message signature.
+import hashlib
 
-## How Length Extension Works
+SECRET_KEY = b"my_super_secret_key_16b" # 16 bytes long
 
-```pseudocode
-// The vulnerability:
-// Given: hash(secret + message) and length(secret)
-// Attacker can compute: hash(secret + message + padding + anything)
-// Without knowing the secret!
+def get_signed_url(message):
+    # The signature is created by prepending the secret to the message and hashing.
+    # This is vulnerable to length extension.
+    signature = hashlib.sha256(SECRET_KEY + message.encode()).hexdigest()
+    return f"/api/action?{message}&signature={signature}"
 
-// Example attack scenario:
-// Original: hash(secret + "amount=100") = abc123...
-// Server verifies: compute hash(secret + params), compare to provided hash
+def verify_request(message, signature):
+    expected_signature = hashlib.sha256(SECRET_KEY + message.encode()).hexdigest()
+    return signature == expected_signature
 
-// Attacker:
-// 1. Knows hash value: abc123...
-// 2. Knows message: "amount=100"
-// 3. Guesses secret length (try 8, 16, 32 bytes)
-// 4. Computes: hash(secret + "amount=100" + padding + "&amount=999")
-// 5. Server computes same hash (secret included), verification passes!
-// 6. Server processes amount=999 (last parameter wins)
+# 1. A legitimate URL is generated:
+#    Message: "user=alice&action=view"
+#    URL: /api/action?user=alice&action=view&signature=...
+
+# 2. An attacker intercepts this URL. They know the signature and the message.
+#    They don't know the SECRET_KEY, but they can guess its length (16 bytes).
+
+# 3. Using a tool like `hashpump`, the attacker can compute a new, valid signature for an extended message.
+#    Original Message: "user=alice&action=view"
+#    Extended Message: "user=alice&action=view" + padding + "&action=delete&target=bob"
+#    The tool generates a new signature and the new message string including the padding.
+
+# 4. The server receives the forged request, recomputes the hash of `SECRET_KEY + extended_message`,
+#    and finds that it matches the attacker's new signature. The delete action is processed.
 ```
 
-## BAD Pattern: hash(secret + message)
+### GOOD Code Example
+```python
+# SECURE: Use HMAC (Hash-based Message Authentication Code).
+import hmac
+import hashlib
 
-```pseudocode
-// VULNERABLE: Using hash(secret + message) for authentication
+SECRET_KEY = b"my_super_secret_key_16b"
 
-FUNCTION create_auth_token(secret_key, message):
-    RETURN sha256(secret_key + message)  // Length extension vulnerable!
-END FUNCTION
+def get_signed_url_secure(message):
+    # HMAC is specifically designed to prevent length extension attacks.
+    # It uses a two-step hashing process: hash(key XOR opad, hash(key XOR ipad, message))
+    signature = hmac.new(SECRET_KEY, message.encode(), hashlib.sha256).hexdigest()
+    return f"/api/action?{message}&signature={signature}"
 
-FUNCTION verify_auth_token(secret_key, message, token):
-    expected = sha256(secret_key + message)
-    RETURN token == expected
-END FUNCTION
+def verify_request_secure(message, signature):
+    expected_signature = hmac.new(SECRET_KEY, message.encode(), hashlib.sha256).hexdigest()
+    # Use hmac.compare_digest for constant-time comparison to prevent timing attacks.
+    return hmac.compare_digest(signature, expected_signature)
 
-// Attack example:
-// User requests: /api?user=alice&role=user
-// Server creates: token = sha256(secret + "user=alice&role=user")
-
-// Attacker extends: hash(secret + "user=alice&role=user" + padding + "&role=admin")
-// Sends: /api?user=alice&role=user[padding]&role=admin
-// With forged token that validates!
+# An attacker cannot extend an HMAC-signed message because they don't know the secret key.
+# The inner hash `hash(key XOR ipad, message)` prevents them from being able
+# to continue the hash chain.
 ```
-
-## BAD Pattern: API Request Signing
-
-```pseudocode
-// VULNERABLE: API signature using hash(key + params)
-
-FUNCTION sign_request(api_key, params):
-    param_string = sort_and_join(params)
-    signature = sha256(api_key + param_string)
-    RETURN signature
-END FUNCTION
-
-FUNCTION verify_request(api_key, params, signature):
-    expected = sha256(api_key + param_string(params))
-    RETURN signature == expected  // Vulnerable to extension!
-END FUNCTION
-
-// Attacker can append parameters to signed request
-```
-
-## GOOD Pattern: Use HMAC
-
-```pseudocode
-// SECURE: HMAC prevents length extension
-
-FUNCTION create_auth_token_secure(secret_key, message):
-    RETURN HMAC_SHA256(secret_key, message)
-END FUNCTION
-
-FUNCTION verify_auth_token_secure(secret_key, message, token):
-    expected = HMAC_SHA256(secret_key, message)
-    RETURN constant_time_equals(token, expected)
-END FUNCTION
-
-// HMAC construction: hash(key XOR opad || hash(key XOR ipad || message))
-// This structure prevents length extension attacks
-```
-
-## GOOD Pattern: hash(message + secret)
-
-```pseudocode
-// ACCEPTABLE: Reversing order prevents extension
-// (But HMAC is still recommended)
-
-FUNCTION create_token_reversed(secret_key, message):
-    // Attacker cannot extend because secret is at the end
-    RETURN sha256(message + secret_key)
-END FUNCTION
-
-// Note: This is NOT as robust as HMAC
-// Still vulnerable to other attacks in some scenarios
-// Always prefer HMAC
-```
-
-## GOOD Pattern: Use SHA-3
-
-```pseudocode
-// SECURE: SHA-3 is resistant to length extension
-
-FUNCTION create_token_sha3(secret_key, message):
-    // SHA-3 uses sponge construction, not Merkle-Damgard
-    // Inherently resistant to length extension
-    RETURN SHA3_256(secret_key + message)
-END FUNCTION
-
-// Still, HMAC is the standard for keyed authentication
-// Use HMAC for consistency across algorithms
-```
-
-## Vulnerable vs Resistant Algorithms
-
-| Algorithm | Vulnerable | Notes |
-|-----------|------------|-------|
-| MD5 | Yes | Merkle-Damgard |
-| SHA-1 | Yes | Merkle-Damgard |
-| SHA-256 | Yes | Merkle-Damgard |
-| SHA-512 | Yes | Merkle-Damgard |
-| SHA-3 | No | Sponge construction |
-| BLAKE2 | No | Different construction |
-| HMAC-* | No | Designed to prevent this |
 
 ## Detection
+- **Review code:** Look for any instance where a message signature or MAC is created by concatenating a secret *at the beginning* of a message and then hashing it with MD5, SHA-1, or SHA-256. The pattern is `hash(secret + data)`.
+- **Check for vulnerable hash functions:** Identify which hash algorithms are being used. If you see MD5, SHA-1, or SHA-2 (SHA-224, SHA-256, SHA-384, SHA-512) used for signing, check the construction.
+- **Use cryptographic analysis tools:** Some advanced static analysis tools can identify weak cryptographic constructions.
 
-- Search for `hash(secret + message)` or `hash(key + data)` patterns
-- Look for SHA-256/SHA-1/MD5 used directly with secret prefix
-- Check API signature implementations
-- Review authentication token generation
-- Look for integrity checks using simple hashing
+## Prevention
+- [ ] **Use HMAC:** Always use HMAC for creating message authentication codes. HMAC is the industry standard and is implemented in the standard library of most modern languages. It is specifically designed to be immune to length extension attacks.
+- [ ] **Choose a secure hash function:** Use HMAC with a strong hash function like SHA-256 or SHA-3.
+- [ ] **Do not roll your own cryptography:** Avoid creating custom signing schemes like `hash(message + secret)` or `hash(secret + message + secret)`. While some might be safe from this specific attack, they may have other flaws. Stick to the standard: HMAC.
+- [ ] **If you cannot use HMAC**, use a hash function that is not vulnerable to length extension, such as SHA-3 or BLAKE2. However, HMAC is still the preferred and most widely supported solution.
 
-## Prevention Checklist
-
-- [ ] Use HMAC for all keyed authentication
-- [ ] Never use hash(secret + message) construction
-- [ ] Use constant-time comparison for verification
-- [ ] If using SHA-3, still prefer HMAC for consistency
-- [ ] Document which hash constructions are used where
-- [ ] Audit legacy code for vulnerable patterns
-
-## Related Patterns
-
-- [weak-encryption](../weak-encryption/) - Related crypto issues
-- [timing-attacks](../timing-attacks/) - Comparison timing
-- [insufficient-randomness](../insufficient-randomness/) - Secret generation
+## Related Security Patterns & Anti-Patterns
+- [Weak Encryption Anti-Pattern](../weak-encryption/): Part of the broader category of cryptographic failures.
+- [Timing Attacks Anti-Pattern](../timing-attacks/): When verifying signatures, it's important to use a constant-time comparison function to avoid leaking information through timing differences.
 
 ## References
-
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [CWE-328: Reversible One-Way Hash](https://cwe.mitre.org/data/definitions/328.html)
 - [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
 - [Length Extension Attack (Wikipedia)](https://en.wikipedia.org/wiki/Length_extension_attack)

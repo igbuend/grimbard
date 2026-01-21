@@ -1,165 +1,112 @@
 ---
-name: timing-attacks-anti-pattern
-description: Security anti-pattern for timing side-channel vulnerabilities (CWE-208). Use when generating or reviewing code that compares secrets, tokens, passwords, or cryptographic values. Detects early-exit comparisons that leak information through timing differences.
+name: "timing-attacks-anti-pattern"
+description: "Security anti-pattern for timing side-channel vulnerabilities (CWE-208). Use when generating or reviewing code that compares secrets, tokens, passwords, or cryptographic values. Detects early-exit comparisons that leak information through timing differences."
 ---
 
 # Timing Attacks Anti-Pattern
 
 **Severity:** Medium
 
-## Risk
+## Summary
+A timing attack is a side-channel attack where an attacker observes the time it takes for a cryptographic operation or a secret comparison to complete. If an application's code for comparing a secret (like a password or an API key) stops as soon as it finds a mismatch, it leaks information. For example, comparing `ABCDEF` to `ABCDEG` will take slightly longer than comparing `ABCDEF` to `XBCDEF` because more characters are compared before a mismatch is found. An attacker can use these minute timing differences to guess the secret character by character, eventually recovering the entire secret.
 
-Timing attacks exploit measurable time differences in operations to extract secret information. When comparing secrets, early-exit comparisons reveal how many characters matched before failure. This leads to:
+## The Anti-Pattern
+The anti-pattern is using a comparison function that returns early upon finding a difference when comparing two sensitive values (e.g., passwords, tokens, cryptographic hashes).
 
-- Token/password character-by-character extraction
-- API key discovery
-- HMAC bypass
-- Authentication bypass through incremental guessing
+### BAD Code Example
+```python
+# VULNERABLE: Naive string comparison that leaks timing information.
+import time
 
-## BAD Pattern: Early-Exit String Comparison
+def insecure_compare(s1, s2):
+    # This comparison function exits as soon as a mismatch is found.
+    # If s1 and s2 differ at the first character, it returns quickly.
+    # If they differ at the last character, it takes longer.
+    if len(s1) != len(s2):
+        return False
+    for i in range(len(s1)):
+        if s1[i] != s2[i]:
+            return False # Early exit.
+        # Adding a small, consistent delay here might make the timing difference more apparent
+        # for an attacker, but doesn't fix the fundamental flaw.
+        # time.sleep(0.000001)
+    return True
 
-```pseudocode
-// VULNERABLE: Early return reveals password length information
+SECRET_TOKEN = "abcdef123456" # This is the secret the attacker wants to guess.
 
-FUNCTION verify_password_vulnerable(input, stored):
-    IF length(input) != length(stored):
-        RETURN FALSE  // Fast return reveals length mismatch
-    END IF
+@app.route("/check_token")
+def check_token():
+    provided_token = request.args.get("token")
+    if insecure_compare(provided_token, SECRET_TOKEN):
+        return "Token valid!"
+    return "Token invalid!"
 
-    FOR i = 0 TO length(input) - 1:
-        IF input[i] != stored[i]:
-            RETURN FALSE  // Fast return reveals first different character
-        END IF
-    END FOR
-
-    RETURN TRUE
-END FUNCTION
-
-// Attack: Time difference reveals character position
-// Wrong first char: ~10ms
-// Wrong second char: ~11ms (one more comparison)
-// Attacker guesses character by character
+# Attacker's strategy:
+# 1. Guess the first character: 'a', 'b', 'c', etc.
+#    - Request `/check_token?token=X` -> very fast response.
+#    - Request `/check_token?token=a` -> slightly slower response (first char matches).
+# 2. Once 'a' is confirmed, guess the second: 'ab', 'ac', etc.
+#    - Request `/check_token?token=aX` -> slightly slower than 'X'.
+#    - Request `/check_token?token=ab` -> even slower (first two chars match).
+# This allows the attacker to discover the secret character by character.
 ```
 
-## BAD Pattern: Standard String Equality
+### GOOD Code Example
+```python
+# SECURE: Use a constant-time comparison function that always takes the same amount of time.
+import hmac # Python's `hmac` module provides `compare_digest` for constant-time comparison.
+import secrets # For securely generating random tokens
 
-```pseudocode
-// VULNERABLE: Language's == operator may short-circuit
+def secure_compare(s1_bytes, s2_bytes):
+    # `hmac.compare_digest` compares two byte strings in a "constant-time" manner.
+    # It ensures that the execution time does not depend on the values of the strings,
+    # only on their length. It performs a full comparison of both strings.
+    return hmac.compare_digest(s1_bytes, s2_bytes)
 
-FUNCTION check_token_vulnerable(provided_token, expected_token):
-    // == operator may return as soon as first difference found
-    RETURN provided_token == expected_token
-END FUNCTION
+SECRET_TOKEN = secrets.token_bytes(16) # A truly random, 16-byte (128-bit) secret.
 
-FUNCTION check_password_vulnerable(password, hash):
-    computed_hash = sha256(password)
-    RETURN computed_hash == hash  // Short-circuit comparison
-END FUNCTION
+@app.route("/check_token_secure")
+def check_token_secure():
+    provided_token_hex = request.args.get("token")
+    try:
+        provided_token_bytes = bytes.fromhex(provided_token_hex)
+    except ValueError:
+        return "Token invalid!", 400
+
+    # Ensure the length of the provided token is the same as the secret.
+    # If lengths differ, `hmac.compare_digest` handles it safely, returning False.
+    if len(provided_token_bytes) != len(SECRET_TOKEN):
+        return "Token invalid!", 400
+
+    if secure_compare(provided_token_bytes, SECRET_TOKEN):
+        return "Token valid!"
+    return "Token invalid!"
 ```
-
-## GOOD Pattern: Constant-Time Comparison
-
-```pseudocode
-// SECURE: Compare all bytes regardless of match
-
-FUNCTION constant_time_equals(a, b):
-    // Handle different lengths without revealing which is longer
-    IF length(a) != length(b):
-        // Pad shorter string to prevent length oracle
-        b = b + repeat("\0", max(0, length(a) - length(b)))
-        a = a + repeat("\0", max(0, length(b) - length(a)))
-    END IF
-
-    result = 0
-    FOR i = 0 TO length(a) - 1:
-        // XOR accumulates differences without early exit
-        result = result OR (char_code(a[i]) XOR char_code(b[i]))
-    END FOR
-
-    RETURN result == 0
-END FUNCTION
-```
-
-## GOOD Pattern: Use Library Functions
-
-```pseudocode
-// SECURE: Use library-provided constant-time comparison
-
-FUNCTION verify_password_secure(password, hashed_password):
-    // bcrypt.compare is designed to be constant-time
-    RETURN bcrypt.compare(password, hashed_password)
-END FUNCTION
-
-FUNCTION verify_hash_secure(input, expected):
-    input_hash = sha256(input)
-    // Use crypto library's timing-safe comparison
-    RETURN crypto.timing_safe_equal(
-        Buffer.from(input_hash, 'hex'),
-        Buffer.from(expected, 'hex')
-    )
-END FUNCTION
-
-FUNCTION verify_token_secure(provided, expected):
-    // Python: hmac.compare_digest()
-    // Node.js: crypto.timingSafeEqual()
-    // Go: subtle.ConstantTimeCompare()
-    RETURN crypto.timing_safe_equal(provided, expected)
-END FUNCTION
-```
-
-## GOOD Pattern: Constant-Time HMAC Verification
-
-```pseudocode
-// SECURE: HMAC verification with constant-time compare
-
-FUNCTION verify_signature(message, signature, key):
-    expected_sig = hmac_sha256(key, message)
-
-    // CRITICAL: Use constant-time comparison
-    RETURN crypto.timing_safe_equal(
-        Buffer.from(signature, 'base64'),
-        Buffer.from(expected_sig, 'base64')
-    )
-END FUNCTION
-```
-
-## Language-Specific Secure Functions
-
-| Language | Constant-Time Function |
-|----------|----------------------|
-| Python | `hmac.compare_digest()`, `secrets.compare_digest()` |
-| Node.js | `crypto.timingSafeEqual()` |
-| Go | `subtle.ConstantTimeCompare()` |
-| Java | `MessageDigest.isEqual()` |
-| Ruby | `Rack::Utils.secure_compare()` |
-| PHP | `hash_equals()` |
 
 ## Detection
+- **Review code for secret comparisons:** Look for any place in the code where sensitive values (passwords, API keys, session tokens, cryptographic hashes, HMAC signatures) are compared.
+- **Identify standard equality operators:** Search for `==` or `===` being used for comparing secrets. These operators are typically not constant-time.
+- **Look for custom comparison loops:** If a custom loop iterates through characters and returns `False` on the first mismatch, it's vulnerable.
 
-- Look for `==` or `===` comparisons of secrets/tokens/hashes
-- Search for custom comparison functions without constant-time logic
-- Check password verification for use of bcrypt/argon2 compare functions
-- Review HMAC verification for proper comparison methods
-- Test with timing measurement tools
+## Prevention
+- [ ] **Always use a constant-time comparison function** when comparing secrets or other security-sensitive values.
+- [ ] **Know your language's constant-time comparison functions:**
+    - **Python:** `hmac.compare_digest()` or `secrets.compare_digest()`.
+    - **Node.js:** `crypto.timingSafeEqual()`.
+    - **Go:** `subtle.ConstantTimeCompare()`.
+    - **Java:** `MessageDigest.isEqual()` (for byte arrays).
+    - **PHP:** `hash_equals()`.
+- [ ] **For password hashing verification:** Always use the library's provided verification function (e.g., `bcrypt.checkpw()` or `argon2.verify()`), as these are designed to be timing-safe.
+- [ ] **Ensure the lengths of the values being compared are the same.** If they are not, `hmac.compare_digest` and similar functions will typically return `False` in a constant-time manner.
 
-## Prevention Checklist
-
-- [ ] Use language-provided constant-time comparison functions
-- [ ] Use bcrypt.compare() or argon2.verify() for passwords
-- [ ] Never use `==` to compare secrets, tokens, or hashes
-- [ ] Ensure HMAC signatures use timing-safe comparison
-- [ ] Add rate limiting as defense in depth
-- [ ] Consider adding random delays (not as primary defense)
-
-## Related Patterns
-
-- [weak-password-hashing](../weak-password-hashing/) - bcrypt provides timing safety
-- [jwt-misuse](../jwt-misuse/) - JWT signature verification timing
-- [padding-oracle](../padding-oracle/) - Related crypto timing issue
+## Related Security Patterns & Anti-Patterns
+- [Weak Password Hashing Anti-Pattern](../weak-password-hashing/): Proper password hashing (e.g., bcrypt) includes protection against timing attacks during verification.
+- [JWT Misuse Anti-Pattern](../jwt-misuse/): Signature verification of JWTs should use constant-time comparisons.
+- [Padding Oracle Anti-Pattern](../padding-oracle/): Another type of cryptographic timing issue where information about padding validity is leaked through timing.
 
 ## References
-
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
 - [OWASP API Security API2:2023 - Broken Authentication](https://owasp.org/API-Security/editions/2023/en/0xa2-broken-authentication/)
 - [OWASP Testing for Timing Attacks](https://owasp.org/www-project-web-security-testing-guide/)
 - [CWE-208: Observable Timing Discrepancy](https://cwe.mitre.org/data/definitions/208.html)

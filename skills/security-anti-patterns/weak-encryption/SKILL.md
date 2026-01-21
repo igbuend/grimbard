@@ -1,180 +1,126 @@
 ---
-name: weak-encryption-anti-pattern
-description: Security anti-pattern for weak encryption (CWE-326, CWE-327). Use when generating or reviewing code that encrypts data, handles encryption keys, or uses cryptographic modes. Detects DES, ECB mode, static IVs, and custom crypto implementations.
+name: "weak-encryption-anti-pattern"
+description: "Security anti-pattern for weak encryption (CWE-326, CWE-327). Use when generating or reviewing code that encrypts data, handles encryption keys, or uses cryptographic modes. Detects DES, ECB mode, static IVs, and custom crypto implementations."
 ---
 
 # Weak Encryption Anti-Pattern
 
 **Severity:** High
 
-## Risk
+## Summary
+Weak encryption refers to the use of cryptographic algorithms, modes, or implementations that provide insufficient protection for sensitive data. This anti-pattern often stems from using outdated algorithms (e.g., DES, RC4), insecure modes of operation (e.g., ECB), or improper key/initialization vector (IV)/nonce management (e.g., static IVs). AI models, trained on vast codebases, can inadvertently suggest these weak practices found in older tutorials or examples. The consequence is that encrypted data can be easily decrypted by an attacker, leading to data breaches, compliance failures, and loss of trust.
 
-AI models frequently suggest outdated encryption algorithms and modes learned from legacy code. Weak encryption leads to:
+## The Anti-Pattern
+The anti-pattern involves using cryptographic techniques that are no longer considered secure for protecting sensitive data.
 
-- Data exposure through decryption
-- Pattern leakage revealing plaintext structure
-- Authentication bypass
-- Compliance failures
+### 1. Outdated or Broken Algorithms
+Using algorithms like DES, 3DES, or RC4 is a critical flaw. These algorithms have known vulnerabilities and are easily broken with modern computing power.
 
-A "significant increase" in encryption vulnerabilities was documented when using AI assistants.
+#### BAD Code Example
+```python
+# VULNERABLE: Using the outdated DES algorithm.
+from Crypto.Cipher import DES
+from Crypto import Random
 
-## BAD Pattern: DES or 3DES
+key = Random.get_random_bytes(8) # DES uses an 8-byte (64-bit) key, but only 56 bits are effective.
 
-```pseudocode
-// VULNERABLE: DES uses 56-bit keys (trivially breakable)
+def encrypt_data_des(plaintext):
+    cipher = DES.new(key, DES.MODE_ECB) # ECB mode is also insecure.
+    # Pad the plaintext to be a multiple of 8 bytes (DES block size).
+    padded_plaintext = plaintext + (8 - len(plaintext) % 8) * chr(8 - len(plaintext) % 8)
+    ciphertext = cipher.encrypt(padded_plaintext.encode('utf-8'))
+    return ciphertext
 
-FUNCTION encrypt_data_weak(plaintext, key):
-    cipher = DES.new(key, mode=ECB)
-    RETURN cipher.encrypt(plaintext)
-END FUNCTION
-
-// Problems:
-// - DES: Brute-forceable in hours with modern hardware
-// - 3DES: Deprecated, vulnerable to Sweet32 attack
+# DES can be brute-forced in a matter of hours or days with dedicated hardware.
 ```
 
-## GOOD Pattern: AES-256-GCM
+### 2. Insecure Modes of Operation (e.g., ECB)
+Even if using a strong algorithm like AES, using it in Electronic Codebook (ECB) mode is highly insecure. ECB encrypts identical blocks of plaintext into identical blocks of ciphertext, revealing patterns in the data.
 
-```pseudocode
-// SECURE: Modern authenticated encryption
+#### BAD Code Example
+```python
+# VULNERABLE: Using AES in ECB mode.
+from Crypto.Cipher import AES
+from Crypto import Random
 
-FUNCTION encrypt_data_secure(plaintext, key):
-    // Use AES-256-GCM or ChaCha20-Poly1305
-    nonce = crypto.secure_random_bytes(12)
-    cipher = AES_GCM.new(key, nonce)
-    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
-    RETURN nonce + tag + ciphertext  // Include nonce and auth tag
-END FUNCTION
+key = Random.get_random_bytes(16) # AES-128 key.
 
-FUNCTION decrypt_data_secure(encrypted_data, key):
-    nonce = encrypted_data[0:12]
-    tag = encrypted_data[12:28]
-    ciphertext = encrypted_data[28:]
+def encrypt_data_ecb(plaintext):
+    cipher = AES.new(key, AES.MODE_ECB)
+    # Pad the plaintext to be a multiple of 16 bytes (AES block size).
+    padded_plaintext = plaintext + (16 - len(plaintext) % 16) * chr(16 - len(plaintext) % 16)
+    ciphertext = cipher.encrypt(padded_plaintext.encode('utf-8'))
+    return ciphertext
 
-    cipher = AES_GCM.new(key, nonce)
-    TRY:
-        plaintext = cipher.decrypt_and_verify(ciphertext, tag)
-        RETURN plaintext
-    CATCH AuthenticationError:
-        log.warning("Decryption failed: tampering detected")
-        THROW Error("Data integrity check failed")
-    END TRY
-END FUNCTION
+# If you encrypt an image with many identical color blocks using AES-ECB,
+# the encrypted image will still show the original image's outline and patterns.
+# This leaks significant information about the plaintext.
 ```
 
-## BAD Pattern: ECB Mode
+### GOOD Code Example
+```python
+# SECURE: Use a modern, authenticated encryption mode like AES-256-GCM.
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
+from cryptography.hazmat.backends import default_backend
+import os
 
-```pseudocode
-// VULNERABLE: ECB encrypts identical blocks identically
+# Generate a strong, random key. AES-256 uses a 32-byte key.
+key = AESGCM.generate_key(bit_length=256)
 
-FUNCTION encrypt_ecb(plaintext, key):
-    // Reveals patterns in data!
-    cipher = AES.new(key, mode=ECB)
-    RETURN cipher.encrypt(pad(plaintext))
-END FUNCTION
+def encrypt_data_gcm(plaintext):
+    aesgcm = AESGCM(key)
+    # GCM requires a unique, unpredictable nonce (Initialization Vector).
+    # It must never be reused with the same key. A 12-byte nonce is standard.
+    nonce = os.urandom(12)
 
-// Problem: Encrypting an image with ECB preserves visual patterns
-// Identical 16-byte blocks produce identical ciphertext
+    # AES-GCM performs both encryption and provides an authentication tag (integrity check).
+    ciphertext = aesgcm.encrypt(nonce, plaintext.encode('utf-8'), None)
+
+    # Store and transmit the nonce along with the ciphertext.
+    return nonce + ciphertext
+
+def decrypt_data_gcm(encrypted_data_with_nonce):
+    aesgcm = AESGCM(key)
+    nonce = encrypted_data_with_nonce[:12]
+    ciphertext = encrypted_data_with_nonce[12:]
+
+    try:
+        # The decrypt method will also verify the authentication tag.
+        # If the data is tampered with, it will raise an `InvalidTag` exception.
+        plaintext = aesgcm.decrypt(nonce, ciphertext, None).decode('utf-8')
+        return plaintext
+    except InvalidTag:
+        raise ValueError("Decryption failed: data may have been tampered with or corrupted.")
+
+# AES-256-GCM provides strong confidentiality, integrity, and authenticity.
+# Each encryption is unique due to the nonce, preventing pattern leakage.
 ```
-
-## GOOD Pattern: GCM Mode
-
-```pseudocode
-// SECURE: Authenticated encryption with unique nonces
-
-FUNCTION encrypt_gcm(plaintext, key):
-    // Each encryption is unique even for same plaintext
-    nonce = crypto.secure_random_bytes(12)  // 96-bit nonce for GCM
-
-    cipher = AES_GCM.new(key, nonce)
-    ciphertext, auth_tag = cipher.encrypt_and_digest(plaintext)
-
-    RETURN nonce + auth_tag + ciphertext
-END FUNCTION
-```
-
-## BAD Pattern: Static or Reused IVs/Nonces
-
-```pseudocode
-// VULNERABLE: Static IV - patterns leak
-
-FUNCTION encrypt_static_iv(plaintext, key):
-    // Same IV for all encryptions!
-    iv = bytes([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
-    cipher = AES_CBC.new(key, iv)
-    RETURN cipher.encrypt(pad(plaintext))
-END FUNCTION
-
-// CATASTROPHIC for GCM: Reusing nonce recovers auth key!
-```
-
-## GOOD Pattern: Random Nonces
-
-```pseudocode
-// SECURE: Random nonce for each encryption
-
-FUNCTION encrypt_with_random_nonce(plaintext, key):
-    // New random nonce every time
-    nonce = crypto.secure_random_bytes(12)  // 96 bits for AES-GCM
-
-    cipher = AES_GCM.new(key, nonce)
-    ciphertext, tag = cipher.encrypt_and_digest(plaintext)
-
-    RETURN nonce + tag + ciphertext
-END FUNCTION
-```
-
-## BAD Pattern: Rolling Your Own Crypto
-
-```pseudocode
-// VULNERABLE: Custom XOR "encryption"
-
-FUNCTION my_encrypt(plaintext, key):
-    // Trivially broken with known-plaintext attack
-    result = ""
-    FOR i = 0 TO plaintext.length - 1:
-        result += char(plaintext[i] XOR key[i % key.length])
-    END FOR
-    RETURN result
-END FUNCTION
-
-// Never implement cryptographic primitives yourself!
-```
-
-## Algorithm Selection Guide
-
-| Purpose | Use | Avoid |
-|---------|-----|-------|
-| Symmetric encryption | AES-256-GCM, ChaCha20-Poly1305 | DES, 3DES, RC4, Blowfish |
-| Mode of operation | GCM, CCM | ECB, raw CBC without MAC |
-| Key size | 256 bits | Less than 128 bits |
 
 ## Detection
+- **Code review for algorithm choice:** Search your codebase for calls to cryptographic functions using `DES`, `3DES`, `RC4`, `MD5` (for encryption), or `SHA-1` (for encryption/signatures).
+- **Check modes of operation:** Look for `ECB` mode being used with block ciphers like AES.
+- **Inspect IV/Nonce generation:** Verify how initialization vectors (IVs) or nonces are generated. Are they random and unique for each encryption? Avoid static, predictable, or reused IVs.
+- **Custom crypto implementations:** Be extremely wary of any "homegrown" encryption algorithms. These are almost always insecure.
 
-- Search for `DES`, `3DES`, `RC4`, `Blowfish` in crypto code
-- Look for `mode=ECB` or `AES.MODE_ECB`
-- Check for static/hardcoded IV or nonce values
-- Review for custom XOR or simple cipher implementations
-- Verify nonces are generated with secure random
+## Prevention
+- [ ] **Use strong, modern algorithms:** For symmetric encryption, always use **AES-256**. For authenticated encryption, prefer **AES-256-GCM** or **ChaCha20-Poly1305**.
+- [ ] **Avoid insecure modes of operation:** Never use ECB mode. If using CBC mode, always pair it with a strong MAC (Message Authentication Code) in an Encrypt-then-MAC scheme. Better yet, use AEAD modes like GCM.
+- [ ] **Generate random, unique IVs/Nonces:** For every encryption operation, a unique and unpredictable IV (for CBC) or nonce (for GCM) must be generated using a cryptographically secure random number generator. Never reuse a nonce with the same key in GCM.
+- [ ] **Use established cryptographic libraries:** Do not attempt to "roll your own" encryption. Use well-vetted, standard libraries (e.g., `cryptography` in Python, `javax.crypto` in Java).
+- [ ] **Ensure key strength:** Use sufficiently long keys (e.g., 256 bits for AES).
 
-## Prevention Checklist
-
-- [ ] Use AES-256-GCM or ChaCha20-Poly1305 for symmetric encryption
-- [ ] Never use DES, 3DES, RC4, or ECB mode
-- [ ] Generate random 12-byte nonce for each GCM encryption
-- [ ] Never reuse nonces with the same key
-- [ ] Use established cryptographic libraries (don't roll your own)
-- [ ] Include authentication tags (use authenticated encryption)
-
-## Related Patterns
-
-- [hardcoded-secrets](../hardcoded-secrets/) - Key management
-- [insufficient-randomness](../insufficient-randomness/) - Nonce generation
-- [weak-password-hashing](../weak-password-hashing/) - Related crypto issues
+## Related Security Patterns & Anti-Patterns
+- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): Encryption keys are critical secrets that must be managed securely.
+- [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): The randomness used for IVs/nonces must be cryptographically secure.
+- [Padding Oracle Anti-Pattern](../padding-oracle/): A specific attack against block ciphers used in CBC mode without proper authentication.
 
 ## References
-
 - [OWASP Top 10 A04:2025 - Cryptographic Failures](https://owasp.org/Top10/2025/A04_2025-Cryptographic_Failures/)
+- [OWASP GenAI LLM10:2025 - Unbounded Consumption](https://genai.owasp.org/llmrisk/llm10-unbounded-consumption/)
+- [OWASP API Security API8:2023 - Security Misconfiguration](https://owasp.org/API-Security/editions/2023/en/0xa8-security-misconfiguration/)
 - [CWE-326: Inadequate Encryption Strength](https://cwe.mitre.org/data/definitions/326.html)
+- [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
 - [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -1,0 +1,427 @@
+# Grimbard Tool Configuration
+# Per-tool settings, flags, rules, and output configurations
+
+# Opengrep - Pattern-based SAST (Open source Semgrep fork)
+opengrep:
+  enabled: true
+
+  # Command to execute
+  command: opengrep
+
+  # Command-line flags
+  flags:
+    - --config=auto                # Auto-detect appropriate rule sets
+    - --sarif                      # Output SARIF format
+    - --quiet                      # Suppress progress output
+    - --max-memory=4096            # Memory limit in MB
+    - --jobs=4                     # Parallel processing
+    - --timeout=3600               # Timeout in seconds
+    - --optimizations=all          # Enable all optimizations
+
+  # Rule sets to use (in addition to auto-detected)
+  rules:
+    - p/security-audit            # Security audit rules
+    - p/owasp-top-ten             # OWASP Top 10
+    - p/cwe-top-25                # CWE Top 25
+    - p/secrets                   # Secrets detection patterns
+
+  # Paths to exclude from scanning
+  exclude:
+    - "test/**"
+    - "tests/**"
+    - "**/*_test.go"
+    - "**/*_spec.rb"
+    - "**/*.test.js"
+    - "**/*.spec.ts"
+    - "**/node_modules/**"
+    - "**/vendor/**"
+    - "**/.git/**"
+    - "**/dist/**"
+    - "**/build/**"
+
+  # Severity filter (only report this level and above)
+  severity-filter: warning  # error, warning, info
+
+  # Output configuration
+  output:
+    format: sarif
+    file: opengrep.sarif
+
+  # Custom rules directory (optional)
+  custom-rules: null
+
+# Gitleaks - Secrets and credentials detection
+gitleaks:
+  enabled: true
+
+  command: gitleaks
+
+  # Gitleaks requires 'detect' subcommand
+  subcommand: detect
+
+  flags:
+    - --no-banner                  # Suppress banner
+    - --no-color                   # Disable color output
+    - --redact                     # Redact secrets in output
+    - --exit-code=0                # Don't fail on findings
+    - --verbose                    # Verbose output
+
+  # Custom configuration file (optional)
+  config-file: null  # .gitleaks.toml in project root if exists
+
+  # Baseline file to exclude known secrets (optional)
+  baseline-file: null  # .gitleaks-baseline.json
+
+  output:
+    format: sarif
+    file: gitleaks.sarif
+
+  # Scan git history or just current files
+  scan-mode: current  # current, history
+
+# KICS - Infrastructure as Code security scanner
+kics:
+  enabled: true
+
+  command: kics
+
+  subcommand: scan
+
+  flags:
+    - --exclude-paths=node_modules,vendor,.git,dist,build
+    - --exclude-severities=info    # Exclude info-level findings
+    - --exclude-results=           # Exclude specific finding IDs (comma-separated)
+    - --no-progress                # Disable progress bar
+    - --fail-on=high               # Fail on high severity (for CI/CD)
+
+  # Platforms to scan
+  platforms:
+    - Terraform
+    - Kubernetes
+    - Docker
+    - CloudFormation
+    - Ansible
+    - Helm
+
+  # Specific queries to include/exclude
+  queries:
+    include: []  # Query IDs to include (empty = all)
+    exclude: []  # Query IDs to exclude
+
+  output:
+    formats: [sarif]
+    path: kics.sarif
+
+  # KICS-specific settings
+  settings:
+    ignore-on-exit: info           # Don't fail on info findings
+    minimal-ui: true
+
+# Noir - API endpoint discovery and attack surface mapping
+noir:
+  enabled: false  # Enable manually when needed
+
+  command: noir
+
+  flags:
+    - --format=sarif               # Output format
+    - --all-taggers                # Use all endpoint taggers
+    - --send-req                   # Send test requests to endpoints
+    - --send-proxy=                # Proxy for requests (optional)
+
+  # Technology detection
+  technologies:
+    - nodejs
+    - python
+    - go
+    - ruby
+    - java
+    - php
+
+  output:
+    format: sarif
+    file: noir.sarif
+
+# OSV-Scanner - Dependency vulnerability scanning (Google)
+osv-scanner:
+  enabled: true
+
+  command: osv-scanner
+
+  subcommand: scan
+
+  flags:
+    - --format=sarif               # Output format
+    - --call-analysis=all          # Analyze transitive dependencies
+    - --skip-git                   # Skip git commit scanning (faster)
+
+  # Lock files to scan
+  lockfiles:
+    - package-lock.json
+    - yarn.lock
+    - pnpm-lock.yaml
+    - go.sum
+    - Cargo.lock
+    - requirements.txt
+    - Pipfile.lock
+    - poetry.lock
+    - Gemfile.lock
+    - composer.lock
+
+  output:
+    format: sarif
+    file: osv-scanner.sarif
+
+  # OSV-Scanner specific settings
+  settings:
+    experimental: false            # Enable experimental features
+    local-db: false                # Use local database (faster, requires setup)
+
+# Depscan - Advanced SCA with SBOM and VDR support
+depscan:
+  enabled: true
+
+  command: depscan
+
+  flags:
+    - --no-banner                  # Suppress banner
+    - --no-error                   # Don't exit with error on findings
+    - --suggest                    # Suggest dependency updates
+    - --risk-audit                 # Enable risk audit
+    - --private-ns=                # Private namespace (optional)
+
+  # Report types to generate
+  reports:
+    - sarif
+    - html
+    - json
+
+  output:
+    dir: ./depscan-output
+    sarif-file: depscan.sarif
+
+  # SBOM generation
+  sbom:
+    enabled: true
+    format: cyclonedx              # cyclonedx, spdx
+    output-file: sbom.json
+
+  # VDR (Vulnerability Disclosure Report) generation
+  vdr:
+    enabled: true
+    output-file: vdr.json
+
+# Application Inspector - Technology profiling and security feature detection
+application-inspector:
+  enabled: false  # Enable for deep analysis
+
+  command: appinspector
+
+  subcommand: analyze
+
+  flags:
+    - --output-file-format=sarif
+    - --confidence-filters=high,medium  # Filter by confidence level
+    - --tags=                      # Specific tags to search for (comma-separated)
+
+  # Feature categories to analyze
+  categories:
+    - Authentication
+    - Authorization
+    - Cryptography
+    - Data.Parsing
+    - Security.Feature
+
+  output:
+    format: sarif
+    file: app-inspector.sarif
+
+  # Custom rules directory (optional)
+  custom-rules: null
+
+# Semgrep - Pattern-based SAST (alternative to Opengrep)
+# Note: Opengrep is preferred for open source projects due to licensing
+semgrep:
+  enabled: false  # Disabled by default, use Opengrep instead
+
+  command: semgrep
+
+  flags:
+    - --config=auto
+    - --sarif
+    - --quiet
+    - --max-memory=4096
+
+  rules:
+    - p/security-audit
+    - p/owasp-top-ten
+
+  exclude:
+    - "test/**"
+    - "tests/**"
+    - "**/node_modules/**"
+    - "**/vendor/**"
+
+  output:
+    format: sarif
+    file: semgrep.sarif
+
+  # Semgrep Pro settings (if using Pro version)
+  pro:
+    enabled: false
+    api-token: null                # SEMGREP_APP_TOKEN environment variable
+
+# CodeQL - Deep static analysis (optional, requires setup)
+codeql:
+  enabled: false
+
+  command: codeql
+
+  database-dir: ./codeql-db
+
+  # Languages to analyze
+  languages:
+    - javascript
+    - python
+    - go
+    - java
+
+  # Query suites
+  suites:
+    - security-extended
+    - security-and-quality
+
+  output:
+    format: sarif
+    file: codeql.sarif
+
+# Trivy - Container and dependency scanner (optional)
+trivy:
+  enabled: false
+
+  command: trivy
+
+  # Scan types
+  scan-types:
+    - filesystem                   # Filesystem scan
+    - config                       # IaC scan
+
+  flags:
+    - --format=sarif
+    - --severity=CRITICAL,HIGH,MEDIUM
+    - --scanners=vuln,secret,misconfig
+
+  output:
+    file: trivy.sarif
+
+# Snyk - Commercial SAST/SCA tool (optional, requires API token)
+snyk:
+  enabled: false
+
+  command: snyk
+
+  # Snyk requires authentication
+  api-token: null  # SNYK_TOKEN environment variable
+
+  # Scan types
+  tests:
+    - code                         # SAST
+    - oss                          # SCA / dependency scanning
+    - iac                          # Infrastructure as Code
+
+  flags:
+    - --sarif
+    - --severity-threshold=medium
+
+  output:
+    file: snyk.sarif
+
+# Tool Execution Order
+# Tools run in this order (or in parallel if parallel-tool-execution: true)
+execution-order:
+  - noir                           # 1. Discover attack surface first
+  - application-inspector          # 2. Technology profiling
+  - opengrep                       # 3. Code security scanning
+  - gitleaks                       # 4. Secrets detection
+  - kics                           # 5. IaC security
+  - osv-scanner                    # 6. Dependency vulnerabilities
+  - depscan                        # 7. Advanced SCA
+
+# Tool Dependencies
+# Some tools should run only if others succeed
+dependencies:
+  noir:
+    required-for: []               # Noir is independent
+  opengrep:
+    requires: []                   # Opengrep is independent
+  depscan:
+    requires: [osv-scanner]        # Depscan can enhance OSV findings
+
+# Tool Timeout Configuration (seconds)
+timeouts:
+  opengrep: 3600                   # 1 hour
+  gitleaks: 1800                   # 30 minutes
+  kics: 1800                       # 30 minutes
+  noir: 600                        # 10 minutes
+  osv-scanner: 1800                # 30 minutes (network dependent)
+  depscan: 1800                    # 30 minutes (network dependent)
+  application-inspector: 1200      # 20 minutes
+
+# Tool Memory Limits (MB)
+memory-limits:
+  opengrep: 4096
+  gitleaks: 2048
+  kics: 2048
+  noir: 1024
+  osv-scanner: 2048
+  depscan: 2048
+  application-inspector: 2048
+
+# Tool-Specific Environment Variables
+environment:
+  opengrep:
+    SEMGREP_ENABLE_VERSION_CHECK: "false"
+    SEMGREP_SEND_METRICS: "off"
+
+  gitleaks:
+    GITLEAKS_NOTIFY_USER_ON_ERROR: "false"
+
+  osv-scanner:
+    OSV_SCANNER_VERBOSITY: "1"
+
+  depscan:
+    DEPSCAN_CLOUD_UPLOAD: "false"
+    DEPSCAN_RISK_AUDIT: "true"
+
+# Common Exclusions (applied to all tools that support exclusions)
+common-exclusions:
+  paths:
+    - "**/node_modules/**"
+    - "**/vendor/**"
+    - "**/.git/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/target/**"
+    - "**/__pycache__/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+    - "**/.env/**"
+    - "**/env/**"
+
+  patterns:
+    - "*.min.js"
+    - "*.min.css"
+    - "*.map"
+    - "*.generated.*"
+    - "*.lock"
+
+  test-paths:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/__tests__/**"
+    - "**/*_test.go"
+    - "**/*_spec.rb"
+    - "**/*.test.js"
+    - "**/*.test.ts"
+    - "**/*.spec.js"
+    - "**/*.spec.ts"

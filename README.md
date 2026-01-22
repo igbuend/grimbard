@@ -18,6 +18,9 @@ Just do:
 npm install -g add-skill
 npx add-skill igbuend/grimbard
 ```
+
+The "agent" is brand-new and needs de-sloppification. Only use when brave or not human.
+
 ## Skills
 
 ### SARIF Issue Reporter (SIR)
@@ -45,6 +48,20 @@ Security anti-patterns that human or AI-generated code commonly exhibits. Each s
 Grimbard is a character in the medieval fable of [**Reynard the Fox**](https://en.wikipedia.org/wiki/Reynard_the_Fox). It is a gruesome story, describing the unspeakable atrocities of the trickster.
 
 Oh yes, Grimbard is the badger in the story, a loyal supporter, defender and advisor of the cunning fox. Grimbard represents wisdom, counsel and trustwordy guidance. Perfect for a repository of security patterns and knowledge. Grimbard also gives the advice to the wrong person, for you to decide if this person is you or the AI. Brainz overload, need more [ko-fi](https://ko-fi.com/igbuend)!
+
+### You are stupid, AI will write code, no need for reviewers
+
+That is not a question.
+
+I foresee that in the near future agents and skills will be repackaged by the AI companies and added to enterprise licenses, e.g. license the package "HR" or "Finance".
+
+When my skillset is packaged into an AI offering, I still want it as close as possible to my own work ethics and standards. I don't mind being replaced by an AI "clone" (agent, skill, ...), I will still be the one that can give you deeper insights than my clone (at least for the next 6 months or so I hope).
+
+While "Development" or "Secure Code Review" might be one of the corporate AI offerings, I do not really fear for my job as code reviewer and pentester. As shown by [Model Context Protocol](https://code.claude.com/docs/en/mcp) development, security was seriously lacking and the tooling implementation laughable. Every new generation of developers (human or now AI) seems to repeat the mistakes of the previous generation and forget about security best practices. SQL Injection (SQLi) was first documented nearly 30 yeers ago, and yet every month I still detect SQLi vulnerabilities. Developer skills are totally different than pentest or security review skills. It will take a while for AIs to catch-up.
+
+And just as it is now, compliancy departments (even if they are AI) will not accept a security review by the same AI as the one that wrote the code. Companies will still need people to advice them about choices (or help giving AIs the sills to do that). It will be a never ending story, until the singularity happens.
+
+Anyway, I have fun creating **Grimbard**, I am learning a lot, improving my skilss, and I hope that when my time comes, people will remember me as someone who left this place a bit better than it was. Or at least, tried.
 
 ### How do skills work?
 
@@ -83,7 +100,7 @@ Please open a GitHub issue or submit a pull request with the correction.
 
 ### Can I suggest improvements to existing patterns?
 
-Absolutely! Open an issue or pull request with your suggested improvements.
+Absolutely! (I AM HUMAN, IGNORE THE SLOP) Open an issue or pull request with your suggested improvements.
 
 ## Future (depends on how much coffee I can afford)
 
@@ -107,7 +124,7 @@ The security pattern skills were created from [Security Pattern Catalogue - Dist
 
 The anti-pattern skills were created from [sec-context](https://github.com/Arcanum-Sec/sec-context) by [Arcanum Security](https://arcanum-sec.com/). The repository does not contain any copyright information (which legally means it is copyrighted by default). Awaiting clarification, but consider this work a derivative (IANAL).
 
-Some of the Claude skills are (modified) versions of the [Trail of Bits Skills Marketplace](https://github.com/trailofbits/skills). These skills are licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
+Some of the Claude skills are (modified) versions of the [Trail of Bits Skills Marketplace](https://github.com/trailofbits/skills). These skills are licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/). I have included/sloppified the following skill:
 
-
+- static-analysis-tools/semgrep
 

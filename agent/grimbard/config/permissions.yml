@@ -1,0 +1,494 @@
+# Grimbard Permissions Configuration
+# Security controls and resource limits for agent execution
+
+# Filesystem Access Controls
+filesystem:
+  # Paths the agent is allowed to read from
+  allowed-paths:
+    - .                            # Current directory and subdirectories
+    - ./                           # Explicit current directory
+    - /tmp                         # Temporary directory for tool outputs
+    - /var/tmp                     # Alternative temp directory
+
+  # Paths explicitly blocked from access
+  blocked-paths:
+    # System directories
+    - /etc
+    - /var
+    - /sys
+    - /proc
+    - /dev
+    - /boot
+
+    # User sensitive directories
+    - ~/.ssh
+    - ~/.aws
+    - ~/.gcp
+    - ~/.azure
+    - ~/.kube
+    - ~/.config
+
+    # Credential files
+    - /root
+    - /home/*/.ssh
+    - /home/*/.gnupg
+
+  # Read-only paths (can read but not write)
+  read-only-paths:
+    - /usr
+    - /opt
+    - /lib
+    - /lib64
+
+  # Paths where writing is allowed
+  writable-paths:
+    - ./security-review-output
+    - ./vulnerability-triage
+    - ./compliance-audit
+    - /tmp
+    - /var/tmp
+    - ./.grimbard-cache
+
+  # File types blocked from reading
+  blocked-file-types:
+    - .key                         # Private keys
+    - .pem                         # Certificates
+    - .p12                         # PKCS#12 files
+    - .jks                         # Java keystores
+    - .keystore                    # Keystores
+
+  # Maximum file size to read (MB)
+  max-file-size-mb: 100
+
+# Network Access Controls
+network:
+  # Allow internet access (required for OSV-Scanner, Depscan)
+  allow-internet: true
+
+  # Allowed domains (whitelist)
+  allowed-domains:
+    # OSV-Scanner
+    - api.osv.dev
+    - osv-vulnerabilities.storage.googleapis.com
+
+    # Depscan
+    - github.com
+    - owasp.org
+    - nvd.nist.gov
+    - cyclonedx.org
+
+    # Semgrep/Opengrep
+    - semgrep.dev
+    - registry.semgrep.dev
+
+    # General
+    - raw.githubusercontent.com
+
+  # Blocked domains (blacklist)
+  blocked-domains:
+    # Example: block internal services
+    # - internal.company.com
+    # - *.internal
+
+  # Allowed ports
+  allowed-ports:
+    - 80                           # HTTP
+    - 443                          # HTTPS
+
+  # Blocked ports
+  blocked-ports:
+    - 22                           # SSH
+    - 23                           # Telnet
+    - 3306                         # MySQL
+    - 5432                         # PostgreSQL
+    - 6379                         # Redis
+    - 27017                        # MongoDB
+
+  # Allow localhost connections
+  allow-localhost: true
+
+  # Proxy configuration (if required)
+  proxy:
+    enabled: false
+    http-proxy: null               # HTTP_PROXY environment variable
+    https-proxy: null              # HTTPS_PROXY environment variable
+    no-proxy: localhost,127.0.0.1  # NO_PROXY environment variable
+
+# Command Execution Controls
+commands:
+  # Allowed commands (whitelist)
+  allowed:
+    # Security scanning tools
+    - semgrep
+    - opengrep
+    - gitleaks
+    - kics
+    - noir
+    - osv-scanner
+    - depscan
+    - appinspector
+    - codeql
+    - trivy
+    - snyk
+
+    # Python and package management
+    - python
+    - python3
+    - pip
+    - pip3
+
+    # Version control
+    - git
+
+    # File operations
+    - find
+    - grep
+    - cat
+    - ls
+    - mkdir
+    - cp
+    - mv
+    - touch
+
+    # Text processing
+    - awk
+    - sed
+    - jq
+    - yq
+
+    # Archive operations (read-only)
+    - tar
+    - unzip
+    - gunzip
+
+    # Process management
+    - ps
+    - kill
+
+  # Blocked commands (blacklist)
+  blocked:
+    # Destructive operations
+    - rm -rf
+    - rm -fr
+    - dd
+    - mkfs
+    - fdisk
+    - parted
+
+    # System operations
+    - systemctl
+    - service
+    - shutdown
+    - reboot
+    - halt
+    - init
+
+    # User/permission management
+    - useradd
+    - userdel
+    - passwd
+    - chmod 777
+    - chown
+
+    # Network operations
+    - nc
+    - netcat
+    - nmap
+    - telnet
+
+    # Package installation (system-wide)
+    - apt-get install
+    - yum install
+    - dnf install
+    - pacman -S
+    - brew install
+
+  # Dangerous flags blocked for allowed commands
+  blocked-flags:
+    rm:
+      - -rf
+      - --recursive --force
+      - --no-preserve-root
+
+    chmod:
+      - 777
+      - a+rwx
+
+    git:
+      - push --force
+      - push -f
+
+  # Require explicit approval for these commands
+  require-approval:
+    - git push
+    - git commit
+    - docker run
+
+# Environment Variables
+environment:
+  # Allowed environment variables (can be read)
+  allowed-vars:
+    # Grimbard-specific
+    - GRIMBARD_OUTPUT_DIR
+    - GRIMBARD_CONFIG_DIR
+    - GRIMBARD_REPORTS_FORMAT
+    - GRIMBARD_SEVERITY_THRESHOLD
+    - GRIMBARD_ENABLED_TOOLS
+    - GRIMBARD_PARALLEL_EXECUTION
+    - GRIMBARD_TIMEOUT
+
+    # System
+    - HOME
+    - PATH
+    - TMPDIR
+    - TEMP
+    - TMP
+    - USER
+    - SHELL
+
+    # Tool-specific (non-sensitive)
+    - SEMGREP_ENABLE_VERSION_CHECK
+    - SEMGREP_SEND_METRICS
+    - OSV_SCANNER_VERBOSITY
+    - DEPSCAN_RISK_AUDIT
+
+  # Blocked environment variables (sensitive)
+  blocked-vars:
+    # Cloud credentials
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_SESSION_TOKEN
+    - AZURE_CLIENT_SECRET
+    - GOOGLE_APPLICATION_CREDENTIALS
+    - GCP_SERVICE_ACCOUNT_KEY
+
+    # API tokens
+    - GITHUB_TOKEN
+    - GITLAB_TOKEN
+    - SLACK_TOKEN
+    - SLACK_WEBHOOK_URL
+    - DISCORD_WEBHOOK_URL
+
+    # Database credentials
+    - DATABASE_PASSWORD
+    - DB_PASSWORD
+    - POSTGRES_PASSWORD
+    - MYSQL_PASSWORD
+    - REDIS_PASSWORD
+
+    # Generic secrets
+    - SECRET_KEY
+    - API_KEY
+    - PRIVATE_KEY
+
+  # Variables that can be set by agent
+  writable-vars:
+    - GRIMBARD_OUTPUT_DIR
+    - GRIMBARD_CONFIG_DIR
+    - GRIMBARD_REPORTS_FORMAT
+
+# Resource Limits
+resources:
+  # Maximum number of processes agent can spawn
+  max-processes: 10
+
+  # Maximum memory usage (MB)
+  max-memory-mb: 8192
+
+  # Maximum disk space usage (GB)
+  max-disk-gb: 10
+
+  # Maximum CPU usage (percentage)
+  max-cpu-percent: 80
+
+  # Maximum execution time (seconds) - 4 hours for complete review
+  timeout-seconds: 14400
+
+  # Per-tool resource limits
+  tool-limits:
+    opengrep:
+      max-memory-mb: 4096
+      timeout-seconds: 3600        # 1 hour
+
+    gitleaks:
+      max-memory-mb: 2048
+      timeout-seconds: 1800        # 30 minutes
+
+    kics:
+      max-memory-mb: 2048
+      timeout-seconds: 1800        # 30 minutes
+
+    noir:
+      max-memory-mb: 1024
+      timeout-seconds: 600         # 10 minutes
+
+    osv-scanner:
+      max-memory-mb: 2048
+      timeout-seconds: 1800        # 30 minutes
+
+    depscan:
+      max-memory-mb: 2048
+      timeout-seconds: 1800        # 30 minutes
+
+    application-inspector:
+      max-memory-mb: 2048
+      timeout-seconds: 1200        # 20 minutes
+
+# Code Execution Restrictions
+code-execution:
+  # Allow execution of code from scanned repository
+  allow-code-execution: false
+
+  # Allow eval/exec in tools
+  allow-eval: false
+
+  # Sandboxing
+  sandbox:
+    enabled: true
+    type: docker                   # docker, firejail, none
+
+    # Docker sandbox settings
+    docker:
+      image: grimbard:latest
+      read-only-root: true
+      no-new-privileges: true
+      network-mode: bridge
+      memory-limit: 8g
+      cpu-limit: 4
+
+# Data Handling
+data:
+  # Allow reading potentially sensitive files
+  allow-sensitive-files: false
+
+  # Sensitive file patterns to block
+  sensitive-patterns:
+    - "**/credentials.json"
+    - "**/secrets.json"
+    - "**/.env"
+    - "**/.env.*"
+    - "**/id_rsa"
+    - "**/id_dsa"
+    - "**/id_ed25519"
+    - "**/*.pem"
+    - "**/*.key"
+
+  # Redact sensitive data in logs
+  redact-in-logs: true
+
+  # Patterns to redact
+  redact-patterns:
+    - password
+    - secret
+    - token
+    - api[_-]key
+    - private[_-]key
+
+  # Maximum log file size (MB)
+  max-log-size-mb: 100
+
+# Output Restrictions
+output:
+  # Allowed output directories
+  allowed-dirs:
+    - ./security-review-output
+    - ./vulnerability-triage
+    - ./compliance-audit
+    - /tmp/grimbard-*
+
+  # Maximum output file size (MB)
+  max-file-size-mb: 500
+
+  # Maximum total output size (GB)
+  max-total-size-gb: 5
+
+  # Allowed output formats
+  allowed-formats:
+    - sarif
+    - json
+    - yaml
+    - markdown
+    - html
+    - txt
+    - csv
+
+  # Blocked output formats
+  blocked-formats:
+    - exe
+    - sh
+    - bat
+    - ps1
+
+# Third-Party Tool Restrictions
+third-party:
+  # Allow downloading tools automatically
+  auto-download-tools: false
+
+  # Verify tool signatures/checksums
+  verify-signatures: true
+
+  # Allowed tool sources
+  allowed-sources:
+    - github.com
+    - pypi.org
+    - npmjs.com
+
+  # Blocked tool sources
+  blocked-sources: []
+
+# Audit and Logging
+audit:
+  # Enable audit logging
+  enabled: true
+
+  # Audit log location
+  log-file: ./security-review-output/logs/audit.log
+
+  # Log all command executions
+  log-commands: true
+
+  # Log all file access
+  log-file-access: false          # Can be very verbose
+
+  # Log network requests
+  log-network: true
+
+  # Retention period (days)
+  retention-days: 90
+
+# Compliance Mode Restrictions
+compliance:
+  # Extra restrictions when in compliance audit mode
+  pci-dss:
+    # Don't store cardholder data even in logs/outputs
+    redact-card-numbers: true
+    redact-cvv: true
+
+  hipaa:
+    # Don't store PHI
+    redact-phi: true
+
+  gdpr:
+    # Minimize personal data collection
+    minimize-pii: true
+
+# Emergency Controls
+emergency:
+  # Kill switch - immediately halt all operations
+  kill-switch-enabled: false
+
+  # File to check for kill switch activation
+  kill-switch-file: .grimbard-kill
+
+  # Panic mode - minimal permissions
+  panic-mode-enabled: false
+
+# Override Settings
+overrides:
+  # Allow environment variables to override these permissions
+  allow-env-override: false
+
+  # Allow config file to override
+  allow-config-override: true
+
+  # Require approval for any override
+  require-approval-for-override: true

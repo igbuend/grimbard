@@ -1,0 +1,277 @@
+# Grimbard Agent Configuration
+# High-level settings for workflows, tools, output, and performance
+
+agent:
+  name: grimbard
+  version: 1.0.0
+  description: Security-focused code review agent
+
+# Workflow Settings
+workflows:
+  # Default workflow when /grimbard is invoked without specifying workflow
+  default: secure-code-review
+
+  settings:
+    # Run tools in parallel for faster execution
+    parallel-tool-execution: true
+
+    # Continue workflow if a tool fails (recommended for comprehensive coverage)
+    continue-on-tool-failure: true
+
+    # Maximum runtime per tool in seconds (1 hour)
+    max-tool-runtime: 3600
+
+    # Timeout entire workflow if any tool times out
+    timeout-on-failure: false
+
+# Tool Configuration
+tools:
+  # Tools enabled by default for all workflows
+  enabled-by-default:
+    - opengrep      # Pattern-based SAST
+    - gitleaks      # Secrets detection
+    - kics          # IaC security
+    - osv-scanner   # Dependency vulnerabilities
+    - depscan       # Advanced SCA with SBOM/VDR
+
+  # Tools that must be explicitly enabled
+  disabled-by-default:
+    - noir                    # API endpoint discovery (enable for attack surface mapping)
+    - application-inspector   # Technology profiling (enable for deep analysis)
+
+  # Tool installation check on agent start
+  verify-installation: true
+
+# Output Configuration
+output:
+  # Base output directory (can be overridden with GRIMBARD_OUTPUT_DIR)
+  directory: ./security-review-output
+
+  # Output formats to generate
+  formats:
+    - sarif      # SARIF v2.1.0 for tool integration
+    - markdown   # Human-readable reports
+    - html       # Interactive web reports
+
+  # SARIF-specific settings
+  sarif:
+    version: "2.1.0"
+    consolidate: true          # Merge all tool SARIF into single file
+    consolidate-file: consolidated.sarif
+    deduplicate: true          # Remove duplicate findings
+
+  # Report generation settings
+  reports:
+    executive-summary: true    # High-level overview for management
+    technical-findings: true   # Detailed technical report for engineers
+    compliance-matrix: false   # Enable for compliance audits (PCI-DSS, HIPAA, etc.)
+
+  # Directory structure
+  structure:
+    sarif-dir: sarif
+    reports-dir: reports
+    findings-dir: findings
+    logs-dir: logs
+
+# Severity Configuration
+severity:
+  # Minimum severity to report (error, warning, note, info)
+  threshold: warning
+
+  # Exit with error code if these severities found
+  fail-on:
+    - error
+
+  # Priority matrix for triage
+  priority-matrix:
+    error-high-exploitability: P0      # Critical - Fix immediately (24h)
+    error-medium-exploitability: P1    # High - Fix before release (1 week)
+    warning-high-exploitability: P1    # High - Fix before release (1 week)
+    warning-medium-exploitability: P2  # Medium - Fix in sprint (2 weeks)
+    note: P3                           # Low - Backlog (quarterly)
+    info: P3                           # Info - Document or suppress
+
+  # CWE categories that always get P0/P1 priority
+  critical-cwes:
+    - 89   # SQL Injection
+    - 78   # OS Command Injection
+    - 79   # Cross-Site Scripting (XSS)
+    - 798  # Hardcoded Credentials
+    - 22   # Path Traversal
+    - 502  # Deserialization of Untrusted Data
+    - 611  # XML External Entities (XXE)
+    - 918  # Server-Side Request Forgery (SSRF)
+    - 94   # Code Injection
+    - 829  # Inclusion of Functionality from Untrusted Control Sphere
+
+# Performance Settings
+performance:
+  # Maximum number of tools to run in parallel
+  max-parallel-tools: 4
+
+  # Memory limit for agent (MB)
+  memory-limit-mb: 8192
+
+  # Minimum free disk space required (GB)
+  disk-space-gb: 10
+
+  # Maximum CPU usage percentage
+  max-cpu-percent: 80
+
+  # Enable caching for dependency scans (reuse if lock files unchanged)
+  cache-enabled: true
+  cache-directory: .grimbard-cache
+
+# Logging Configuration
+logging:
+  # Log level (DEBUG, INFO, WARNING, ERROR)
+  level: INFO
+
+  # Log to file
+  file-enabled: true
+  file-path: logs/grimbard.log
+
+  # Log to console
+  console-enabled: true
+
+  # Include timestamps
+  timestamps: true
+
+  # Include tool stdout/stderr in logs
+  tool-output: true
+
+# Notification Settings (optional)
+notifications:
+  enabled: false
+
+  # Notify on completion
+  on-completion:
+    enabled: false
+    channels: []  # slack, email, webhook
+
+  # Notify on critical findings
+  on-critical-findings:
+    enabled: false
+    channels: []
+
+  # Webhook configuration
+  webhook:
+    url: ""
+    method: POST
+    headers: {}
+
+# Exclusions (global, tool-specific in tools.yml)
+exclusions:
+  # Paths to exclude from all scans
+  paths:
+    - "**/node_modules/**"
+    - "**/vendor/**"
+    - "**/.git/**"
+    - "**/dist/**"
+    - "**/build/**"
+    - "**/target/**"
+    - "**/__pycache__/**"
+    - "**/.venv/**"
+    - "**/venv/**"
+
+  # File patterns to exclude
+  patterns:
+    - "*.min.js"
+    - "*.min.css"
+    - "*.map"
+    - "*.generated.*"
+    - "*.lock"
+
+  # Test files (lower priority in triage)
+  test-paths:
+    - "**/test/**"
+    - "**/tests/**"
+    - "**/*_test.go"
+    - "**/*_spec.rb"
+    - "**/*.test.js"
+    - "**/*.spec.ts"
+
+# False Positive Handling
+false-positives:
+  # Suppression file
+  suppression-file: .grimbard-suppressions.yml
+
+  # Auto-suppress findings in test code
+  auto-suppress-tests: false
+
+  # Auto-suppress findings in generated code
+  auto-suppress-generated: true
+
+# Integration Settings
+integrations:
+  # GitHub integration
+  github:
+    enabled: false
+    upload-sarif: false       # Upload SARIF to GitHub Code Scanning
+    create-issues: false      # Auto-create issues for P0/P1 findings
+
+  # JIRA integration
+  jira:
+    enabled: false
+    create-tickets: false
+    project-key: ""
+
+  # Slack integration
+  slack:
+    enabled: false
+    webhook-url: ""
+    notify-on-completion: false
+    notify-on-critical: false
+
+# Compliance Settings
+compliance:
+  # Enable compliance mode
+  enabled: false
+
+  # Active compliance framework
+  framework: null  # PCI-DSS, HIPAA, SOC2, GDPR
+
+  # Framework-specific settings
+  pci-dss:
+    version: "4.0"
+    scope: []  # List of in-scope components
+
+  hipaa:
+    scope: []  # Components handling ePHI
+
+  soc2:
+    trust-criteria: [CC6.1, CC6.6, CC7.2, CC8.1]
+
+  gdpr:
+    data-categories: []  # personal-data, sensitive-data
+
+# Advanced Settings
+advanced:
+  # Enable experimental features
+  experimental-features: false
+
+  # Custom rule directories
+  custom-rules-dirs: []
+
+  # Pre-scan hooks (commands to run before scanning)
+  pre-scan-hooks: []
+
+  # Post-scan hooks (commands to run after scanning)
+  post-scan-hooks: []
+
+  # Enable variant analysis (find similar patterns)
+  variant-analysis: true
+
+  # Enable threat modeling
+  threat-modeling: false
+
+# Environment Variables
+# These can override configuration values:
+#
+# GRIMBARD_OUTPUT_DIR          - Output directory
+# GRIMBARD_CONFIG_DIR          - Configuration directory
+# GRIMBARD_REPORTS_FORMAT      - Comma-separated formats
+# GRIMBARD_SEVERITY_THRESHOLD  - Severity threshold
+# GRIMBARD_ENABLED_TOOLS       - Comma-separated tool names
+# GRIMBARD_PARALLEL_EXECUTION  - true/false
+# GRIMBARD_TIMEOUT             - Timeout in seconds

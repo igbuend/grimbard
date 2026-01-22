@@ -1,0 +1,148 @@
+# Grimbard Agent Ignore File
+# Files and directories to exclude from agent processing
+
+# Dependencies
+node_modules/
+vendor/
+__pycache__/
+.venv/
+venv/
+env/
+.tox/
+*.egg-info/
+
+# Build artifacts
+dist/
+build/
+target/
+out/
+*.pyc
+*.pyo
+*.class
+*.o
+*.so
+*.dylib
+*.dll
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-*
+.project
+.classpath
+.settings/
+
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Version Control
+.git/
+.gitignore
+.gitattributes
+.svn/
+.hg/
+
+# CI/CD
+.github/
+.gitlab/
+.circleci/
+.travis.yml
+azure-pipelines.yml
+
+# Test data and fixtures
+test/fixtures/
+tests/fixtures/
+**/testdata/
+**/__tests__/__fixtures__/
+
+# Generated files
+*.min.js
+*.min.css
+*.map
+*.generated.*
+
+# Logs
+*.log
+logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# Lock files (keep in repo but don't scan for vulnerabilities in agent)
+package-lock.json
+yarn.lock
+Pipfile.lock
+poetry.lock
+Gemfile.lock
+composer.lock
+go.sum
+Cargo.lock
+
+# Documentation (if large)
+docs/assets/
+docs/images/
+docs/*.pdf
+
+# Media files
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.svg
+*.ico
+*.mp4
+*.mp3
+*.wav
+*.webm
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# Archives
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Binary files
+*.exe
+*.bin
+*.app
+
+# Output directories (grimbard's own output)
+security-review-output/
+grimbard-output/
+sarif-results/
+scan-results/
+
+# Example directories (don't scan examples themselves)
+examples/*/output/
+examples/*/node_modules/
+examples/*/vendor/

@@ -504,4 +504,4 @@ kics scan -p . --minimal-ui --silent --no-progress
 - GitHub Action: <https://github.com/checkmarx/kics-github-action>
 - SARIF Documentation: <https://github.com/Checkmarx/kics/blob/master/docs/results.md>
 - CIS Benchmarks: <https://www.cisecurity.org/cis-benchmarks>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+

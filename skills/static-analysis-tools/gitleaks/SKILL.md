@@ -468,4 +468,4 @@ gitleaks detect --source /large/repo
 - Default Rules: <https://github.com/gitleaks/gitleaks/blob/master/config/gitleaks.toml>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
 - Pre-commit Hook: <https://github.com/gitleaks/gitleaks#pre-commit>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+

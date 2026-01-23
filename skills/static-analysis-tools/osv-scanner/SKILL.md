@@ -497,4 +497,4 @@ osv-scanner scan --offline --db-path ./osv-db /path/to/project
 - GitHub Action: <https://github.com/google/osv-scanner-action>
 - Output Formats: <https://google.github.io/osv-scanner/output/>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+

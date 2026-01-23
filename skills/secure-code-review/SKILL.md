@@ -1,17 +1,16 @@
 ---
 name: secure-codebase-documentation
-description: Generate security-focused codebase documentation in CLAUDE.md format for secure code review. Use when performing security assessments, threat modeling, penetration testing preparation, or security-focused code review. Produces comprehensive overview including trust boundaries, attack surface, authentication flows, sensitive data handling, cryptographic usage, and security controls. Essential for security engineers, penetration testers, and secure code reviewers entering unfamiliar codebases.
+description: Generate security-focused codebase documentation in .md format for secure code review. Use when performing security assessments, threat modeling, security-focused code review. Produces comprehensive overview including trust boundaries, attack surface, authentication flows, sensitive data handling, cryptographic usage, and security controls. Essential for security engineers and secure code reviewers entering unfamiliar codebases.
 ---
 
 # Secure Codebase Documentation Generator
 
-Generate a security-focused CLAUDE.md file optimized for secure code review and threat modeling.
+Generate a security-focused DISCOVERY.md file optimized for secure code review and threat modeling.
 
 ## When to Generate
 
 - Security assessment of a new codebase
 - Threat modeling preparation
-- Penetration testing reconnaissance
 - Security-focused code review
 - Compliance audit preparation
 
@@ -40,6 +39,7 @@ grep -r -l "route\|router\|endpoint\|@app\.\|@api\." --include="*.py" --include=
 ### 2. Dependency Security Analysis
 
 Examine dependency files for:
+
 - Known vulnerable packages (check versions against CVE databases)
 - Outdated dependencies
 - Unnecessary dependencies expanding attack surface
@@ -48,6 +48,7 @@ Examine dependency files for:
 ### 3. Trust Boundary Identification
 
 Map where untrusted data enters:
+
 - HTTP endpoints (REST, GraphQL, WebSocket)
 - File uploads
 - CLI arguments
@@ -59,13 +60,14 @@ Map where untrusted data enters:
 ### 4. Authentication & Authorization Flow Tracing
 
 Trace the complete auth flow:
+
 - Identity verification mechanism
 - Session management
 - Token handling (JWT, OAuth, API keys)
 - Permission checks
 - Role-based access control implementation
 
-## CLAUDE.md Security-Enhanced Structure
+## Security-Enhanced Structure (Based on Claude.md)
 
 ```markdown
 # [Project Name] - Security Review Documentation
@@ -93,7 +95,9 @@ Brief description with security context: what the application does, what sensiti
 | Error Handling | [Secure/Leaky] | [Pattern used] |
 
 ## Project Structure (Security View)
+
 ```
+
 project-root/
 ├── src/
 │   ├── auth/           # [!] Authentication logic
@@ -107,6 +111,7 @@ project-root/
 ├── config/             # [!] Configuration, potential secrets
 └── tests/
     └── security/       # Security-specific tests (if any)
+
 ```
 [!] = Security-critical directories
 
@@ -144,11 +149,14 @@ project-root/
 
 ### Primary Authentication
 ```
+
 [Diagram or step-by-step flow]
+
 1. User submits credentials to POST /auth/login
 2. Server validates against [user store]
 3. [Session/Token] created and returned
 4. Subsequent requests authenticated via [header/cookie]
+
 ```
 
 **Implementation Files:**
@@ -195,9 +203,11 @@ project-root/
 
 ### Data Flow
 ```
+
 [Input] → [Validation] → [Processing] → [Storage]
                 ↓
          [Logging - what's logged?]
+
 ```
 
 ### Secrets Management
@@ -303,11 +313,13 @@ bundle audit
 ## Security Testing
 
 ### Existing Security Tests
+
 - Location: `tests/security/` or integrated
 - Coverage: [Auth, authz, injection, etc.]
 - Automation: [CI/CD integration]
 
 ### Recommended Test Areas
+
 1. Authentication bypass attempts
 2. Authorization boundary testing
 3. Input validation fuzzing
@@ -317,6 +329,7 @@ bundle audit
 ## Configuration Security
 
 ### Security-Relevant Configuration
+
 | Setting | Location | Current Value | Recommendation |
 |---------|----------|---------------|----------------|
 | Debug mode | `config/app.js` | [true/false] | false in prod |
@@ -324,6 +337,7 @@ bundle audit
 | Password policy | `config/auth.js` | [policy] | [recommendation] |
 
 ### Environment Variables
+
 | Variable | Purpose | Sensitivity |
 |----------|---------|-------------|
 | `DATABASE_URL` | DB connection | High |
@@ -333,17 +347,20 @@ bundle audit
 ## High-Risk Areas
 
 ### Priority Review Targets
+
 1. **[Component]**: [Reason for concern]
 2. **[Component]**: [Reason for concern]
 3. **[Component]**: [Reason for concern]
 
 ### Known Security Debt
+
 - [Issue 1]: [Location, severity, notes]
 - [Issue 2]: [Location, severity, notes]
 
 ## Quick Reference
 
 ### Security-Critical Files
+
 | File | Contains |
 |------|----------|
 | `src/auth/login.js` | Authentication logic |
@@ -352,6 +369,7 @@ bundle audit
 | `config/security.js` | Security configuration |
 
 ### Common Vulnerability Locations
+
 - **SQLi**: `src/models/`, raw query usage
 - **XSS**: `src/views/`, dynamic content
 - **SSRF**: `src/services/`, URL handling
@@ -359,11 +377,14 @@ bundle audit
 - **Deserialization**: `src/utils/`, object parsing
 
 ## Compliance Considerations
+
 If applicable:
+
 - **GDPR**: Data subject rights implementation
 - **PCI-DSS**: Cardholder data handling
 - **HIPAA**: PHI protection measures
 - **SOC 2**: Security controls mapping
+
 ```
 
 ## Generation Checklist
@@ -380,4 +401,4 @@ Before finalizing, verify:
 
 ## Output
 
-Save as `CLAUDE.md` or `SECURITY-REVIEW.md` in the repository root.
+Save as `DISCOVERY.md` in the repository root.

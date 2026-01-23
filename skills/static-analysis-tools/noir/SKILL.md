@@ -456,4 +456,4 @@ noir -b /repo -q --format sarif -o results.sarif
 - OWASP Project: <https://owasp.org/www-project-noir/>
 - Supported Technologies: <https://owasp-noir.github.io/noir/techs/>
 - SARIF Output: <https://owasp-noir.github.io/noir/usage/output_formats/sarif/>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+

@@ -661,4 +661,4 @@ curl -X POST "https://dependency-track/api/v1/bom" \
 - CycloneDX Spec: <https://cyclonedx.org/>
 - CSAF Spec: <https://docs.oasis-open.org/csaf/csaf/v2.0/csaf-v2.0.html>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+-

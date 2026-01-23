@@ -376,4 +376,4 @@ sarif filter --level error --rule-id "DS.*Credentials.*" results.sarif
 - Documentation: <https://github.com/microsoft/ApplicationInspector/wiki>
 - Default Rules: <https://github.com/microsoft/ApplicationInspector/tree/main/AppInspector/rules>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
+

@@ -9,11 +9,11 @@ description: "Security anti-pattern for hallucinated (non-existent) packages (CW
 
 ## Summary
 
-AI models, including large language models (LLMs), have a tendency to "hallucinate" and suggest installing software packages that do not exist in official repositories. Attackers exploit this by registering these non-existent package names (a technique called "slopsquatting" or "dependency confusion"). When a developer, trusting the AI's suggestion, installs the hallucinated package, they inadvertently execute malicious code from the attacker. This is a critical, AI-specific supply chain vulnerability that can lead to malware execution, credential theft, and system compromise.
+AI models hallucinate non-existent software packages at rates of 5-21%. Attackers exploit this through slopsquatting: registering hallucinated package names with malicious code. Developers installing AI-suggested packages without verification execute attacker code, leading to malware execution, credential theft, and system compromise. This AI-specific supply chain attack exploits the trust gap between AI suggestions and package verification.
 
 ## The Anti-Pattern
 
-The anti-pattern is to blindly trust and install a package suggested by an AI model without first verifying its existence, legitimacy, and reputation.
+Never install AI-suggested packages without verifying existence, legitimacy, and reputation in official registries.
 
 ### BAD Code Example
 
@@ -70,12 +70,72 @@ def process_image(image_path):
     return processed
 ```
 
+### Language-Specific Examples
+
+**JavaScript/Node.js:**
+```javascript
+// VULNERABLE: AI suggests non-existent package
+// AI: "Install express-jwt-secure for enhanced JWT security"
+// $ npm install express-jwt-secure
+
+const jwtSecure = require('express-jwt-secure'); // Malicious package!
+
+app.use(jwtSecure.protect());
+```
+
+```javascript
+// SECURE: Verify before installing
+// 1. Check npm: $ npm view express-jwt-secure
+//    Result: "404 Not Found" - hallucination detected!
+// 2. Search for real alternatives: "express jwt authentication"
+// 3. Use verified packages with high download counts
+
+const jwt = require('jsonwebtoken'); // 20M+ weekly downloads
+const expressJWT = require('express-jwt'); // 1M+ weekly downloads
+
+app.use(expressJWT({
+  secret: process.env.JWT_SECRET,
+  algorithms: ['HS256']
+}));
+```
+
+**Java/Maven:**
+```xml
+<!-- VULNERABLE: AI suggests non-existent dependency -->
+<!-- AI: "Add apache-commons-cryptography for encryption" -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-cryptography</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+```xml
+<!-- SECURE: Verify on Maven Central first -->
+<!-- Search: https://search.maven.org/search?q=commons-cryptography -->
+<!-- No results - hallucination! -->
+<!-- Real alternative: Apache Commons Crypto -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-crypto</artifactId>
+    <version>1.2.0</version>
+</dependency>
+```
+
 ## Detection
 
-- **Verify Package Existence:** Before installing, search for the package on its official registry (e.g., `pypi.org`, `npmjs.com`). If it doesn't exist or was created very recently, it's a hallucination.
-- **Check for Typosquatting:** Does the package name look like a typo of a more popular package (e.g., `reqeusts` instead of `requests`)?
-- **Review Package Statistics:** Check the package's download count, release history, and maintainers. A brand-new package with very few downloads is highly suspicious.
-- **Use Auditing Tools:** Tools like `npm audit`, `pip-audit`, and `socket.dev` can help identify known vulnerabilities and suspicious packages.
+- **Verify Package Existence:** Search official registries before installing:
+  - Python: `pip index versions <package-name>` or visit `pypi.org`
+  - Node.js: `npm view <package-name>` or visit `npmjs.com`
+  - Reject packages created within 48 hours or with < 100 weekly downloads
+- **Check for Typosquatting:** Compare against popular packages using `pip search` or fuzzy matching tools
+- **Review Package Statistics:** Check downloads, release history, maintainers, GitHub stars:
+  - `npm view <package> time created dist-tags downloads`
+  - Inspect package.json repository field for active GitHub repos
+- **Use Auditing Tools:** Integrate into CI/CD:
+  - `npm audit` / `pip-audit` for known vulnerabilities
+  - `socket.dev` for AI hallucination detection
+  - `osv-scanner` for supply chain risks
 
 ## Prevention
 

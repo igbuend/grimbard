@@ -9,11 +9,11 @@ description: "Security anti-pattern for insecure temporary files (CWE-377). Use 
 
 ## Summary
 
-Insecure temporary file creation is a vulnerability that occurs when an application writes data to a temporary file in an unsafe manner. This anti-pattern covers three main flaws: using predictable file names, setting insecure file permissions, and failing to clean up temporary files. Attackers can exploit these flaws to read sensitive data, write malicious content, or cause denial of service. AI-generated code might suggest simplistic file handling that falls into these traps.
+Insecure temporary file creation exposes three attack vectors: predictable file names enabling symlink attacks, insecure permissions allowing unauthorized access, and missing cleanup leaving sensitive data on disk. Attackers exploit these to read sensitive data, inject malicious content, or cause denial of service. AI-generated code frequently suggests simplistic file handling vulnerable to these attacks.
 
 ## The Anti-Pattern
 
-The anti-pattern is creating and using temporary files without considering the security implications of their location, naming, permissions, and lifecycle.
+Never create temporary files without securing their location, naming, permissions, and lifecycle management.
 
 ### 1. Predictable File Names
 
@@ -105,12 +105,124 @@ def generate_report(data):
     return result
 ```
 
+### Language-Specific Examples
+
+**JavaScript/Node.js:**
+```javascript
+// VULNERABLE: Predictable name and no cleanup
+const fs = require('fs');
+const path = require('path');
+
+function processUpload(userId, data) {
+  const tempPath = `/tmp/upload_${userId}.dat`; // Predictable!
+  fs.writeFileSync(tempPath, data); // World-readable by default
+  // ... processing ...
+  // File never deleted!
+  return tempPath;
+}
+```
+
+```javascript
+// SECURE: Use tmp module with automatic cleanup
+const tmp = require('tmp');
+
+function processUpload(userId, data) {
+  // Creates file with mode 0600 (owner read/write only)
+  const tempFile = tmp.fileSync({ prefix: 'upload-', postfix: '.dat' });
+
+  try {
+    fs.writeFileSync(tempFile.name, data);
+    // ... processing ...
+    return processFile(tempFile.name);
+  } finally {
+    tempFile.removeCallback(); // Guaranteed cleanup
+  }
+}
+```
+
+**Java:**
+```java
+// VULNERABLE: Predictable name in shared directory
+public void processData(String userId, byte[] data) throws IOException {
+    File tempFile = new File("/tmp/data_" + userId + ".tmp"); // Predictable!
+    Files.write(tempFile.toPath(), data); // Default permissions may be insecure
+    // ... processing ...
+    // No cleanup - file persists!
+}
+```
+
+```java
+// SECURE: Use Files.createTempFile with try-with-resources
+import java.nio.file.*;
+import java.nio.file.attribute.*;
+
+public void processData(String userId, byte[] data) throws IOException {
+    // Create with restricted permissions (owner only)
+    Set<PosixFilePermission> perms = PosixFilePermissions.fromString("rw-------");
+    FileAttribute<Set<PosixFilePermission>> attr =
+        PosixFilePermissions.asFileAttribute(perms);
+
+    Path tempFile = Files.createTempFile("data-", ".tmp", attr);
+
+    try {
+        Files.write(tempFile, data);
+        // ... processing ...
+    } finally {
+        Files.deleteIfExists(tempFile); // Guaranteed cleanup
+    }
+}
+```
+
+**Go:**
+```go
+// VULNERABLE: Predictable path and missing cleanup
+func processData(userID string, data []byte) error {
+    tempPath := fmt.Sprintf("/tmp/data_%s.tmp", userID) // Predictable!
+    if err := os.WriteFile(tempPath, data, 0644); err != nil { // World-readable!
+        return err
+    }
+    // ... processing ...
+    // No cleanup!
+    return nil
+}
+```
+
+```go
+// SECURE: Use os.CreateTemp with defer cleanup
+import "os"
+
+func processData(userID string, data []byte) error {
+    // Creates file with mode 0600 automatically
+    tempFile, err := os.CreateTemp("", "data-*.tmp")
+    if err != nil {
+        return err
+    }
+    defer os.Remove(tempFile.Name()) // Guaranteed cleanup
+    defer tempFile.Close()
+
+    if _, err := tempFile.Write(data); err != nil {
+        return err
+    }
+
+    // ... processing ...
+    return nil
+}
+```
+
 ## Detection
 
-- Search the code for file creation in common temporary directories like `/tmp/` or `/var/tmp/`.
-- Look for predictable patterns in temporary file names, such as those based on user IDs, timestamps, or simple counters.
-- Check the permissions set on newly created files. Do they use secure defaults or are they overly permissive?
-- Review the code to ensure that temporary files are always deleted, even in error conditions (i.e., cleanup logic is in a `finally` block or uses a context manager).
+- **Search for insecure temp directories:** Grep for hardcoded temp paths:
+  - `rg 'open\s*\(\s*["\']/(tmp|var/tmp)/'`
+  - `rg 'File\.createTempFile|mktemp|tmpfile'` (check if used correctly)
+- **Identify predictable file names:** Find patterns based on user IDs or timestamps:
+  - `rg 'f"/tmp/{user_id}' 'f"/tmp/{username}'`
+  - `rg 'new File\("/tmp/" \+ userId'`
+- **Check file permissions:** Audit permission settings:
+  - `rg 'os\.chmod.*0o[67]'` (world-readable/writable)
+  - Review code for missing `os.umask(0o077)` or tempfile usage
+- **Verify cleanup logic:** Ensure files are always deleted:
+  - `rg 'open\(' | rg -v 'with|try.*finally|NamedTemporaryFile'`
+  - Check for missing `defer f.Close()` (Go) or `using` (C#)
 
 ## Prevention
 

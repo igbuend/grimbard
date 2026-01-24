@@ -9,11 +9,11 @@ description: "Security anti-pattern for hardcoded credentials and secrets (CWE-7
 
 ## Summary
 
-Hardcoding secrets is the practice of embedding sensitive information, such as API keys, passwords, or database credentials, directly into the source code. This is a critical vulnerability because anyone with access to the code—including developers, version control history, or attackers who gain source code access—can see the secret. AI models frequently generate code with hardcoded secrets, as they are trained on vast amounts of public code from tutorials and examples where this bad practice is common. Secrets committed to a public repository are often discovered and abused by automated bots within minutes.
+Hardcoded secrets embed sensitive credentials (API keys, passwords, database credentials) directly in source code. Anyone with code access—developers, version control history, or attackers—can extract these secrets. AI models frequently generate hardcoded secrets, trained on public code with this common bad practice. Secrets committed to public repositories are discovered and exploited by automated bots within minutes.
 
 ## The Anti-Pattern
 
-The anti-pattern is storing any form of secret, credential, or sensitive configuration value directly in a file that is tracked by version control.
+Never store secrets, credentials, or sensitive configuration values in files tracked by version control.
 
 ### BAD Code Example
 
@@ -86,12 +86,131 @@ def get_db_connection():
     return conn
 ```
 
+### Language-Specific Examples
+
+**JavaScript/Node.js:**
+```javascript
+// VULNERABLE: Hardcoded credentials
+const stripe = require('stripe')('sk_live_abc123def456ghi789'); // Exposed!
+
+const dbConfig = {
+  host: 'localhost',
+  user: 'admin',
+  password: 'MyP@ssw0rd123', // Never do this!
+  database: 'production_db'
+};
+```
+
+```javascript
+// SECURE: Use environment variables
+require('dotenv').config(); // Load .env file
+
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME
+};
+
+if (!process.env.STRIPE_SECRET_KEY || !process.env.DB_PASSWORD) {
+  throw new Error('Required environment variables not set');
+}
+```
+
+**Java/Spring Boot:**
+```java
+// VULNERABLE: Hardcoded in application.properties
+// application.properties:
+// spring.datasource.password=MySecretPassword123
+// aws.access.key=AKIAIOSFODNN7EXAMPLE
+```
+
+```java
+// SECURE: Use environment variables or secret managers
+// application.properties:
+// spring.datasource.password=${DB_PASSWORD}
+// aws.access.key=${AWS_ACCESS_KEY}
+
+// Or use AWS Secrets Manager
+@Configuration
+public class SecretsConfig {
+    @Bean
+    public AWSSecretsManager secretsManager() {
+        return AWSSecretsManagerClientBuilder.standard()
+            .withRegion("us-west-2")
+            .build();
+    }
+
+    @Bean
+    public String dbPassword(AWSSecretsManager secretsManager) {
+        GetSecretValueRequest request = new GetSecretValueRequest()
+            .withSecretId("prod/db/password");
+        GetSecretValueResult result = secretsManager.getSecretValue(request);
+        return result.getSecretString();
+    }
+}
+```
+
+**C# (ASP.NET Core):**
+```csharp
+// VULNERABLE: Hardcoded in appsettings.json
+// {
+//   "ConnectionStrings": {
+//     "Default": "Server=localhost;Database=mydb;User=admin;Password=Secret123;"
+//   },
+//   "ApiKeys": {
+//     "SendGrid": "SG.abc123def456ghi789"
+//   }
+// }
+```
+
+```csharp
+// SECURE: Use User Secrets for dev, Azure Key Vault for production
+// Startup.cs
+public class Startup
+{
+    public Startup(IConfiguration configuration)
+    {
+        Configuration = configuration;
+    }
+
+    public IConfiguration Configuration { get; }
+
+    public void ConfigureServices(IServiceCollection services)
+    {
+        // Connection string from environment or User Secrets
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(
+                Configuration.GetConnectionString("Default")));
+
+        // API key from Azure Key Vault (production) or User Secrets (dev)
+        services.AddSingleton<IEmailService>(sp =>
+            new SendGridEmailService(Configuration["ApiKeys:SendGrid"]));
+    }
+}
+
+// Set secrets:
+// dotnet user-secrets set "ConnectionStrings:Default" "Server=..."
+// Or use Azure Key Vault in production
+```
+
 ## Detection
 
-- **Use secret scanning tools:** Tools like `gitleaks`, `trufflehog`, or `git-secrets` can automatically scan your repository's history for patterns that match common secret formats.
-- **Search for keywords:** Manually search the codebase for keywords like `password`, `secret`, `api_key`, `token`, and `credential`.
-- **Look for high-entropy strings:** Long, random-looking strings are often API keys or private keys.
-- **Check configuration files:** Review files like `config.json`, `settings.py`, or `.env` files that have been committed to version control.
+- **Use secret scanning tools:** Scan repository history automatically:
+  - `gitleaks detect --source . --verbose`
+  - `trufflehog git file://. --only-verified`
+  - `git-secrets --scan` (pre-commit hook integration)
+- **Search for keywords:** Grep for common patterns:
+  - `rg -i '(password|secret|api_?key|token|credential)\s*=\s*["\']'`
+  - `rg 'sk-[a-zA-Z0-9]{32,}'` (OpenAI API keys)
+- **Detect high-entropy strings:** Identify random 32+ character strings:
+  - `trufflehog --entropy=True`
+  - `detect-secrets scan --baseline .secrets.baseline`
+- **Check configuration files:** Audit committed configs:
+  - `git log --all --full-history -- "*.env" "config.json" "settings.py"`
+  - Review files that should be in .gitignore
 
 ## Prevention
 

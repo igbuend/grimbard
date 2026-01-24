@@ -9,11 +9,11 @@ description: "Security anti-pattern for log injection vulnerabilities (CWE-117).
 
 ## Summary
 
-Log injection, or log forging, is a vulnerability that occurs when an attacker can write arbitrary data into an application's log files. This anti-pattern arises when user-supplied input is written to logs without being sanitized. By injecting special characters, such as newlines (\n) and carriage returns (\r), an attacker can create fake log entries. This can be used to hide malicious activity, mislead system administrators, or even exploit vulnerabilities in log analysis tools.
+Log injection occurs when attackers write arbitrary data into log files by injecting newlines (\n) and carriage returns (\r) through unsanitized user input. Attackers create fake log entries to hide malicious activity, mislead administrators, and exploit log analysis tools.
 
 ## The Anti-Pattern
 
-The anti-pattern is logging unsanitized user input directly, allowing an attacker to inject newline characters and forge new log lines.
+Never log unsanitized user input. Attackers inject newline characters to forge log entries.
 
 ### BAD Code Example
 
@@ -77,9 +77,18 @@ def user_login_structured(username, ip_address):
 
 ## Detection
 
-- **Review logging statements:** Look for any place in the code where user-controlled input is passed directly into a logging function.
-- **Check for string formatting:** Be suspicious of string concatenation (`+`) or f-strings that combine user input into a log message without prior sanitization.
-- **Test with control characters:** Input data containing `\n`, `\r`, and other control characters to see if they are properly handled in the log output.
+- **Find unsanitized logging:** Grep for user input in log statements:
+  - `rg 'logging\.(info|warn|error).*f["\']|logging.*\+.*request\.' --type py`
+  - `rg 'console\.(log|error).*\$\{|logger.*\+.*req\.' --type js`
+  - `rg 'logger\.(info|warn).*\+|log\.println.*\+' --type java`
+- **Identify string concatenation in logs:** Find unescaped variables:
+  - `rg 'log.*%s|log.*\.format|log.*f"' --type py -A 1`
+  - `rg 'log\(.*\+|logger.*template' --type js`
+- **Test with CRLF injection:** Input test strings to verify sanitization:
+  - `username%0aINFO - Fake log entry` (URL-encoded newline)
+  - `admin\r\nSUCCESS: ` (direct CRLF)
+- **Check for structured logging:** Verify JSON escaping:
+  - `rg 'json\.dumps|JSON\.stringify' | rg 'log'`
 
 ## Prevention
 

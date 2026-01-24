@@ -9,11 +9,11 @@ description: "Security anti-pattern for missing or broken authentication (CWE-28
 
 ## Summary
 
-Missing or broken authentication is a critical vulnerability that occurs when an application fails to correctly verify the identity of a user, allowing attackers to access protected data or functionality. This anti-pattern is one of the most common and damaging security flaws. It can manifest as completely unprotected endpoints, a failure to check for a valid session, or weak credential verification processes that can be easily bypassed or brute-forced. AI-generated code can often produce insecure boilerplate where authentication and authorization checks are stubbed out or missing entirely.
+Missing or broken authentication occurs when applications fail to verify user identity, allowing unauthorized access to protected data and functionality. This manifests as unprotected endpoints, missing session checks, or weak credential verification vulnerable to bypass or brute-force. AI-generated code frequently produces insecure boilerplate with stubbed or missing authentication checks.
 
 ## The Anti-Pattern
 
-The core anti-pattern is creating an endpoint that provides access to sensitive data or functionality without first performing a robust check to confirm that the user is who they claim to be and that they have a valid, active session.
+Never create endpoints accessing sensitive data or functionality without verifying user identity and validating active sessions.
 
 ### BAD Code Example
 
@@ -78,10 +78,20 @@ def get_user_profile_secure(current_user, user_id):
 
 ## Detection
 
-- **Review all endpoints:** Systematically check every API endpoint and web route to ensure that it has an authentication check before any data is accessed or any action is performed.
-- **Identify sensitive functionality:** Pay close attention to endpoints that handle user profiles, administrative actions, financial transactions, or any other sensitive data.
-- **Check for "fail-open" logic:** Ensure that the default behavior is to deny access. The code should actively grant access upon successful authentication, not the other way around.
-- **Test endpoints directly:** Use a tool like `curl` or Postman to make requests to sensitive endpoints without providing any authentication token or session cookie. If the request succeeds, the endpoint is vulnerable.
+- **Audit all endpoints for authentication:** Grep for routes without auth:
+  - `rg '@app\.route|@router\.(get|post)' --type py -A 5 | rg -v '@require|@login|@auth'`
+  - `rg 'app\.(get|post|put|delete)\(' --type js -A 3 | rg -v 'authenticate|isAuth'`
+  - `rg '@GetMapping|@PostMapping' --type java -A 3 | rg -v '@PreAuthorize|@Secured'`
+- **Find sensitive endpoints:** Identify admin, profile, financial routes:
+  - `rg '/admin|/api/users|/profile|/account|/payment' -i`
+  - Check each for authentication decorators/middleware
+- **Check for fail-open logic:** Find default permit patterns:
+  - `rg 'if.*not.*authenticated.*return|except.*pass' --type py`
+  - `rg 'catch.*\{\s*\}|if.*!auth.*continue' --type js`
+- **Test unauthenticated access:** Direct endpoint testing:
+  - `curl -X GET https://api.example.com/api/users/me` (no auth header)
+  - `curl -X DELETE https://api.example.com/api/admin/users/1` (no token)
+  - If these succeed without 401/403, endpoints are vulnerable
 
 ## Prevention
 

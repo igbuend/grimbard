@@ -9,11 +9,11 @@ description: "Security anti-pattern for mass assignment vulnerabilities (CWE-915
 
 ## Summary
 
-Mass assignment (also known as "autobinding") is a vulnerability that occurs when a web framework automatically binds incoming HTTP request parameters to variables or objects in the application's code. This is a convenient feature, but it becomes a vulnerability when an attacker can inject and set properties they are not supposed to control. The most common example is an attacker submitting a request with a field like `"isAdmin": true` and having the application blindly save it, escalating their privileges.
+Mass assignment (autobinding) occurs when frameworks automatically bind HTTP parameters to object properties without filtering. Attackers inject unauthorized properties (`isAdmin: true`) to escalate privileges or modify protected fields. This vulnerability enables complete access control bypass through parameter injection.
 
 ## The Anti-Pattern
 
-The anti-pattern is directly using a dictionary of user-provided data to create or update a database model without first filtering for allowed properties.
+Never use user-provided data dictionaries to update models without filtering for allowed properties. Use explicit allowlists.
 
 ### BAD Code Example
 
@@ -97,9 +97,19 @@ def update_profile_dto():
 
 ## Detection
 
-- **Review update/create logic:** Look for any code that takes a user-provided dictionary or object (`request.body`, `params`, etc.) and uses it to directly populate a model (e.g., `user.update(params)`, `new User(params)`).
-- **Check for "allowlists" vs. "blocklists":** Code that tries to *remove* bad keys (a blocklist, e.g., `del params['is_admin']`) is insecure. A new sensitive property could be added to the model later and forgotten in the blocklist. Secure code uses an *allowlist* to only accept known-good keys.
-- **Test API endpoints:** Send requests to `POST` or `PUT` endpoints with extra, unauthorized fields in the JSON body (e.g., `is_admin`, `role`, `account_balance`) and see if the values are reflected in the API's response or the database.
+- **Find direct model updates from request data:** Grep for unsafe binding:
+  - `rg 'setattr.*request\.|\.update\(request\.' --type py`
+  - `rg 'Object\.assign.*req\.body|\.save\(req\.body' --type js`
+  - `rg 'BeanUtils\.copyProperties|ModelMapper' --type java`
+- **Identify blocklist approaches (insecure):** Find key deletion patterns:
+  - `rg 'del.*\[.*(admin|role|permission)|\.pop\(.*(admin|role)' --type py`
+  - `rg 'delete.*\.(isAdmin|role)|omit\(' --type js`
+  - Blocklists are insecure - search for allowlist patterns instead
+- **Test for mass assignment:** Send malicious parameters:
+  - `curl -X POST /api/users -d '{"email":"test@example.com","isAdmin":true}'`
+  - Try: `isAdmin`, `role`, `permissions`, `accountBalance`, `verified`
+- **Check for DTO usage:** Verify proper input validation:
+  - `rg 'class.*DTO|@Valid|validator\.validate' --type py --type java`
 
 ## Prevention
 

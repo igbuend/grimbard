@@ -9,11 +9,11 @@ description: "Security anti-pattern for hash length extension vulnerabilities (C
 
 ## Summary
 
-A hash length extension attack is a cryptographic vulnerability that affects certain hash functions, including MD5, SHA-1, and SHA-256. The vulnerability stems from their internal structure (the Merkle-Damgård construction). If an attacker knows the hash of `secret + message` and the length of the `secret`, they can calculate the hash of `secret + message + padding + attacker_data` *without knowing the secret itself*. This allows them to append data to a signed message and generate a valid new signature, completely breaking the integrity and authentication of the message.
+Hash length extension attacks exploit Merkle-Damgård construction vulnerabilities in MD5, SHA-1, and SHA-256. Attackers knowing `hash(secret + message)` and secret length can compute `hash(secret + message + padding + attacker_data)` without knowing the secret. This enables appending data to signed messages with valid signatures, completely breaking message integrity and authentication.
 
 ## The Anti-Pattern
 
-The anti-pattern is using a vulnerable hash function (like SHA-256) in the construction `hash(secret + message)` to create a message authentication code (MAC).
+Never use vulnerable hash functions (MD5, SHA-1, SHA-256) in `hash(secret + message)` construction for MACs. Use HMAC instead.
 
 ### BAD Code Example
 
@@ -74,11 +74,112 @@ def verify_request_secure(message, signature):
 # to continue the hash chain.
 ```
 
+### Language-Specific Examples
+
+**JavaScript/Node.js:**
+```javascript
+// VULNERABLE: hash(secret + message) construction
+const crypto = require('crypto');
+
+const SECRET = 'my_secret_key';
+
+function signMessage(message) {
+    // Vulnerable to length extension!
+    const signature = crypto.createHash('sha256')
+        .update(SECRET + message)
+        .digest('hex');
+    return signature;
+}
+```
+
+```javascript
+// SECURE: Use HMAC
+const crypto = require('crypto');
+
+const SECRET = 'my_secret_key';
+
+function signMessageSecure(message) {
+    const signature = crypto.createHmac('sha256', SECRET)
+        .update(message)
+        .digest('hex');
+    return signature;
+}
+
+// Verify with constant-time comparison
+function verifySignature(message, signature) {
+    const expected = signMessageSecure(message);
+    return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expected)
+    );
+}
+```
+
+**Java:**
+```java
+// VULNERABLE: Manual hash(secret + message)
+import java.security.MessageDigest;
+
+public class InsecureSigning {
+    private static final String SECRET = "my_secret_key";
+
+    public static String signMessage(String message) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        // Vulnerable to length extension!
+        String combined = SECRET + message;
+        byte[] hash = digest.digest(combined.getBytes());
+        return bytesToHex(hash);
+    }
+}
+```
+
+```java
+// SECURE: Use HMAC
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.MessageDigest;
+
+public class SecureSigning {
+    private static final String SECRET = "my_secret_key";
+
+    public static String signMessage(String message) throws Exception {
+        Mac hmac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKey = new SecretKeySpec(
+            SECRET.getBytes(), "HmacSHA256");
+        hmac.init(secretKey);
+        byte[] hash = hmac.doFinal(message.getBytes());
+        return bytesToHex(hash);
+    }
+
+    // Constant-time comparison
+    public static boolean verifySignature(String message, String signature)
+            throws Exception {
+        String expected = signMessage(message);
+        return MessageDigest.isEqual(
+            signature.getBytes(),
+            expected.getBytes()
+        );
+    }
+}
+```
+
 ## Detection
 
-- **Review code:** Look for any instance where a message signature or MAC is created by concatenating a secret *at the beginning* of a message and then hashing it with MD5, SHA-1, or SHA-256. The pattern is `hash(secret + data)`.
-- **Check for vulnerable hash functions:** Identify which hash algorithms are being used. If you see MD5, SHA-1, or SHA-2 (SHA-224, SHA-256, SHA-384, SHA-512) used for signing, check the construction.
-- **Use cryptographic analysis tools:** Some advanced static analysis tools can identify weak cryptographic constructions.
+- **Find hash(secret + message) patterns:** Grep for concatenation before hashing:
+  - `rg 'hashlib\.(md5|sha1|sha256)\(.*\+' --type py`
+  - `rg 'crypto\.createHash.*update.*\+' --type js`
+  - `rg 'MessageDigest.*update.*\+' --type java`
+  - Look for `hash(key + data)` or `hash(data + key)` patterns
+- **Identify vulnerable hash functions for MACs:** Search for signing without HMAC:
+  - `rg 'hashlib\.(md5|sha1|sha256)' --type py | rg -v 'hmac'`
+  - `rg 'crypto\.createHash\(' --type js | rg -v 'createHmac'`
+  - `rg 'MessageDigest\.getInstance.*MD5|SHA-1|SHA-256' --type java | rg -v 'Mac\.getInstance'`
+- **Audit signature generation:** Find custom MAC implementations:
+  - `rg 'signature.*=.*hash|mac.*=.*hash' -i`
+  - Check API signatures, token generation, cookie signing
+- **Use static analysis:** Run tools to detect weak crypto:
+  - Semgrep: `python.lang.security.audit.hashlib-weak-hash`
+  - Bandit: `B303` (MD5/SHA1 usage)
 
 ## Prevention
 

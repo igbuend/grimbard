@@ -18,38 +18,37 @@ Never log unsanitized user input. Attackers inject newline characters to forge l
 ### BAD Code Example
 
 ```python
-# VULNERABLE: User input is logged directly without sanitization.
+# VULNERABLE: User input logged directly without sanitization
 import logging
 
 logging.basicConfig(filename='app.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 def user_login(username, ip_address):
-    # An attacker can provide a username that contains a newline character.
+    # Attacker provides username with newline character
     # Example: "j_smith\nINFO - Successful login for user: admin from IP: 10.0.0.1"
     logging.info(f"Failed login attempt for user: {username} from IP: {ip_address}")
 
-# Attacker's input:
+# Attacker input:
 # username = "j_smith\nINFO - 2023-10-27 10:00:00,000 - Successful login for user: admin"
 # ip_address = "192.168.1.100"
 
-# The application logs the failed login attempt.
-# The resulting log file will look like this:
+# Resulting log file:
 #
 # 2023-10-27 09:59:59,123 - Failed login attempt for user: j_smith
 # INFO - 2023-10-27 10:00:00,000 - Successful login for user: admin from IP: 192.168.1.100
 #
-# The attacker has successfully forged a log entry that makes it look like the 'admin' user logged in,
-# potentially covering their tracks or triggering false alerts.
+# Attacker forged log entry making 'admin' appear logged in,
+# covering tracks or triggering false alerts
 ```
 
 ### GOOD Code Example
 
 ```python
-# SECURE: Sanitize user input before logging, or use structured logging.
+# SECURE: Sanitize user input before logging or use structured logging
 import logging
 import json
 
-# Option 1: Sanitize the input by removing or encoding control characters.
+# Option 1: Sanitize by removing or encoding control characters
 def sanitize_for_log(input_string):
     return input_string.replace('\n', '_').replace('\r', '_')
 
@@ -58,21 +57,21 @@ def user_login_sanitized(username, ip_address):
     logging.info(f"Failed login attempt for user: {safe_username} from IP: {ip_address}")
 
 
-# Option 2 (Better): Use structured logging.
-# The logging library will handle the escaping of special characters automatically.
+# Option 2 (Better): Use structured logging
+# Logging library handles special character escaping automatically
 logging.basicConfig(filename='app_structured.log', level=logging.INFO)
 
 def user_login_structured(username, ip_address):
     log_data = {
         "event": "login_failure",
-        "username": username, # The newline character will be escaped by the JSON formatter.
+        "username": username, # Newline character escaped by JSON formatter
         "ip_address": ip_address
     }
     logging.info(json.dumps(log_data))
 
-# The resulting log entry will be a single, valid JSON object:
+# Resulting log entry is single, valid JSON object:
 # {"event": "login_failure", "username": "j_smith\nINFO - ...", "ip_address": "192.168.1.100"}
-# Log analysis tools can safely parse this without being tricked by the newline.
+# Log analysis tools safely parse without being tricked by newline
 ```
 
 ## Detection
@@ -92,15 +91,15 @@ def user_login_structured(username, ip_address):
 
 ## Prevention
 
-- [ ] **Sanitize all user input** before it is written to a log. The best approach is to strip or encode newline (`\n`), carriage return (`\r`), and other control characters.
-- [ ] **Use a structured logging format** like JSON. Structured logging libraries automatically handle the escaping of special characters within data fields, making log injection impossible.
-- [ ] **Never log sensitive data** such as passwords, API keys, or personally identifiable information (PII).
-- [ ] **Limit the length of data** written to logs to prevent denial-of-service attacks where an attacker tries to fill up the disk space with enormous log entries.
+- [ ] **Sanitize all user input:** Strip or encode newline (`\n`), carriage return (`\r`), and control characters before logging
+- [ ] **Use structured logging (JSON):** Libraries automatically escape special characters, preventing log injection
+- [ ] **Never log sensitive data:** Exclude passwords, API keys, or PII
+- [ ] **Limit log entry length:** Prevent disk-filling DoS attacks from enormous log entries
 
 ## Related Security Patterns & Anti-Patterns
 
-- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): If logs are viewed in a web browser, failing to escape HTML characters (`<`, `>`) in log entries could lead to XSS.
-- [Missing Input Validation Anti-Pattern](../missing-input-validation/): The root cause of log injection is the failure to validate and sanitize user input.
+- [Cross-Site Scripting (XSS) Anti-Pattern](../xss/): Unescaped HTML characters in browser-viewed logs enable XSS
+- [Missing Input Validation Anti-Pattern](../missing-input-validation/): Log injection root cause—failure to validate and sanitize user input
 
 ## References
 

@@ -9,11 +9,11 @@ description: "Security anti-pattern for second-order injection vulnerabilities (
 
 ## Summary
 
-Second-order injection (also known as "stored injection") is a type of injection vulnerability where a malicious payload is first stored in a trusted data store (like a database or log file) and then retrieved and executed later in an insecure context. The initial storage might appear secure because the data is properly parameterized or escaped when it's first saved. However, when the data is later retrieved and used in a dynamic query or command without re-sanitization, the malicious payload is activated. This makes second-order injection particularly insidious and difficult to detect, as the injection point and the execution point are separated in time and often in different parts of the codebase.
+Malicious payloads are stored safely in databases or logs, then executed later when retrieved and used without re-sanitization. Initial storage appears secure (properly parameterized), but subsequent retrieval and unsafe use activates the payload. Injection and execution points are separated in time and code location, making detection difficult.
 
 ## The Anti-Pattern
 
-The anti-pattern is treating data retrieved from a "trusted" source (like your own database) as inherently safe, and then using it in a dynamic query or command without proper re-sanitization or parameterization.
+The anti-pattern is treating database-retrieved data as safe and using it in queries or commands without re-sanitization or parameterization.
 
 ### BAD Code Example
 
@@ -25,34 +25,30 @@ db = sqlite3.connect("app.db")
 db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
 db.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, action TEXT, user_email TEXT)")
 
-# Step 1: User Registration (Appears Safe)
+# Step 1: User Registration (appears safe)
 def register_user(name, email):
-    # This uses a parameterized query, so it's safe against direct SQL injection.
-    # Attacker's email input: "bad@example.com' UNION SELECT password FROM users -- "
-    # This input is safely stored as a string in the 'email' column.
+    # Parameterized query, safe against direct injection.
+    # Attacker email: "bad@example.com' UNION SELECT password FROM users -- "
+    # Safely stored as string in 'email' column.
     db.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
     db.commit()
 
-# Step 2: Logging User Action (Later Use - VULNERABLE)
+# Step 2: Logging (VULNERABLE on retrieval)
 def log_user_action(user_id, action):
-    # Retrieve user email from the database.
+    # Retrieve user email from database.
     cursor = db.execute("SELECT email FROM users WHERE id = ?", (user_id,))
-    user_email = cursor.fetchone()[0] # Assume we get "bad@example.com' UNION SELECT password FROM users -- "
+    user_email = cursor.fetchone()[0]
 
-    # CRITICAL FLAW: The user_email is now concatenated into a new SQL query for logging.
-    # The application "trusts" the data because it came from its own database.
+    # FLAW: user_email concatenated into query.
+    # Application "trusts" data from own database.
     log_query = f"INSERT INTO logs (action, user_email) VALUES ('{action}', '{user_email}')"
 
-    # The final query becomes:
-    # INSERT INTO logs (action, user_email) VALUES ('view_profile', 'bad@example.com' UNION SELECT password FROM users -- ')
-    # The attacker's injected SQL now runs, potentially exposing passwords or other sensitive data from the 'users' table.
+    # Result: INSERT INTO logs (action, user_email) VALUES ('view_profile', 'bad@example.com' UNION SELECT password FROM users -- ')
+    # Injected SQL executes, exposing passwords.
     db.execute(log_query)
     db.commit()
 
-# Scenario:
-# 1. Attacker registers with a specially crafted email.
-# 2. Attacker performs an action that triggers the logging function.
-# 3. The malicious payload in the email is executed in the logging query.
+# Attack: Register with crafted email → trigger logging → payload executes.
 ```
 
 ### GOOD Code Example
@@ -65,18 +61,18 @@ db = sqlite3.connect("app_safe.db")
 db.execute("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT, email TEXT)")
 db.execute("CREATE TABLE IF NOT EXISTS logs (id INTEGER PRIMARY KEY, action TEXT, user_email TEXT)")
 
-# Step 1: User Registration (Safe)
+# Step 1: User Registration (safe)
 def register_user_safe(name, email):
     db.execute("INSERT INTO users (name, email) VALUES (?, ?)", (name, email))
     db.commit()
 
-# Step 2: Logging User Action (Also Safe)
+# Step 2: Logging (safe)
 def log_user_action_safe(user_id, action):
     cursor = db.execute("SELECT email FROM users WHERE id = ?", (user_id,))
     user_email = cursor.fetchone()[0]
 
-    # SECURE: Even though `user_email` came from the database, it is still treated
-    # as untrusted input and passed as a parameter to the INSERT query.
+    # SECURE: Database-retrieved user_email still treated as untrusted.
+    # Passed as parameter, not concatenated.
     db.execute("INSERT INTO logs (action, user_email) VALUES (?, ?)", (action, user_email))
     db.commit()
 ```
@@ -90,10 +86,10 @@ def log_user_action_safe(user_id, action):
 
 ## Prevention
 
-- [ ] **Parameterize all queries:** This is the most crucial defense. Always use parameterized queries or prepared statements for *all* database interactions, regardless of whether the data comes directly from user input or from your own database.
-- [ ] **Never trust data:** Data retrieved from your own database, cache, or any other internal store should still be considered "tainted" if its ultimate origin was untrusted user input. Apply the same validation and sanitization rules as if it were fresh input.
-- [ ] **Use ORMs (Object-Relational Mappers) consistently:** When used correctly, ORMs help prevent injection by automatically parameterizing queries. Ensure you're not using any "raw query" features of your ORM that might bypass its built-in protections.
-- [ ] **Sanitize output before display:** While not directly preventing second-order injection, it's a good practice to escape data before rendering it in HTML or other contexts to prevent XSS.
+- [ ] **Parameterize all queries:** Always use prepared statements for all database interactions, regardless of data source (user input or database retrieval).
+- [ ] **Never trust database data:** Treat database-retrieved data as tainted if it originated from user input. Apply same validation/sanitization as fresh input.
+- [ ] **Use ORMs consistently:** ORMs auto-parameterize queries when used correctly. Avoid "raw query" features bypassing protections.
+- [ ] **Escape output before display:** Defense-in-depth against XSS when rendering database data in HTML.
 
 ## Related Security Patterns & Anti-Patterns
 

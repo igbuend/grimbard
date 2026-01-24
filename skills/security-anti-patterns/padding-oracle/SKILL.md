@@ -9,11 +9,11 @@ description: "Security anti-pattern for padding oracle vulnerabilities (CWE-649)
 
 ## Summary
 
-A padding oracle is a critical cryptographic vulnerability that occurs when an application, while decrypting data, leaks information about whether the padding of the encrypted message is correct or not. This is typically done through different error messages (e.g., "Invalid Padding" vs. "Decryption Failed") or timing differences. By carefully manipulating the ciphertext and observing the server's response, an attacker can use this "oracle" to decrypt the entire message, byte by byte, without ever knowing the encryption key. This completely breaks the confidentiality of the encrypted data.
+Applications leak padding correctness during decryption through different error messages ("Invalid Padding" vs. "Decryption Failed") or timing differences. Attackers manipulate ciphertext and observe responses to decrypt entire messages byte-by-byte without knowing the key, breaking confidentiality.
 
 ## The Anti-Pattern
 
-The anti-pattern is using a block cipher mode like CBC (Cipher Block Chaining) and, upon decryption, returning a different response to the user depending on the type of error that occurred.
+The anti-pattern is using CBC mode and returning different responses based on decryption error type.
 
 ### BAD Code Example
 
@@ -44,16 +44,16 @@ def decrypt_data():
         return "Decryption successful!", 200
 
     except ValueError as e:
-        # THIS IS THE ORACLE!
-        # If the padding is wrong, a `ValueError` is often raised with a message like "Invalid padding".
-        # If the data is corrupt for another reason, a different error might occur or no error at all.
+        # ORACLE: Different error responses leak information.
+        # Wrong padding raises ValueError with "Invalid padding".
+        # Other corruption causes different errors.
         if "padding" in str(e).lower():
             return "Error: Invalid padding.", 400
         else:
             return "Error: Decryption failed.", 500
 
-# An attacker can now send modified ciphertext to this endpoint and, by observing whether they get a 400 or 500 error,
-# they can deduce information about the plaintext.
+# Attacker sends modified ciphertext, observes 400 vs. 500 errors,
+# deduces plaintext information.
 ```
 
 ### GOOD Code Example
@@ -80,19 +80,19 @@ def decrypt_data_secure():
     aesgcm = AESGCM(KEY)
 
     try:
-        # `decrypt` in an AEAD mode automatically verifies the integrity (authentication tag).
-        # If the ciphertext has been tampered with in any way, it will fail with a single,
-        # generic exception before it even gets to a padding step (as there is none).
+        # AEAD mode automatically verifies integrity (authentication tag).
+        # Tampering fails with single generic exception before padding step.
+        # (No padding in AEAD modes.)
         decrypted_data = aesgcm.decrypt(nonce, ciphertext_with_tag, None)
         return "Decryption successful!", 200
     except InvalidTag:
-        # CRITICAL: Any failure (tampering, corruption, etc.) results in a single, generic error.
-        # This gives the attacker no useful information.
+        # Any failure (tampering, corruption) → single generic error.
+        # No useful information for attacker.
         return "Error: Decryption failed or data is corrupt.", 400
 
-# If you MUST use CBC mode, you must use an "Encrypt-then-MAC" scheme, where you compute a MAC (like HMAC-SHA256)
-# of the ciphertext and verify it *before* attempting decryption. If the MAC is invalid, you reject the message
-# without trying to decrypt it.
+# If using CBC: Use "Encrypt-then-MAC" scheme.
+# Compute MAC (HMAC-SHA256) of ciphertext, verify BEFORE decryption.
+# Invalid MAC → reject without decryption.
 ```
 
 ## Detection
@@ -104,9 +104,9 @@ def decrypt_data_secure():
 
 ## Prevention
 
-- [ ] **Use an Authenticated Encryption with Associated Data (AEAD) cipher mode.** This is the best solution. Modern modes like **AES-GCM** or **ChaCha20-Poly1305** combine encryption and authentication into a single, secure step. They are not vulnerable to padding oracle attacks.
-- [ ] **If you must use CBC, you must also use a MAC (Encrypt-then-MAC).** First, encrypt the data. Second, compute a Message Authentication Code (like HMAC-SHA256) of the *ciphertext* (and IV). When decrypting, you must first verify the MAC. If the MAC is invalid, reject the data immediately and do not attempt to decrypt it.
-- [ ] **Ensure all decryption errors are handled identically.** Whether the error is due to bad padding, a corrupt block, or an invalid MAC, the application must return the exact same generic error message and HTTP status code.
+- [ ] **Use AEAD cipher modes:** Best solution. AES-GCM or ChaCha20-Poly1305 combine encryption and authentication. Not vulnerable to padding oracles.
+- [ ] **Use Encrypt-then-MAC with CBC:** Encrypt data, compute MAC (HMAC-SHA256) of ciphertext+IV. Verify MAC before decryption. Invalid MAC → reject immediately without decrypting.
+- [ ] **Handle all errors identically:** Same generic error message and status code for bad padding, corrupt blocks, or invalid MACs.
 
 ## Related Security Patterns & Anti-Patterns
 

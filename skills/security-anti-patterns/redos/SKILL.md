@@ -9,19 +9,19 @@ description: "Security anti-pattern for Regular Expression Denial of Service (CW
 
 ## Summary
 
-A Regular Expression Denial of Service (ReDoS) is a vulnerability that occurs when a poorly written regular expression takes an extremely long time to evaluate a maliciously crafted input. This can cause the application or server to hang, consuming 100% of a CPU core for seconds or even minutes from a single request. The vulnerability is caused by a phenomenon called "catastrophic backtracking," which is common in regex patterns that have nested quantifiers (e.g., `(a+)+`) or overlapping alternations.
+Poorly written regex patterns take extremely long to evaluate malicious input, causing applications to hang and consume 100% CPU from a single request. Caused by catastrophic backtracking in patterns with nested quantifiers (`(a+)+`) or overlapping alternations.
 
 ## The Anti-Pattern
 
-The anti-pattern is using a regex with exponential-time complexity to validate user-provided input. A small increase in the length of the attacker's input can lead to an exponential increase in the regex engine's computation time.
+The anti-pattern is regex with exponential-time complexity for input validation. Small input length increases cause exponential computation time growth.
 
 ### BAD Code Example
 
 ```javascript
-// VULNERABLE: A regex with nested quantifiers used for validation.
+// VULNERABLE: Nested quantifiers cause catastrophic backtracking.
 
-// This regex tries to validate a string composed of 'a's followed by a 'b'.
-// The `(a+)+` part is the "evil" pattern. It creates catastrophic backtracking.
+// Validates string of 'a's followed by 'b'.
+// `(a+)+` is the "evil" pattern creating catastrophic backtracking.
 const VULNERABLE_REGEX = /^(a+)+b$/;
 
 function validateString(input) {
@@ -31,49 +31,47 @@ function validateString(input) {
     return result;
 }
 
-// For a normal string, it's fast.
-// validateString("aaab"); // -> true, executes in < 1ms
+// Normal: validateString("aaab"); // -> true, < 1ms
 
-// But an attacker provides a string that *almost* matches.
-const malicious_input = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaab"; // 30 'a's and a 'b'
+// Attack: string that almost matches
+const malicious_input = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaab"; // 30 'a's + 'b'
 
-// With this input, the regex engine gets stuck.
-// The `(a+)+` part can match the string of 'a's in an exponential number of ways.
-// For example, "aaa" can be matched as (a)(a)(a), (aa)(a), (a)(aa), or (aaa).
-// The engine must try every single combination before it can confirm the match.
-// For 30 'a's, this results in over 1 billion backtracking steps, freezing the process.
-validateString(malicious_input); // This will hang for a very long time.
+// `(a+)+` matches 'a's in exponential ways.
+// "aaa" → (a)(a)(a), (aa)(a), (a)(aa), (aaa)
+// Engine tries all combinations.
+// 30 'a's → over 1 billion backtracking steps, freezing process.
+validateString(malicious_input); // Hangs for very long time.
 ```
 
 ### GOOD Code Example
 
 ```javascript
-// SECURE: Rewrite the regex to be linear-time, or add other controls.
+// SECURE: Linear-time regex or add controls.
 
-// Option 1 (Best): Fix the regex by removing the nested quantifier.
-// This version is functionally identical but has linear-time complexity.
+// Option 1 (Best): Remove nested quantifier.
+// Functionally identical, linear-time complexity.
 const SAFE_REGEX = /^a+b$/;
 
 function validateStringSafe(input) {
     console.time('Regex Execution');
-    // This will now fail almost instantly for the malicious input.
+    // Fails almost instantly for malicious input.
     const result = SAFE_REGEX.test(input);
     console.timeEnd('Regex Execution');
     return result;
 }
 
-// Option 2: Add an input length limit as a defense-in-depth measure.
+// Option 2: Input length limit (defense-in-depth).
 const MAX_LENGTH = 50;
 function validateStringWithLimit(input) {
     if (input.length > MAX_LENGTH) {
         throw new Error("Input exceeds maximum length.");
     }
-    // Still better to use the safe regex, but this provides a fallback.
+    // Prefer safe regex, but this provides fallback.
     return VULNERABLE_REGEX.test(input);
 }
 
-// Option 3: Use a modern regex engine (like Google's RE2) that is designed
-// to avoid catastrophic backtracking and guarantee linear-time execution.
+// Option 3: Use ReDoS-safe engine (Google RE2)
+// Guarantees linear-time, avoids catastrophic backtracking.
 ```
 
 ## Detection
@@ -89,11 +87,11 @@ function validateStringWithLimit(input) {
 
 ## Prevention
 
-- [ ] **Avoid nested quantifiers:** This is the most important rule. A pattern like `(a+)+` can almost always be rewritten more safely as `a+`.
-- [ ] **Be wary of alternations:** Ensure that alternations within a repeated group do not overlap (e.g., use `(a|b)` not `(a|ab)`).
-- [ ] **Limit input length:** Before applying a complex regex, always validate the length of the input string. This provides an effective, though crude, defense against ReDoS by capping the potential execution time.
-- [ ] **Use a timeout:** Some languages and libraries allow you to execute a regex match with a timeout. This can prevent a ReDoS attack from freezing a process indefinitely, although it doesn't fix the underlying vulnerable regex.
-- [ ] **Use a ReDoS-safe regex engine:** Consider using an alternative regex engine like Google's RE2, which guarantees linear-time performance and is immune to catastrophic backtracking.
+- [ ] **Avoid nested quantifiers:** Most important rule. Rewrite `(a+)+` as `a+`.
+- [ ] **Avoid overlapping alternations:** Use `(a|b)` not `(a|ab)` within repeated groups.
+- [ ] **Limit input length:** Validate input length before complex regex. Caps execution time (crude but effective defense).
+- [ ] **Use timeouts:** Regex match timeouts prevent indefinite freezing (doesn't fix underlying vulnerability).
+- [ ] **Use ReDoS-safe engines:** Google RE2 guarantees linear-time, immune to catastrophic backtracking.
 
 ## Related Security Patterns & Anti-Patterns
 

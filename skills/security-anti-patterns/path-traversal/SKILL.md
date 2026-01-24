@@ -9,16 +9,16 @@ description: "Security anti-pattern for path traversal vulnerabilities (CWE-22).
 
 ## Summary
 
-Path traversal (also known as "directory traversal" or "dot-dot-slash") is a vulnerability that allows an attacker to read or write files outside of the intended directory. This anti-pattern occurs when an application uses user-supplied input to construct a file path without properly validating or sanitizing it. By manipulating the input with sequences like `../`, an attacker can navigate up the directory tree and access sensitive files anywhere on the server, such as `/etc/passwd`, application source code, or credentials.
+Attackers read or write files outside intended directories by manipulating user input in file paths. Using sequences like `../` without validation allows navigation up directory trees to access `/etc/passwd`, source code, or credentials.
 
 ## The Anti-Pattern
 
-The anti-pattern is concatenating user input directly into a file path without first validating that the input is safe and does not contain any directory traversal characters.
+The anti-pattern is concatenating user input into file paths without validating for directory traversal characters.
 
 ### BAD Code Example
 
 ```python
-# VULNERABLE: User input is directly joined with a base directory path.
+# VULNERABLE: User input joined directly to base path.
 from flask import request
 import os
 
@@ -26,18 +26,18 @@ BASE_DIR = "/var/www/uploads/"
 
 @app.route("/files/view")
 def view_file():
-    # The 'filename' parameter is taken directly from the request.
+    # Filename from request without validation.
     filename = request.args.get("filename")
 
-    # The user input is concatenated with the base directory.
-    # No validation is performed to check for path traversal characters.
+    # User input concatenated with base directory.
+    # No path traversal validation.
     file_path = os.path.join(BASE_DIR, filename)
 
-    # Attacker's request: /files/view?filename=../../../../etc/passwd
-    # The final `file_path` becomes: /var/www/uploads/../../../../etc/passwd
-    # This resolves to: /etc/passwd
+    # Attack: /files/view?filename=../../../../etc/passwd
+    # Result: /var/www/uploads/../../../../etc/passwd
+    # Resolves to: /etc/passwd
 
-    # The application reads and returns the contents of the system's password file.
+    # Reads and returns system password file.
     try:
         with open(file_path, 'r') as f:
             return f.read()
@@ -48,7 +48,7 @@ def view_file():
 ### GOOD Code Example
 
 ```python
-# SECURE: The user input is validated and the final path is canonicalized.
+# SECURE: Validate input and canonicalize path.
 from flask import request
 import os
 
@@ -58,23 +58,23 @@ BASE_DIR = "/var/www/uploads/"
 def view_file_secure():
     filename = request.args.get("filename")
 
-    # 1. Basic validation: Check for malicious characters.
+    # 1. Basic validation: check for malicious characters.
     if ".." in filename or filename.startswith("/"):
         return "Invalid filename.", 400
 
-    # 2. Construct the full path.
+    # 2. Construct full path.
     file_path = os.path.join(BASE_DIR, filename)
 
-    # 3. Canonicalize the path: Resolve all symbolic links and `../` sequences.
-    #    This is the most critical step.
+    # 3. Canonicalize: resolve symbolic links and `../` sequences.
+    #    Most critical step.
     real_path = os.path.realpath(file_path)
     real_base_dir = os.path.realpath(BASE_DIR)
 
-    # 4. Ensure the final, resolved path is still within the intended base directory.
+    # 4. Ensure resolved path within intended base directory.
     if not real_path.startswith(real_base_dir + os.sep):
         return "Access denied: Path is outside of the allowed directory.", 403
 
-    # Now it is safe to access the file.
+    # Safe to access file.
     try:
         with open(real_path, 'r') as f:
             return f.read()
@@ -91,11 +91,11 @@ def view_file_secure():
 
 ## Prevention
 
-- [ ] **Never trust user input** when constructing file paths.
-- [ ] **Validate user input** before using it. The best approach is to use a strict allowlist of known-good filenames if possible. If not, disallow path traversal sequences.
-- [ ] **Canonicalize the path:** After constructing the full path, use a language-specific function (e.g., `os.path.realpath()` in Python, `File.getCanonicalPath()` in Java) to resolve it to its absolute form.
-- [ ] **Verify the final path:** After canonicalization, check that the resulting path starts with the expected base directory. This is the most reliable way to prevent path traversal.
-- [ ] **Use indirect references:** Instead of passing filenames, consider using IDs or indices from a predefined list of available files, so the user never directly controls a piece of the file path.
+- [ ] **Never trust user input:** Don't trust user-provided data in file path construction.
+- [ ] **Validate input:** Use strict allowlist of known-good filenames. Otherwise disallow path traversal sequences.
+- [ ] **Canonicalize paths:** Use `os.path.realpath()` (Python), `File.getCanonicalPath()` (Java) to resolve to absolute form.
+- [ ] **Verify final path:** After canonicalization, ensure path starts with expected base directory. Most reliable prevention.
+- [ ] **Use indirect references:** Use IDs or indices instead of filenames. User never directly controls file path.
 
 ## Related Security Patterns & Anti-Patterns
 

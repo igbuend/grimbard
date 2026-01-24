@@ -9,11 +9,11 @@ description: "Security anti-pattern for open Cross-Origin Resource Sharing (CORS
 
 ## Summary
 
-Cross-Origin Resource Sharing (CORS) is a browser security feature that controls how web pages from one domain can request resources from another domain. A misconfigured, overly permissive CORS policy is a common vulnerability. This anti-pattern occurs when a server responds with `Access-Control-Allow-Origin: *` or dynamically reflects the client's `Origin` header. This allows *any* website on the internet to make authenticated requests to your application on behalf of your users, potentially leading to data theft and unauthorized actions.
+Misconfigured CORS policies allow any website to make authenticated requests on behalf of users. Servers responding with `Access-Control-Allow-Origin: *` or reflecting client `Origin` headers enable data theft and unauthorized actions.
 
 ## The Anti-Pattern
 
-The anti-pattern is configuring the `Access-Control-Allow-Origin` header to a value that is too permissive, such as the wildcard (`*`) or reflecting any value sent by the client in the `Origin` header.
+The anti-pattern is overly permissive `Access-Control-Allow-Origin` headers: wildcard (`*`) or reflecting client `Origin` values.
 
 ### BAD Code Example
 
@@ -25,14 +25,14 @@ app = Flask(__name__)
 
 @app.after_request
 def add_cors_headers(response):
-    # DANGEROUS: Reflecting the Origin header.
-    # An attacker's site (https://evil.com) can now make requests.
+    # DANGEROUS: Reflecting Origin header.
+    # Attacker site (https://evil.com) can make requests.
     origin = request.headers.get('Origin')
     if origin:
         response.headers['Access-Control-Allow-Origin'] = origin
 
-    # DANGEROUS: Wildcard `*` combined with `Allow-Credentials`.
-    # Most browsers block this, but it's a critical misconfiguration.
+    # DANGEROUS: Wildcard with credentials.
+    # Most browsers block, but critical misconfiguration.
     # response.headers['Access-Control-Allow-Origin'] = '*'
     # response.headers['Access-Control-Allow-Credentials'] = 'true'
 
@@ -40,18 +40,16 @@ def add_cors_headers(response):
 
 @app.route("/api/user/profile")
 def get_profile():
-    # This endpoint is intended to be called by your frontend application.
-    # It relies on the user's session cookie for authentication.
+    # Endpoint for frontend, relies on session cookie.
     user = get_user_from_session()
     return jsonify(user.to_dict())
 
-# Attack Scenario:
-# 1. A logged-in user of your site visits https://evil.com.
-# 2. A script on evil.com makes a `fetch` request to `https://yourapp.com/api/user/profile`.
-# 3. Because of the permissive CORS policy, the browser allows this request,
-#    and importantly, it attaches the user's session cookie.
-# 4. Your server receives a valid, authenticated request and responds with the user's sensitive profile data.
-# 5. The script on evil.com now has the user's data and can send it to the attacker.
+# Attack:
+# 1. Logged-in user visits https://evil.com
+# 2. Script fetches https://yourapp.com/api/user/profile
+# 3. Permissive CORS allows request with session cookie
+# 4. Server responds with user's sensitive profile
+# 5. evil.com exfiltrates user data
 ```
 
 ### GOOD Code Example
@@ -62,7 +60,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-# Define a strict allowlist of origins that are permitted to access your API.
+# Strict allowlist of permitted origins.
 ALLOWED_ORIGINS = {
     "https://www.yourapp.com",
     "https://yourapp.com",
@@ -73,10 +71,10 @@ ALLOWED_ORIGINS = {
 def add_secure_cors_headers(response):
     origin = request.headers.get('Origin')
     if origin in ALLOWED_ORIGINS:
-        # Only set the header if the origin is in the trusted list.
+        # Set header only if origin in trusted list.
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
-        # Vary header tells caches that the response depends on the Origin.
+        # Vary tells caches response depends on Origin.
         response.headers['Vary'] = 'Origin'
     return response
 
@@ -85,9 +83,8 @@ def get_profile_secure():
     user = get_user_from_session()
     return jsonify(user.to_dict())
 
-# Now, when a script from https://evil.com tries to make a request,
-# the `origin` is not in the `ALLOWED_ORIGINS` set, so no CORS headers are sent.
-# The browser's same-origin policy blocks the request, protecting the user's data.
+# Script from https://evil.com: origin not in ALLOWED_ORIGINS,
+# no CORS headers sent. Browser same-origin policy blocks request.
 ```
 
 ## Detection
@@ -100,11 +97,11 @@ def get_profile_secure():
 
 ## Prevention
 
-- [ ] **Maintain a strict allowlist** of trusted origins. This is the most critical step.
-- [ ] **Never reflect the user-provided `Origin` header** without validating it against the allowlist first.
-- [ ] **Do not use the wildcard (`*`)** for `Access-Control-Allow-Origin` on any endpoint that requires authentication (e.g., uses cookies or `Authorization` headers). A wildcard is only safe for truly public, unauthenticated resources.
-- [ ] **Set `Access-Control-Allow-Credentials` to `true`** only when necessary and only for origins on your allowlist.
-- [ ] **Add the `Vary: Origin` header** to tell caches that the response is origin-dependent. This prevents a cached response intended for a trusted origin from being served to a malicious one.
+- [ ] **Maintain strict allowlist:** Most critical step. Define trusted origins explicitly.
+- [ ] **Never reflect `Origin` header:** Validate against allowlist before reflecting.
+- [ ] **Avoid wildcard on authenticated endpoints:** `*` unsafe for endpoints using cookies or `Authorization` headers. Only use for public, unauthenticated resources.
+- [ ] **Use `Access-Control-Allow-Credentials` carefully:** Set to `true` only when necessary and only for allowlisted origins.
+- [ ] **Add `Vary: Origin` header:** Tells caches response depends on Origin. Prevents cached response for trusted origin being served to malicious one.
 
 ## Related Security Patterns & Anti-Patterns
 

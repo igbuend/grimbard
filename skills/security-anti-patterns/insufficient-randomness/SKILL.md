@@ -9,11 +9,11 @@ description: "Security anti-pattern for insufficient randomness vulnerabilities 
 
 ## Summary
 
-Insufficient randomness is a critical vulnerability that occurs when a security-sensitive value, such as a session token, password reset code, or encryption key, is generated using a predictable or non-cryptographically secure random number generator (PRNG). AI models often suggest using standard PRNGs like `Math.random()` or Python's `random` module because they are simple and common in general-purpose programming. However, these generators are not designed for security. Their output can be predicted by an attacker who observes a few values, allowing them to forge tokens, hijack sessions, or compromise cryptographic operations.
+Insufficient randomness occurs when security-sensitive values (session tokens, password reset codes, encryption keys) are generated using predictable non-cryptographic PRNGs. AI models frequently suggest `Math.random()` or Python's `random` module for simplicity. These generators enable attackers to predict outputs after observing a few values, allowing token forgery, session hijacking, and cryptographic compromise.
 
 ## The Anti-Pattern
 
-The anti-pattern is using a predictable, non-cryptographic random number generator for any value that needs to be unpredictable for security reasons.
+Never use predictable, non-cryptographic random number generators for security-sensitive values.
 
 ### BAD Code Example
 
@@ -54,15 +54,105 @@ function generateSessionToken() {
 // making it infeasible for an attacker to guess or predict.
 ```
 
+### Language-Specific Examples
+
+**Python:**
+```python
+# VULNERABLE: Using random module for security
+import random
+import string
+
+def generate_reset_token():
+    chars = string.ascii_letters + string.digits
+    # random module is predictable - can be reversed with ~624 observations
+    return ''.join(random.choice(chars) for _ in range(32))
+```
+
+```python
+# SECURE: Using secrets module (Python 3.6+)
+import secrets
+
+def generate_reset_token():
+    # secrets module uses os.urandom() - cryptographically secure
+    return secrets.token_urlsafe(32)  # 32 bytes = 256 bits
+
+# Alternative: Using os.urandom directly
+import os
+import base64
+
+def generate_session_id():
+    return base64.urlsafe_b64encode(os.urandom(32)).decode('utf-8')
+```
+
+**Java:**
+```java
+// VULNERABLE: Using java.util.Random for security
+import java.util.Random;
+
+public String generateSessionToken() {
+    Random random = new Random(); // Predictable PRNG!
+    byte[] bytes = new byte[32];
+    random.nextBytes(bytes);
+    return Base64.getEncoder().encodeToString(bytes);
+}
+```
+
+```java
+// SECURE: Using SecureRandom
+import java.security.SecureRandom;
+import java.util.Base64;
+
+public String generateSessionToken() {
+    SecureRandom secureRandom = new SecureRandom();
+    byte[] bytes = new byte[32];
+    secureRandom.nextBytes(bytes);
+    return Base64.getEncoder().encodeToString(bytes);
+}
+```
+
+**C#:**
+```csharp
+// VULNERABLE: Using System.Random for security
+using System;
+
+public string GenerateApiKey()
+{
+    var random = new Random(); // Predictable!
+    var bytes = new byte[32];
+    random.NextBytes(bytes);
+    return Convert.ToBase64String(bytes);
+}
+```
+
+```csharp
+// SECURE: Using RandomNumberGenerator
+using System;
+using System.Security.Cryptography;
+
+public string GenerateApiKey()
+{
+    using (var rng = RandomNumberGenerator.Create())
+    {
+        var bytes = new byte[32];
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes);
+    }
+}
+```
+
 ## Detection
 
-- **Search the codebase** for the use of non-cryptographic random functions in security-sensitive contexts. Look for:
-  - `Math.random()` in JavaScript.
-  - The `random` module in Python.
-  - The `java.util.Random` class in Java.
-  - `rand()` in PHP or C.
-- **Review seeding:** Look for any manual seeding of a random number generator, especially using a predictable value like the current time (`random.seed(time.time())`). CSPRNGs do not need to be manually seeded.
-- **Check token generation logic:** Examine how session IDs, password reset tokens, API keys, and other secrets are created.
+- **Search for weak PRNGs in security contexts:** Grep for non-cryptographic random functions:
+  - `rg 'Math\.random\(\)' --type js` (JavaScript)
+  - `rg 'import random[^_]|from random import' --type py` (Python random module)
+  - `rg 'new Random\(\)|Random\.next' --type java` (Java util.Random)
+  - `rg '\brand\(|mt_rand\(' --type php` (PHP rand/mt_rand)
+- **Identify manual seeding:** Find predictable seeds:
+  - `rg 'random\.seed|Random\(time|srand\(time'`
+  - CSPRNGs should never be manually seeded
+- **Audit token generation:** Find session/token creation logic:
+  - `rg 'session.*token|reset.*token|api.*key' -A 10`
+  - Verify CSPRNG usage for all security tokens
 
 ## Prevention
 

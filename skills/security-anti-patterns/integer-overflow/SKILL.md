@@ -9,11 +9,11 @@ description: "Security anti-pattern for integer overflow vulnerabilities (CWE-19
 
 ## Summary
 
-An integer overflow occurs when an arithmetic operation, such as addition or multiplication, results in a number that is too large to be stored in the available memory space for that data type. Instead of causing an error, the value often "wraps around," becoming a very small or negative number. This anti-pattern is particularly dangerous when user-controlled inputs, which may be individually valid, are combined in a calculation. Attackers can exploit this to bypass security checks, cause buffer overflows, or manipulate financial transactions.
+Integer overflow occurs when arithmetic operations exceed the maximum value for a data type, causing values to wrap around to small or negative numbers instead of erroring. Individually valid user-controlled inputs combined in calculations create exploitable conditions. Attackers bypass security checks, trigger buffer overflows, and manipulate financial transactions through overflow exploitation.
 
 ## The Anti-Pattern
 
-The anti-pattern is performing arithmetic operations on user-controlled inputs without first checking if the operation could exceed the maximum value for the integer type. Validation of the individual inputs is not sufficient.
+Never perform arithmetic operations on user-controlled inputs without checking for overflow. Individual input validation is insufficient.
 
 ### BAD Code Example
 
@@ -79,12 +79,123 @@ void process_purchase_safe(uint32_t quantity, uint32_t price_per_item) {
 }
 ```
 
+### Language-Specific Examples
+
+**Python:**
+```python
+# VULNERABLE: Python 3 has arbitrary precision integers, but C extensions don't
+import ctypes
+
+def allocate_buffer(width, height, bytes_per_pixel):
+    # Individually valid: width=1000000, height=1000000, bytes_per_pixel=4
+    # Product: 4,000,000,000,000 - may overflow in C extension
+    size = width * height * bytes_per_pixel
+
+    # When passed to C extension expecting int32:
+    buffer = ctypes.create_string_buffer(size)  # Overflow in C layer!
+    return buffer
+```
+
+```python
+# SECURE: Check for overflow before calculation
+import sys
+
+def allocate_buffer_safe(width, height, bytes_per_pixel):
+    MAX_INT32 = 2**31 - 1
+
+    # Check multiplication won't overflow
+    if height > 0 and width > MAX_INT32 // (height * bytes_per_pixel):
+        raise ValueError("Buffer size would overflow")
+
+    size = width * height * bytes_per_pixel
+
+    if size > MAX_INT32:
+        raise ValueError(f"Buffer size {size} exceeds maximum")
+
+    buffer = ctypes.create_string_buffer(size)
+    return buffer
+```
+
+**JavaScript:**
+```javascript
+// VULNERABLE: JavaScript numbers are 64-bit floats but lose precision
+function calculateTotal(quantity, pricePerUnit) {
+    // Numbers > 2^53 lose precision
+    // quantity=10000000000000, pricePerUnit=100
+    const total = quantity * pricePerUnit; // Precision loss!
+    return total;
+}
+```
+
+```javascript
+// SECURE: Use BigInt for large calculations
+function calculateTotalSafe(quantity, pricePerUnit) {
+    const MAX_SAFE = Number.MAX_SAFE_INTEGER; // 2^53 - 1
+
+    // Check for overflow before calculating
+    if (quantity > MAX_SAFE / pricePerUnit) {
+        throw new Error('Calculation would overflow safe integer range');
+    }
+
+    const total = quantity * pricePerUnit;
+    return total;
+}
+
+// Or use BigInt for arbitrary precision
+function calculateTotalBigInt(quantity, pricePerUnit) {
+    const total = BigInt(quantity) * BigInt(pricePerUnit);
+    return total;
+}
+```
+
+**Java:**
+```java
+// VULNERABLE: Multiplication without overflow check
+public long calculateTotalPrice(int quantity, int pricePerItem) {
+    // Both int32, but product may overflow before promotion to long
+    long total = quantity * pricePerItem; // Overflow before cast!
+    return total;
+}
+```
+
+```java
+// SECURE: Use Math.multiplyExact or manual checks
+public long calculateTotalPriceSafe(int quantity, int pricePerItem) {
+    try {
+        // Math.multiplyExact throws ArithmeticException on overflow
+        return Math.multiplyExact(quantity, pricePerItem);
+    } catch (ArithmeticException e) {
+        throw new IllegalArgumentException("Price calculation overflow", e);
+    }
+}
+
+// Alternative: Cast to long before multiplication
+public long calculateTotalPriceSafe2(int quantity, int pricePerItem) {
+    long total = (long) quantity * pricePerItem;
+    if (total > Integer.MAX_VALUE) {
+        throw new IllegalArgumentException("Total exceeds maximum");
+    }
+    return total;
+}
+```
+
 ## Detection
 
-- **Review arithmetic operations:** Look for any code where two or more user-controlled numerical inputs are added, multiplied, or otherwise combined.
-- **Check validation logic:** Ensure that validation doesn't just check the range of individual inputs but also considers the potential result of their combination.
-- **Test with boundary values:** Use the maximum value for a given integer type (e.g., `2,147,483,647` for a 32-bit signed integer) in your tests to see how the application handles it.
-- **Use static analysis tools:** Many static code analysis (SAST) tools can detect potential integer overflow conditions.
+- **Audit arithmetic operations on user inputs:** Search for multiplications and additions:
+  - `rg '\*|[+]' --type c --type cpp -A 2 -B 2` (C/C++)
+  - `rg 'quantity.*price|amount.*rate|size.*count' -i`
+  - Focus on financial calculations, memory allocations, buffer sizes
+- **Find missing overflow checks:** Identify operations without pre-checks:
+  - `rg '(?<!if.*)\w+\s*[*+]\s*\w+' --type c`
+  - Look for calculations not preceded by validation
+- **Test boundary values:** Fuzz with extreme values:
+  - INT32_MAX: 2,147,483,647
+  - UINT32_MAX: 4,294,967,295
+  - INT64_MAX: 9,223,372,036,854,775,807
+- **Use SAST tools:** Automated overflow detection:
+  - CodeQL: `cpp/uncontrolled-arithmetic`
+  - Clang Static Analyzer: `-analyzer-checker=security.intoverflow`
+  - Semgrep rules for integer overflow patterns
 
 ## Prevention
 

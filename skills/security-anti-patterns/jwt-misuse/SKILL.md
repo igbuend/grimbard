@@ -9,7 +9,7 @@ description: "Security anti-pattern for JWT misuse vulnerabilities (CWE-287). Us
 
 ## Summary
 
-JSON Web Tokens (JWTs) are a common standard for creating access tokens, but they are frequently misused, leading to significant security vulnerabilities. This anti-pattern covers several common JWT implementation flaws often seen in AI-generated code, including accepting the "none" algorithm, using weak secrets, storing sensitive data in the payload, and failing to set an expiration time. These mistakes can lead to authentication bypass, token forgery, and sensitive data exposure.
+JSON Web Tokens (JWTs) are frequently misused in AI-generated code, creating critical vulnerabilities. Common flaws include accepting the "none" algorithm, weak secrets, sensitive data in payloads, and missing expiration. These enable authentication bypass, token forgery, and sensitive data exposure.
 
 ## The Anti-Patterns and Solutions
 
@@ -127,12 +127,145 @@ def create_jwt_secure(user, secret_key):
     return jwt.encode(payload, secret_key, algorithm="HS256")
 ```
 
+### Language-Specific Examples
+
+**JavaScript/Node.js:**
+```javascript
+// VULNERABLE: Multiple JWT misuse patterns
+const jwt = require('jsonwebtoken');
+
+// Weak secret
+const SECRET = 'mysecret';
+
+// No algorithm specified - accepts "none"!
+function verifyToken(token) {
+    return jwt.verify(token, SECRET); // CRITICAL FLAW
+}
+
+// Sensitive data in payload, no expiration
+function createToken(user) {
+    return jwt.sign({
+        id: user.id,
+        email: user.email,
+        password: user.passwordHash, // EXPOSED!
+        ssn: user.ssn // EXPOSED!
+        // No exp claim!
+    }, SECRET);
+}
+```
+
+```javascript
+// SECURE: Proper JWT implementation
+const jwt = require('jsonwebtoken');
+
+const SECRET = process.env.JWT_SECRET; // Strong, env-based secret
+if (!SECRET || SECRET.length < 32) {
+    throw new Error('JWT_SECRET must be at least 256 bits');
+}
+
+function verifyToken(token) {
+    // CRITICAL: Explicitly specify allowed algorithms
+    return jwt.verify(token, SECRET, {
+        algorithms: ['HS256'],
+        maxAge: '1h' // Also enforce expiration
+    });
+}
+
+function createToken(user) {
+    const now = Math.floor(Date.now() / 1000);
+    return jwt.sign({
+        sub: user.id,          // Standard claim
+        iat: now,              // Issued at
+        exp: now + 3600,       // Expires in 1 hour
+        role: user.role        // Non-sensitive only
+    }, SECRET, {
+        algorithm: 'HS256'
+    });
+}
+```
+
+**Java:**
+```java
+// VULNERABLE: Weak secret and no algorithm enforcement
+import io.jsonwebtoken.*;
+
+public class JwtService {
+    private static final String SECRET = "secret123"; // Weak!
+
+    public Claims verifyToken(String token) {
+        // No algorithm specified - vulnerable to none attack
+        return Jwts.parser()
+            .setSigningKey(SECRET)
+            .parseClaimsJws(token)
+            .getBody();
+    }
+
+    public String createToken(User user) {
+        // No expiration, sensitive data included
+        return Jwts.builder()
+            .setSubject(user.getId())
+            .claim("email", user.getEmail())
+            .claim("ssn", user.getSsn()) // EXPOSED!
+            .signWith(SignatureAlgorithm.HS256, SECRET)
+            .compact();
+    }
+}
+```
+
+```java
+// SECURE: Proper JWT implementation
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import java.security.Key;
+import java.util.Date;
+
+public class SecureJwtService {
+    // Load from environment or secret manager
+    private static final String SECRET_KEY = System.getenv("JWT_SECRET");
+    private static final Key KEY = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+
+    public Claims verifyToken(String token) {
+        // Explicitly require HS256 algorithm
+        return Jwts.parserBuilder()
+            .setSigningKey(KEY)
+            .requireAlgorithm("HS256")
+            .build()
+            .parseClaimsJws(token)
+            .getBody();
+    }
+
+    public String createToken(User user) {
+        long nowMillis = System.currentTimeMillis();
+        Date now = new Date(nowMillis);
+        Date expiry = new Date(nowMillis + 3600000); // 1 hour
+
+        return Jwts.builder()
+            .setSubject(user.getId())
+            .setIssuedAt(now)
+            .setExpiration(expiry) // REQUIRED
+            .claim("role", user.getRole()) // Non-sensitive only
+            .signWith(KEY, SignatureAlgorithm.HS256)
+            .compact();
+    }
+}
+```
+
 ## Detection
 
-- Review calls to `jwt.decode()` and ensure the `algorithms` parameter is explicitly set to a list of expected algorithms.
-- Search for hardcoded or weak JWT secrets (e.g., `"secret"`, `"password"`, short keys).
-- Inspect the data being added to the JWT payload for any sensitive information (PII, credentials, etc.).
-- Check for the absence of the `exp` (expiration) claim when creating tokens.
+- **Find algorithm confusion vulnerabilities:** Grep for unsafe jwt.decode calls:
+  - `rg 'jwt\.decode.*algorithms\s*=\s*(None|null|\[\])'`
+  - `rg 'jwt\.decode' | rg -v 'algorithms='` (missing explicit algorithm)
+  - `rg 'verify.*false|verify:\s*false' --type js` (disabled verification)
+- **Identify weak secrets:** Search for hardcoded JWT keys:
+  - `rg 'JWT_SECRET.*=.*["\'][^"\']{1,16}["\']'` (short secrets < 32 chars)
+  - `rg 'secret.*password|password.*jwt' -i`
+  - Use gitleaks/trufflehog to scan for leaked secrets
+- **Find sensitive data in payloads:** Audit JWT creation:
+  - `rg 'jwt\.encode|jwt\.sign' -A 5`
+  - Check for PII: `ssn`, `password`, `credit_card`, `email`, `phone`
+- **Detect missing expiration:** Find tokens without exp claim:
+  - `rg 'jwt\.encode' -A 5 | rg -v 'exp|expir'`
+  - Verify all tokens include expiration timestamps
 
 ## Prevention
 

@@ -9,11 +9,11 @@ description: "Security anti-pattern for LDAP injection vulnerabilities (CWE-90).
 
 ## Summary
 
-LDAP Injection is a vulnerability that occurs when user-provided input is insecurely inserted into an LDAP (Lightweight Directory Access Protocol) query. Similar to SQL injection, it allows an attacker to manipulate the query's logic by injecting special characters. A successful attack can lead to authentication bypass, unauthorized data access, privilege escalation, or disclosure of the directory service's structure.
+LDAP Injection occurs when user input is insecurely inserted into LDAP queries without escaping special characters. Attackers manipulate query logic through character injection, enabling authentication bypass, unauthorized data access, privilege escalation, and directory structure disclosure.
 
 ## The Anti-Pattern
 
-The anti-pattern is building LDAP filters by directly concatenating unescaped user input. The special characters in the input can alter the structure of the LDAP filter, changing its intended meaning.
+Never build LDAP filters by concatenating unescaped user input. Special characters alter filter structure and meaning.
 
 ### BAD Code Example
 
@@ -86,12 +86,181 @@ def authenticate_ldap_safe(username, password):
         return False
 ```
 
+### Language-Specific Examples
+
+**Java:**
+```java
+// VULNERABLE: Unescaped user input in LDAP filter
+import javax.naming.directory.*;
+
+public User findUser(String username) throws NamingException {
+    DirContext ctx = getContext();
+
+    // Direct concatenation - injection vulnerable!
+    String filter = "(uid=" + username + ")";
+    // Attacker input: "admin*)(uid=*)" creates: "(uid=admin*)(uid=*)"
+
+    SearchControls controls = new SearchControls();
+    NamingEnumeration<SearchResult> results =
+        ctx.search("ou=users,dc=example,dc=com", filter, controls);
+
+    return parseUser(results);
+}
+```
+
+```java
+// SECURE: Use proper escaping or parameterized queries
+import javax.naming.directory.*;
+import org.apache.directory.api.ldap.model.filter.FilterEncoder;
+
+public User findUserSafe(String username) throws NamingException {
+    DirContext ctx = getContext();
+
+    // Escape special LDAP characters
+    String safeUsername = FilterEncoder.encodeFilterValue(username);
+    String filter = "(uid=" + safeUsername + ")";
+
+    SearchControls controls = new SearchControls();
+    NamingEnumeration<SearchResult> results =
+        ctx.search("ou=users,dc=example,dc=com", filter, controls);
+
+    return parseUser(results);
+}
+
+// BEST: Use BIND for authentication instead of search
+public boolean authenticateSafe(String username, String password) {
+    String escapedUsername = FilterEncoder.encodeFilterValue(username);
+    String userDn = "uid=" + escapedUsername + ",ou=users,dc=example,dc=com";
+
+    try {
+        DirContext ctx = new InitialDirContext(
+            createEnv(userDn, password));
+        ctx.close();
+        return true; // Bind successful
+    } catch (AuthenticationException e) {
+        return false; // Invalid credentials
+    } catch (NamingException e) {
+        throw new RuntimeException("LDAP error", e);
+    }
+}
+```
+
+**C# (ASP.NET):**
+```csharp
+// VULNERABLE: String interpolation in LDAP filter
+using System.DirectoryServices;
+
+public User FindUser(string username)
+{
+    using (var entry = new DirectoryEntry("LDAP://dc=example,dc=com"))
+    using (var searcher = new DirectorySearcher(entry))
+    {
+        // Vulnerable to injection!
+        searcher.Filter = $"(sAMAccountName={username})";
+        // Attacker: "admin*)(sAMAccountName=*)" bypasses intended logic
+
+        SearchResult result = searcher.FindOne();
+        return ParseUser(result);
+    }
+}
+```
+
+```csharp
+// SECURE: Escape LDAP special characters
+using System.DirectoryServices;
+using System.Text.RegularExpressions;
+
+public User FindUserSafe(string username)
+{
+    // Escape LDAP special characters: \ * ( ) NUL
+    string escapedUsername = EscapeLdapFilter(username);
+
+    using (var entry = new DirectoryEntry("LDAP://dc=example,dc=com"))
+    using (var searcher = new DirectorySearcher(entry))
+    {
+        searcher.Filter = $"(sAMAccountName={escapedUsername})";
+        SearchResult result = searcher.FindOne();
+        return ParseUser(result);
+    }
+}
+
+private string EscapeLdapFilter(string input)
+{
+    return input
+        .Replace("\\", "\\5c")
+        .Replace("*", "\\2a")
+        .Replace("(", "\\28")
+        .Replace(")", "\\29")
+        .Replace("\0", "\\00");
+}
+```
+
+**Node.js (ldapjs):**
+```javascript
+// VULNERABLE: Template literal with user input
+const ldap = require('ldapjs');
+
+function searchUser(username, callback) {
+    const client = ldap.createClient({ url: 'ldap://ldap.example.com' });
+
+    // Direct interpolation - vulnerable!
+    const filter = `(uid=${username})`;
+    // Attacker: "admin*)(uid=*)" bypasses filter
+
+    client.search('ou=users,dc=example,dc=com', {
+        filter: filter,
+        scope: 'sub'
+    }, callback);
+}
+```
+
+```javascript
+// SECURE: Use ldapjs escape function
+const ldap = require('ldapjs');
+
+function searchUserSafe(username, callback) {
+    const client = ldap.createClient({ url: 'ldap://ldap.example.com' });
+
+    // Escape LDAP filter characters
+    const safeUsername = ldap.filters.escape(username);
+    const filter = `(uid=${safeUsername})`;
+
+    client.search('ou=users,dc=example,dc=com', {
+        filter: filter,
+        scope: 'sub'
+    }, callback);
+}
+
+// BEST: Use BIND for authentication
+function authenticateSafe(username, password, callback) {
+    const client = ldap.createClient({ url: 'ldap://ldap.example.com' });
+    const safeUsername = ldap.filters.escape(username);
+    const userDn = `uid=${safeUsername},ou=users,dc=example,dc=com`;
+
+    client.bind(userDn, password, (err) => {
+        client.unbind();
+        callback(err ? false : true);
+    });
+}
+```
+
 ## Detection
 
-- **Review LDAP queries:** Look for any code that constructs LDAP search filters using string concatenation or formatting with user-controlled variables.
-- **Check for escaping:** Ensure that any variable being inserted into an LDAP filter is first passed through a proper LDAP escaping function.
-- **Search for LDAP query functions:** Identify all calls to functions like `ldap.search`, `search_s`, or similar methods in other languages, and trace the origin of the filter string.
-- **Test with special characters:** Input LDAP metacharacters like `*`, `(`, `)`, `\`, and `|` to see if they alter the query's behavior or cause an error.
+- **Find unescaped LDAP filter construction:** Grep for string concatenation in filters:
+  - `rg 'search.*\(.*f["\'].*{|search.*\+.*uid=' --type py`
+  - `rg 'SearchRequest.*\+|DirectorySearcher.*\+' --type cs`
+  - `rg 'new LdapQuery.*\+|filter.*concat' --type java`
+- **Verify escaping function usage:** Check for proper escaping:
+  - `rg 'ldap.*search' -A 2 | rg -v 'escape_filter|escape_dn'` (Python)
+  - `rg 'DirectorySearcher|SearchRequest' -A 3` (C#)
+  - Look for missing escaping before filter construction
+- **Audit all LDAP operations:** Find search and bind operations:
+  - `rg 'ldap\.search|search_s|search_st' --type py`
+  - `rg 'DirectorySearcher|DirectoryEntry' --type cs`
+  - `rg 'LdapContext\.search|DirContext\.search' --type java`
+- **Test with LDAP metacharacters:** Inject special chars to verify escaping:
+  - `*` (wildcard), `(` `)` (filter grouping), `\` (escape), `|` (OR), `&` (AND)
+  - Input: `admin*)(uid=*)` should not bypass authentication
 
 ## Prevention
 

@@ -9,11 +9,11 @@ description: "Security anti-pattern for DOM Clobbering vulnerabilities (CWE-79 v
 
 ## Summary
 
-DOM Clobbering is a subtle but dangerous vulnerability where attacker-controlled HTML can overwrite global JavaScript variables or DOM properties. When an HTML element is created with an `id` or `name` attribute, some browsers automatically create a global variable with that name, pointing to the element. This can "clobber" (overwrite) legitimate variables or objects in the application, leading to client-side logic bypasses, XSS, and other attacks. This is especially risky even when using HTML sanitizers, as `id` and `name` are often allowed.
+DOM Clobbering overwrites global JavaScript variables via attacker-controlled HTML. Browsers auto-create global variables from `id` and `name` attributes. Enables logic bypasses, XSS, and security control evasion. Bypasses HTML sanitizers that allow `id` and `name`.
 
 ## The Anti-Pattern
 
-The anti-pattern occurs when an application's JavaScript code relies on global variables that can be overwritten by HTML elements injected by an attacker. The code expects to access a legitimate object or value but instead gets a reference to a DOM element.
+Application JavaScript relies on global variables that HTML injection overwrites. Code expects legitimate objects but receives DOM element references instead.
 
 ### BAD Code Example
 
@@ -74,11 +74,96 @@ function submitForm() {
 Object.freeze(myApp.config);
 ```
 
+### React Example
+
+**BAD:**
+```jsx
+// VULNERABLE: Accessing window global that can be clobbered
+function AdminPanel() {
+    // Attacker injects: <div id="appConfig"></div>
+    // window.appConfig now points to the div, not the config object
+    if (window.appConfig?.isAdmin) {
+        return <AdminControls />;
+    }
+    return <AccessDenied />;
+}
+```
+
+**GOOD:**
+```jsx
+// SECURE: Use React Context or module scope
+import { useContext } from 'react';
+import { ConfigContext } from './ConfigContext';
+
+function AdminPanel() {
+    const config = useContext(ConfigContext);
+
+    if (config.isAdmin) {
+        return <AdminControls />;
+    }
+    return <AccessDenied />;
+}
+```
+
+### TypeScript Example
+
+**GOOD:**
+```typescript
+// Type safety prevents DOM clobbering
+interface AppConfig {
+    isAdmin: boolean;
+    apiUrl: string;
+}
+
+// Module-scoped, not global
+const appConfig: AppConfig = {
+    isAdmin: false,
+    apiUrl: '/api'
+};
+
+// TypeScript enforces type checking
+function checkAdmin(): void {
+    // Even if window.appConfig exists, TypeScript requires the interface
+    if (appConfig.isAdmin) {  // Type-safe access
+        showAdminPanel();
+    }
+}
+
+// Validate DOM elements with type guards
+function submitForm(formId: string): void {
+    const elem = document.getElementById(formId);
+
+    if (!(elem instanceof HTMLFormElement)) {
+        throw new TypeError(`Element ${formId} is not a form`);
+    }
+
+    elem.submit();
+}
+```
+
 ## Detection
 
-- **Review JavaScript Code:** Look for direct access to global variables (e.g., `window.someConfig`, or just `someConfig`) where the variable is expected to be an object or hold a security-critical value.
-- **Analyze HTML Sanitizer Configuration:** Check if your HTML sanitizer allows `id` and `name` attributes. While often necessary for functionality, it's the root cause of DOM Clobbering.
-- **Test for Clobbering:** Try to inject HTML elements with `id` attributes that match the names of global variables used in your application's code. For example, if your code uses a `config` object, inject `<div id="config">`.
+**JavaScript Patterns:**
+- Global variable access: `window.config`, `document.userInfo`
+- Implicit globals: `config.isAdmin` (no var/let/const declaration)
+- `document.getElementById()` without type validation
+- Security checks on globals: `if (window.auth.isLoggedIn)`
+
+**Search Patterns:**
+- Grep: `window\.[a-zA-Z]+\.|\bdocument\.[a-zA-Z]+\.|getElementById\(.*\)\.(?!tag|class)`
+- Look for: `if (window.` or `if (document.`
+- Check: Direct property access without instanceof check
+
+**HTML Sanitizer Review:**
+- DOMPurify: Check `FORBID_ATTR` doesn't exclude `id`, `name`
+- Sanitize-html: Review `allowedAttributes` config
+- HTML Purifier: Verify attribute whitelist
+
+**Manual Testing:**
+1. Identify global variables: Check `window` object in console
+2. Inject clobbering HTML: `<div id="globalVarName"></div>`
+3. Verify override: `console.log(typeof window.globalVarName)`
+4. Test security impact: Try bypassing checks
 
 ## Prevention
 
@@ -87,6 +172,71 @@ Object.freeze(myApp.config);
 - [ ] **Validate the type** of any object retrieved from the DOM before using it (e.g., `if (elem instanceof HTMLFormElement)`).
 - [ ] **Use a robust HTML sanitizer**, but be aware that allowing `id` and `name` attributes still leaves you vulnerable. DOM Clobbering protection must be implemented in your JavaScript code.
 - [ ] **Use prefixes for element IDs** that are unlikely to collide with global variables (e.g., `id="myapp-user-form"`).
+
+## Testing for DOM Clobbering
+
+**Manual Testing:**
+1. **Identify globals:** Open browser console, type `window.` and check autocomplete
+2. **Test clobbering:** Inject `<div id="targetGlobal"></div>` via input fields
+3. **Verify type change:** `typeof window.targetGlobal` should show object → object (Element)
+4. **Test bypass:** Check if security checks fail (admin access, auth bypass)
+
+**Automated Testing:**
+- **Static Analysis:** ESLint plugin `eslint-plugin-no-unsanitized`
+- **Dynamic Testing:** Burp Suite DOM Clobbering scanner
+- **Code Review:** Search for `window.` access patterns
+- **Type Checking:** TypeScript strict mode catches many cases
+
+**Example Test:**
+```javascript
+// Test that critical objects cannot be clobbered
+describe('DOM Clobbering Protection', () => {
+    it('should prevent config object clobbering', () => {
+        // Attempt to clobber
+        const div = document.createElement('div');
+        div.id = 'appConfig';
+        document.body.appendChild(div);
+
+        // Verify original object intact
+        expect(typeof myApp.config).toBe('object');
+        expect(myApp.config.isAdmin).toBe(false);
+
+        // Cleanup
+        document.body.removeChild(div);
+    });
+
+    it('should validate form element types', () => {
+        // Create fake form
+        const div = document.createElement('div');
+        div.id = 'loginForm';
+        document.body.appendChild(div);
+
+        // Should throw or return false
+        expect(() => submitForm('loginForm')).toThrow(TypeError);
+    });
+});
+```
+
+**Browser DevTools Check:**
+```javascript
+// Run in console to find potential clobbering targets
+Object.keys(window).filter(key =>
+    typeof window[key] === 'object' &&
+    window[key] !== null &&
+    !window[key].toString().includes('[native code]')
+);
+```
+
+## Remediation Steps
+
+1. **Identify global dependencies** - Search for `window.` and implicit globals
+2. **Audit HTML sanitizer** - Check if `id` and `name` are allowed
+3. **Create namespace** - Move globals to module scope or namespace object
+4. **Add type validation** - Check `instanceof` before using DOM elements
+5. **Freeze critical objects** - Use `Object.freeze()` on config objects
+6. **Update code** - Replace `window.foo` with `myApp.foo`
+7. **Test protection** - Verify clobbering attempts fail
+8. **Enable TypeScript** - Leverage type safety for additional protection
 
 ## Related Security Patterns & Anti-Patterns
 

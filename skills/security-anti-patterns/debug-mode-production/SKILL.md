@@ -9,14 +9,14 @@ description: "Security anti-pattern for debug mode in production (CWE-215). Use 
 
 ## Summary
 
-Enabling debug mode in a production environment is a critical security misconfiguration. This anti-pattern occurs when development settings or debugging features are not disabled before deployment, exposing sensitive system information and creating unintended backdoors. AI-generated code can inadvertently include hardcoded debug flags or fail to differentiate between production and development environments, leading to this vulnerability.
+Debug mode in production exposes sensitive system information and creates backdoors. Occurs when development settings remain enabled in deployment. Common in AI-generated code that hardcodes debug flags or fails to differentiate environments.
 
 ## The Anti-Pattern
 
 This anti-pattern manifests in two primary ways:
 
-1. **Hardcoded Debug Flags:** A global flag like `DEBUG = True` is set in the code and is never changed, meaning the application runs in debug mode in all environments.
-2. **Unprotected Debug Endpoints:** Routes or endpoints intended for debugging (e.g., `/debug/env`, `/_debug/sql`) are included in the production build, providing a powerful vector for attackers.
+1. **Hardcoded Debug Flags:** Global flag `DEBUG = True` never changes, so the application runs in debug mode in all environments.
+2. **Unprotected Debug Endpoints:** Debug routes (`/debug/env`, `/_debug/sql`) included in production builds provide attack vectors.
 
 ### BAD Code Example
 
@@ -78,12 +78,158 @@ if __name__ == "__main__":
 
 ```
 
+### JavaScript/Node.js Examples
+
+**BAD:**
+```javascript
+// VULNERABLE: Hardcoded debug flag in Express
+const express = require('express');
+const app = express();
+
+// Hardcoded debug mode
+const DEBUG = true;
+
+app.get('/', (req, res) => {
+    res.send('Welcome!');
+});
+
+// Debug route exposes environment variables
+app.get('/debug/env', (req, res) => {
+    if (DEBUG) {
+        res.json(process.env);
+    } else {
+        res.send('Not in debug mode.');
+    }
+});
+
+app.listen(3000);
+```
+
+**GOOD:**
+```javascript
+// SECURE: Environment-based configuration
+const express = require('express');
+const app = express();
+
+// Load from environment, default to production
+const APP_ENV = process.env.APP_ENV || 'production';
+const DEBUG = APP_ENV === 'development';
+
+app.get('/', (req, res) => {
+    res.send('Welcome!');
+});
+
+// Conditionally register debug route
+if (DEBUG) {
+    app.get('/debug/env', (req, res) => {
+        res.json(process.env);
+    });
+}
+
+// Startup check prevents production debug mode
+if (APP_ENV === 'production' && DEBUG) {
+    throw new Error('FATAL: Debug mode enabled in production. Aborting.');
+}
+
+app.listen(3000);
+```
+
+### Java/Spring Boot Examples
+
+**BAD:**
+```java
+// VULNERABLE: Hardcoded debug in application.properties
+// application.properties:
+// debug=true
+// logging.level.root=DEBUG
+
+@RestController
+public class DebugController {
+    @Value("${debug}")
+    private boolean debug;
+
+    @GetMapping("/debug/env")
+    public Map<String, String> debugEnv() {
+        if (debug) {
+            return System.getenv();
+        }
+        return Map.of("error", "Not in debug mode");
+    }
+}
+```
+
+**GOOD:**
+```java
+// SECURE: Profile-based configuration
+// application-dev.properties:
+// debug=true
+// application-prod.properties:
+// debug=false
+
+@RestController
+@Profile("dev")  // Only register in development profile
+public class DebugController {
+    @GetMapping("/debug/env")
+    public Map<String, String> debugEnv() {
+        return System.getenv();
+    }
+}
+
+// Application startup check
+@Component
+public class EnvironmentValidator implements ApplicationRunner {
+    @Value("${spring.profiles.active:prod}")
+    private String activeProfile;
+
+    @Value("${debug:false}")
+    private boolean debug;
+
+    @Override
+    public void run(ApplicationArguments args) {
+        if ("prod".equals(activeProfile) && debug) {
+            throw new IllegalStateException(
+                "FATAL: Debug mode enabled in production. Aborting."
+            );
+        }
+    }
+}
+```
+
 ## Detection
 
-- Search for hardcoded debug flags like `DEBUG = True` or `debug: true` in configuration files and source code.
-- Look for routes or endpoints with names like `/debug`, `/_debug`, or `/admin/debug`.
-- Check for the presence of development-only dependencies or packages in the production build.
-- Review error handling logic to see if it exposes detailed stack traces or sensitive information to the user.
+**Python/Flask/Django:**
+- `DEBUG = True` in source code
+- `debug=True` in Flask config
+- `DEBUG = True` in Django settings.py
+- Debug routes: `@app.route("/debug/`
+
+**JavaScript/Node.js/Express:**
+- `const DEBUG = true` in source code
+- `process.env.NODE_ENV !== 'production'` checks missing
+- Debug middleware always enabled
+- Routes: `app.get('/debug/`
+
+**Java/Spring Boot:**
+- `debug=true` in application.properties
+- `logging.level.root=DEBUG` in production
+- Debug endpoints without `@Profile("dev")`
+- `spring.devtools.restart.enabled=true` in prod
+
+**PHP:**
+- `error_reporting(E_ALL)` in production
+- `display_errors = On` in php.ini
+- `APP_DEBUG=true` in .env
+
+**Configuration Files:**
+- `.env` files with `DEBUG=true`
+- YAML configs with `debug: true`
+- JSON configs with `"debug": true`
+
+**Search Patterns:**
+- Grep: `DEBUG.*=.*[Tt]rue|debug.*:.*true|\/debug\/|process\.env\.NODE_ENV`
+- Development dependencies in production builds
+- Stack traces exposed in error responses
+- Verbose error messages with file paths
 
 ## Prevention
 
@@ -93,6 +239,59 @@ if __name__ == "__main__":
 - [ ] **Implement a startup check** in the application that aborts if it detects debug mode is enabled in a production environment.
 - [ ] **Use separate configuration files** for each environment (development, staging, production) to avoid overlap.
 - [ ] **Review your CI/CD pipeline** to ensure that the correct environment variables are being injected and that development artifacts are excluded from the final build.
+
+## Testing for Debug Mode
+
+**Manual Testing:**
+1. Check environment variables: `echo $DEBUG`, `echo $APP_ENV`
+2. Access debug endpoints: `/debug`, `/_debug`, `/debug/env`
+3. Trigger errors and check for stack traces
+4. Review HTTP headers for debug information (X-Debug, Server versions)
+
+**Automated Testing:**
+- **Static Analysis:** Semgrep, Bandit (Python), ESLint, SonarQube
+- **Configuration Scanning:** Detect hardcoded `DEBUG = True` in code
+- **Runtime Testing:** Burp Suite, OWASP ZAP to find debug endpoints
+- **CI/CD Checks:** Fail builds with debug flags enabled
+
+**Example Test:**
+```python
+# Test that debug mode is disabled in production
+def test_debug_disabled_in_production():
+    import os
+    os.environ['APP_ENV'] = 'production'
+
+    # This should raise ValueError
+    with pytest.raises(ValueError, match="Debug mode is enabled in a production environment"):
+        import app  # Import triggers startup check
+```
+
+**CI/CD Pipeline Check:**
+```yaml
+# .github/workflows/deploy.yml
+- name: Verify No Debug Mode
+  run: |
+    if grep -r "DEBUG.*=.*True" app/; then
+      echo "ERROR: Hardcoded DEBUG=True found"
+      exit 1
+    fi
+
+    if [ "$APP_ENV" = "production" ] && [ "$DEBUG" = "true" ]; then
+      echo "ERROR: Debug mode enabled for production deployment"
+      exit 1
+    fi
+```
+
+## Remediation Steps
+
+1. **Identify debug configurations** - Use detection patterns above
+2. **Check current environment** - Determine if debug mode is active
+3. **Create environment-based config** - Use environment variables
+4. **Remove hardcoded flags** - Replace `DEBUG = True` with env lookup
+5. **Conditional debug routes** - Register only in development
+6. **Add startup checks** - Abort if debug mode in production
+7. **Test the fix** - Verify debug disabled in production config
+8. **Update CI/CD** - Add validation to deployment pipeline
 
 ## Related Security Patterns & Anti-Patterns
 

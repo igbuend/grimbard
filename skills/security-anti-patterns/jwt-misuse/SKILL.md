@@ -15,7 +15,7 @@ JSON Web Tokens (JWTs) are frequently misused in AI-generated code, creating cri
 
 ### 1. Algorithm Confusion ("none" Algorithm Attack)
 
-A critical vulnerability where a library accepts any algorithm specified in the token's header. An attacker can change the algorithm to "none" and remove the signature, causing the library to validate the token without any cryptographic checks.
+Critical vulnerability where library accepts any algorithm in token header. Attacker changes algorithm to "none" and removes signature, bypassing all cryptographic validation.
 
 #### BAD Code Example
 
@@ -40,8 +40,8 @@ def verify_jwt_vulnerable(token, secret_key):
 import jwt
 
 def verify_jwt_secure(token, secret_key):
-    # CRITICAL: Always specify the exact algorithm(s) you expect.
-    # The library will now reject any token that does not use one of the specified algorithms.
+    # CRITICAL: Always specify exact algorithm(s) expected
+    # Library rejects tokens not using specified algorithms
     try:
         decoded = jwt.decode(token, secret_key, algorithms=["HS256", "RS256"])
         return decoded
@@ -52,7 +52,7 @@ def verify_jwt_secure(token, secret_key):
 
 ### 2. Weak Secret
 
-Using a weak, predictable, or hardcoded secret for symmetric signing algorithms (like HS256) makes it possible for an attacker to brute-force the secret and forge valid tokens.
+Weak, predictable, or hardcoded secrets for symmetric signing algorithms (HS256) enable attackers to brute-force secrets and forge valid tokens.
 
 #### BAD Code Example
 
@@ -74,15 +74,15 @@ def create_jwt(user_id):
 import jwt
 import os
 
-# Load a strong, randomly generated secret from environment variables or a secret manager.
+# Load strong, randomly generated secret from environment or secret manager
 JWT_SECRET = os.environ.get("JWT_SECRET")
 
 def initialize():
     if not JWT_SECRET or len(JWT_SECRET) < 32:
         raise ValueError("JWT_SECRET must be at least 256 bits (32 chars) for HS256")
 
-# For production, consider asymmetric keys (e.g., RS256) where the private key is kept secret
-# and the public key can be safely distributed for verification.
+# For production, use asymmetric keys (RS256): private key kept secret,
+# public key safely distributed for verification
 def create_jwt_asymmetric(user_id, private_key):
     payload = {"sub": user_id}
     return jwt.encode(payload, private_key, algorithm="RS256")
@@ -90,7 +90,7 @@ def create_jwt_asymmetric(user_id, private_key):
 
 ### 3. Sensitive Data in Payload
 
-The JWT payload is Base64Url-encoded, not encrypted. Anyone who intercepts the token can easily decode and read the data it contains. Storing sensitive information like PII, passwords, or internal data in the payload is a major security risk.
+JWT payload is Base64Url-encoded, not encrypted. Anyone intercepting the token can decode and read it. Storing PII, passwords, or internal data in payload creates major security risk.
 
 #### BAD Code Example
 
@@ -117,13 +117,13 @@ import time
 
 def create_jwt_secure(user, secret_key):
     payload = {
-        "sub": user.id,          # Subject (user ID) - standard and non-sensitive
+        "sub": user.id,          # Subject (user ID) - standard, non-sensitive
         "iat": int(time.time()), # Issued at - standard
         "exp": int(time.time()) + 3600, # Expiration (1 hour) - standard
         "role": user.role        # Non-sensitive custom claim
     }
-    # Never include passwords, PII, payment info, or internal data.
-    # The server should fetch this data from a secure database using the user ID from the token.
+    # Never include passwords, PII, payment info, or internal data
+    # Server fetches data from secure database using user ID from token
     return jwt.encode(payload, secret_key, algorithm="HS256")
 ```
 
@@ -269,18 +269,18 @@ public class SecureJwtService {
 
 ## Prevention
 
-- [ ] **Always specify allowed algorithms** explicitly during token verification.
-- [ ] **Use strong, centrally managed secrets** (at least 256 bits for HS256) or prefer asymmetric algorithms (RS256/ES256) for production systems.
-- [ ] **Never store sensitive data** in JWT payloads. The payload is readable by anyone.
-- [ ] **Always include an `exp` claim** with a reasonably short lifetime for access tokens.
-- [ ] **Implement a token refresh mechanism** for sessions that need to last longer than the access token's lifetime.
-- [ ] **Consider implementing a token revocation list** to invalidate tokens for compromised accounts.
+- [ ] **Always specify allowed algorithms:** Explicitly declare during token verification
+- [ ] **Use strong secrets:** At least 256 bits for HS256. Prefer asymmetric algorithms (RS256/ES256) for production
+- [ ] **Never store sensitive data:** JWT payload readable by anyone
+- [ ] **Always include `exp` claim:** Reasonably short lifetime for access tokens
+- [ ] **Implement token refresh:** For sessions longer than access token lifetime
+- [ ] **Consider token revocation list:** Invalidate tokens for compromised accounts
 
 ## Related Security Patterns & Anti-Patterns
 
-- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): JWT secrets are a common type of hardcoded secret.
-- [Session Fixation Anti-Pattern](../session-fixation/): Provides context on alternative session management strategies.
-- [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): Relevant if generating unique token identifiers (`jti`).
+- [Hardcoded Secrets Anti-Pattern](../hardcoded-secrets/): JWT secrets commonly hardcoded
+- [Session Fixation Anti-Pattern](../session-fixation/): Alternative session management strategies
+- [Insufficient Randomness Anti-Pattern](../insufficient-randomness/): Relevant for generating unique token identifiers (`jti`)
 
 ## References
 

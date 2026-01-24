@@ -18,14 +18,14 @@ Never use vulnerable hash functions (MD5, SHA-1, SHA-256) in `hash(secret + mess
 ### BAD Code Example
 
 ```python
-# VULNERABLE: Using hash(secret + message) for a message signature.
+# VULNERABLE: Using hash(secret + message) for message signature
 import hashlib
 
-SECRET_KEY = b"my_super_secret_key_16b" # 16 bytes long
+SECRET_KEY = b"my_super_secret_key_16b" # 16 bytes
 
 def get_signed_url(message):
-    # The signature is created by prepending the secret to the message and hashing.
-    # This is vulnerable to length extension.
+    # Signature created by prepending secret to message and hashing
+    # Vulnerable to length extension
     signature = hashlib.sha256(SECRET_KEY + message.encode()).hexdigest()
     return f"/api/action?{message}&signature={signature}"
 
@@ -33,45 +33,44 @@ def verify_request(message, signature):
     expected_signature = hashlib.sha256(SECRET_KEY + message.encode()).hexdigest()
     return signature == expected_signature
 
-# 1. A legitimate URL is generated:
+# 1. Legitimate URL generated:
 #    Message: "user=alice&action=view"
 #    URL: /api/action?user=alice&action=view&signature=...
 
-# 2. An attacker intercepts this URL. They know the signature and the message.
-#    They don't know the SECRET_KEY, but they can guess its length (16 bytes).
+# 2. Attacker intercepts URL. Knows signature and message.
+#    Doesn't know SECRET_KEY but can guess length (16 bytes)
 
-# 3. Using a tool like `hashpump`, the attacker can compute a new, valid signature for an extended message.
-#    Original Message: "user=alice&action=view"
-#    Extended Message: "user=alice&action=view" + padding + "&action=delete&target=bob"
-#    The tool generates a new signature and the new message string including the padding.
+# 3. Using `hashpump`, attacker computes new valid signature for extended message
+#    Original: "user=alice&action=view"
+#    Extended: "user=alice&action=view" + padding + "&action=delete&target=bob"
+#    Tool generates new signature and message with padding
 
-# 4. The server receives the forged request, recomputes the hash of `SECRET_KEY + extended_message`,
-#    and finds that it matches the attacker's new signature. The delete action is processed.
+# 4. Server receives forged request, recomputes hash of `SECRET_KEY + extended_message`,
+#    finds it matches attacker's signature. Delete action processed
 ```
 
 ### GOOD Code Example
 
 ```python
-# SECURE: Use HMAC (Hash-based Message Authentication Code).
+# SECURE: Use HMAC (Hash-based Message Authentication Code)
 import hmac
 import hashlib
 
 SECRET_KEY = b"my_super_secret_key_16b"
 
 def get_signed_url_secure(message):
-    # HMAC is specifically designed to prevent length extension attacks.
-    # It uses a two-step hashing process: hash(key XOR opad, hash(key XOR ipad, message))
+    # HMAC designed to prevent length extension attacks
+    # Two-step hashing: hash(key XOR opad, hash(key XOR ipad, message))
     signature = hmac.new(SECRET_KEY, message.encode(), hashlib.sha256).hexdigest()
     return f"/api/action?{message}&signature={signature}"
 
 def verify_request_secure(message, signature):
     expected_signature = hmac.new(SECRET_KEY, message.encode(), hashlib.sha256).hexdigest()
-    # Use hmac.compare_digest for constant-time comparison to prevent timing attacks.
+    # Use hmac.compare_digest for constant-time comparison, prevents timing attacks
     return hmac.compare_digest(signature, expected_signature)
 
-# An attacker cannot extend an HMAC-signed message because they don't know the secret key.
-# The inner hash `hash(key XOR ipad, message)` prevents them from being able
-# to continue the hash chain.
+# Attacker cannot extend HMAC-signed message without secret key
+# Inner hash `hash(key XOR ipad, message)` prevents continuing hash chain
 ```
 
 ### Language-Specific Examples
@@ -183,15 +182,15 @@ public class SecureSigning {
 
 ## Prevention
 
-- [ ] **Use HMAC:** Always use HMAC for creating message authentication codes. HMAC is the industry standard and is implemented in the standard library of most modern languages. It is specifically designed to be immune to length extension attacks.
-- [ ] **Choose a secure hash function:** Use HMAC with a strong hash function like SHA-256 or SHA-3.
-- [ ] **Do not roll your own cryptography:** Avoid creating custom signing schemes like `hash(message + secret)` or `hash(secret + message + secret)`. While some might be safe from this specific attack, they may have other flaws. Stick to the standard: HMAC.
-- [ ] **If you cannot use HMAC**, use a hash function that is not vulnerable to length extension, such as SHA-3 or BLAKE2. However, HMAC is still the preferred and most widely supported solution.
+- [ ] **Use HMAC:** Always use HMAC for message authentication codes. Industry standard, immune to length extension attacks, available in standard libraries
+- [ ] **Choose secure hash functions:** Use HMAC with SHA-256 or SHA-3
+- [ ] **Never roll your own crypto:** Avoid custom schemes like `hash(message + secret)` or `hash(secret + message + secret)`. Use HMAC
+- [ ] **Alternative if HMAC unavailable:** Use SHA-3 or BLAKE2 (not vulnerable to length extension). HMAC still preferred
 
 ## Related Security Patterns & Anti-Patterns
 
-- [Weak Encryption Anti-Pattern](../weak-encryption/): Part of the broader category of cryptographic failures.
-- [Timing Attacks Anti-Pattern](../timing-attacks/): When verifying signatures, it's important to use a constant-time comparison function to avoid leaking information through timing differences.
+- [Weak Encryption Anti-Pattern](../weak-encryption/): Part of broader cryptographic failures category
+- [Timing Attacks Anti-Pattern](../timing-attacks/): Use constant-time comparison for signature verification to prevent timing leaks
 
 ## References
 

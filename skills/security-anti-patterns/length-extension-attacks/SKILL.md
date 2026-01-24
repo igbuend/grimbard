@@ -200,4 +200,5 @@ public class SecureSigning {
 - [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
 - [Length Extension Attack (Wikipedia)](https://en.wikipedia.org/wiki/Length_extension_attack)
 - [Hash Length Extension Attacks](https://blog.skullsecurity.org/2012/everything-you-need-to-know-about-hash-length-extension-attacks)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

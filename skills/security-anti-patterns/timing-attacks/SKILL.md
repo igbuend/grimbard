@@ -110,4 +110,5 @@ def check_token_secure():
 - [OWASP Testing for Timing Attacks](https://owasp.org/www-project-web-security-testing-guide/)
 - [CWE-208: Observable Timing Discrepancy](https://cwe.mitre.org/data/definitions/208.html)
 - [CAPEC-462: Cross-Domain Search Timing](https://capec.mitre.org/data/definitions/462.html)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

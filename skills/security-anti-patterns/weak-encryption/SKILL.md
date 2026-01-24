@@ -132,4 +132,5 @@ def decrypt_data_gcm(encrypted_data_with_nonce):
 - [CWE-326: Inadequate Encryption Strength](https://cwe.mitre.org/data/definitions/326.html)
 - [CWE-327: Use of a Broken or Risky Cryptographic Algorithm](https://cwe.mitre.org/data/definitions/327.html)
 - [CAPEC-97: Cryptanalysis](https://capec.mitre.org/data/definitions/97.html)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

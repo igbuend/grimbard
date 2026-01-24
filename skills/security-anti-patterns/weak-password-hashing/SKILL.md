@@ -104,4 +104,5 @@ def verify_password_secure(password, stored_hash):
 - [CWE-759: Use of a One-Way Hash without a Salt](https://cwe.mitre.org/data/definitions/759.html)
 - [CAPEC-55: Rainbow Table Password Cracking](https://capec.mitre.org/data/definitions/55.html)
 - [PortSwigger: Authentication](https://portswigger.net/web-security/authentication)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

@@ -291,4 +291,5 @@ public class SecureJwtService {
 - [CWE-287: Improper Authentication](https://cwe.mitre.org/data/definitions/287.html)
 - [CAPEC-220: Client-Server Protocol Manipulation](https://capec.mitre.org/data/definitions/220.html)
 - [PortSwigger: Jwt](https://portswigger.net/web-security/jwt)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

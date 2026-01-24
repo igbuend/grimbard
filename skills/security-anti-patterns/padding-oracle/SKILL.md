@@ -121,4 +121,5 @@ def decrypt_data_secure():
 - [CWE-649: Reliance on Obfuscation](https://cwe.mitre.org/data/definitions/649.html)
 - [CAPEC-463: Padding Oracle Crypto Attack](https://capec.mitre.org/data/definitions/463.html)
 - [Padding Oracle Attack (Wikipedia)](https://en.wikipedia.org/wiki/Padding_oracle_attack)
+- [BlueKrypt - Cryptographic Key Length Recommendation](https://www.keylength.com/)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

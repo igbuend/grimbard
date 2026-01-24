@@ -9,7 +9,7 @@ description: "Security anti-pattern for weak encryption (CWE-326, CWE-327). Use 
 
 ## Summary
 
-Weak encryption refers to the use of cryptographic algorithms, modes, or implementations that provide insufficient protection for sensitive data. This anti-pattern often stems from using outdated algorithms (e.g., DES, RC4), insecure modes of operation (e.g., ECB), or improper key/initialization vector (IV)/nonce management (e.g., static IVs). AI models, trained on vast codebases, can inadvertently suggest these weak practices found in older tutorials or examples. The consequence is that encrypted data can be easily decrypted by an attacker, leading to data breaches, compliance failures, and loss of trust.
+Applications use outdated algorithms (DES, RC4), insecure modes (ECB), or mismanage IVs/nonces (static, reused), enabling easy decryption. AI models suggest these weak practices from older tutorials, leading to data breaches and compliance failures.
 
 ## The Anti-Pattern
 
@@ -35,7 +35,7 @@ def encrypt_data_des(plaintext):
     ciphertext = cipher.encrypt(padded_plaintext.encode('utf-8'))
     return ciphertext
 
-# DES can be brute-forced in a matter of hours or days with dedicated hardware.
+# DES can be brute-forced in under 24 hours with commodity hardware.
 ```
 
 ### 2. Insecure Modes of Operation (e.g., ECB)
@@ -68,9 +68,7 @@ def encrypt_data_ecb(plaintext):
 ```python
 # SECURE: Use a modern, authenticated encryption mode like AES-256-GCM.
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.hkdf import HKDFExpand
-from cryptography.hazmat.backends import default_backend
+from cryptography.exceptions import InvalidTag
 import os
 
 # Generate a strong, random key. AES-256 uses a 32-byte key.
@@ -116,8 +114,8 @@ def decrypt_data_gcm(encrypted_data_with_nonce):
 
 - [ ] **Use strong, modern algorithms:** For symmetric encryption, always use **AES-256**. For authenticated encryption, prefer **AES-256-GCM** or **ChaCha20-Poly1305**.
 - [ ] **Avoid insecure modes of operation:** Never use ECB mode. If using CBC mode, always pair it with a strong MAC (Message Authentication Code) in an Encrypt-then-MAC scheme. Better yet, use AEAD modes like GCM.
-- [ ] **Generate random, unique IVs/Nonces:** For every encryption operation, a unique and unpredictable IV (for CBC) or nonce (for GCM) must be generated using a cryptographically secure random number generator. Never reuse a nonce with the same key in GCM.
-- [ ] **Use established cryptographic libraries:** Do not attempt to "roll your own" encryption. Use well-vetted, standard libraries (e.g., `cryptography` in Python, `javax.crypto` in Java).
+- [ ] **Generate random, unique IVs/Nonces:** Generate a unique, unpredictable IV (CBC) or nonce (GCM) for every encryption using a cryptographically secure random number generator. Never reuse a nonce with the same key in GCM (enables catastrophic key recovery).
+- [ ] **Use established cryptographic libraries:** Never "roll your own" encryption. Use well-vetted, standard libraries (e.g., `cryptography` in Python, `javax.crypto` in Java).
 - [ ] **Ensure key strength:** Use sufficiently long keys (e.g., 256 bits for AES).
 
 ## Related Security Patterns & Anti-Patterns

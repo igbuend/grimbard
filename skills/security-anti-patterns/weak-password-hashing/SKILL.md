@@ -9,7 +9,7 @@ description: "Security anti-pattern for weak password hashing (CWE-327, CWE-759)
 
 ## Summary
 
-Weak password hashing is a critical vulnerability that occurs when applications use cryptographic algorithms that are unsuitable for storing passwords. This anti-pattern often involves using fast, general-purpose hash functions (like MD5, SHA-1, or plain SHA-256) without proper salting, or by not hashing passwords at all. Attackers can exploit this to rapidly crack user passwords using pre-computed tables (rainbow tables) or brute-force attacks, especially with modern GPUs. This can lead to mass account compromise and credential stuffing across different services.
+Applications use fast general-purpose hash functions (MD5, SHA-1, SHA-256) without salting for password storage, enabling rapid cracking via rainbow tables or GPU-accelerated brute-force (billions of hashes per second). Results in mass account compromise and credential stuffing attacks.
 
 ## The Anti-Pattern
 
@@ -48,16 +48,14 @@ def hash_password_sha256_unsalted(password):
 import bcrypt # Or Argon2, scrypt
 
 def hash_password_secure(password):
-    # bcrypt automatically generates a unique salt for each password.
-    # The `gensalt()` function also allows specifying the work factor (rounds).
-    # A higher work factor makes hashing slower, increasing resistance to brute-force attacks.
+    # bcrypt generates unique salt per password and supports adjustable work factor.
+    # Higher rounds = slower hashing = better brute-force resistance.
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12))
     return hashed_password.decode('utf-8') # Store the hashed password as a string.
 
 def verify_password_secure(password, stored_hash):
-    # `checkpw()` safely verifies the password against the stored hash.
-    # It extracts the salt and work factor from the stored hash and performs a
-    # constant-time comparison to prevent timing attacks.
+    # checkpw() verifies password against stored hash with constant-time comparison.
+    # Extracts salt and work factor from stored hash to prevent timing attacks.
     return bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8'))
 
 # Recommended algorithms (in order of current preference):
@@ -85,7 +83,7 @@ def verify_password_secure(password, stored_hash):
   - **Argon2id:** Currently the recommended algorithm for new applications.
   - **bcrypt:** A widely used and strong algorithm.
   - **scrypt:** Another strong algorithm.
-- [ ] **Always use a unique, cryptographically secure salt** for each password. Modern algorithms like bcrypt and Argon2 handle salt generation automatically.
+- [ ] **Always use a unique, cryptographically secure salt** for each password. bcrypt and Argon2 generate salts automatically.
 - [ ] **Adjust the work factor (cost) appropriately.** Increase the number of rounds (bcrypt) or memory/time cost (Argon2) until hashing takes about 250-500 milliseconds on your server hardware. This makes brute-forcing expensive for attackers.
 - [ ] **Never use fast, general-purpose hash functions** like MD5, SHA-1, or plain SHA-256 for passwords. These are designed for speed, not for password storage.
 - [ ] **Never store plaintext passwords.**

@@ -9,7 +9,7 @@ description: "Security anti-pattern for Cross-Site Scripting vulnerabilities (CW
 
 ## Summary
 
-Cross-Site Scripting (XSS) is a type of injection vulnerability where an attacker injects malicious client-side scripts into a web page viewed by other users. This happens when an application includes untrusted data in a web page without proper validation or encoding. XSS attacks can steal session cookies, deface websites, redirect users to malicious sites, or even perform actions on behalf of the victim. It is a pervasive and dangerous vulnerability, with AI-generated code showing a particularly high failure rate in preventing it.
+Cross-Site Scripting (XSS) occurs when applications include untrusted data in web pages without proper encoding, allowing attackers to inject malicious scripts that steal cookies, hijack sessions, or perform unauthorized actions. AI-generated code has an 86% XSS failure rate.
 
 ## The Anti-Pattern
 
@@ -17,7 +17,7 @@ The anti-pattern is directly embedding user-controlled data into HTML content wi
 
 ### 1. Reflected XSS
 
-Malicious script is reflected immediately in the web browser from user-supplied input.
+User input reflects malicious scripts immediately in the web browser response.
 
 #### BAD Code Example
 
@@ -202,7 +202,6 @@ window.onload = function() {
 - [CAPEC-86: Cross Site Scripting](https://capec.mitre.org/data/definitions/86.html)
 - [PortSwigger: Cross Site Scripting](https://portswigger.net/web-security/cross-site-scripting)
 - [CAPEC-591: Reflected XSS](https://capec.mitre.org/data/definitions/591.html)
-- [PortSwigger: Cross Site Scripting](https://portswigger.net/web-security/cross-site-scripting)
 - [CAPEC-592: Stored XSS](https://capec.mitre.org/data/definitions/592.html)
 - [PortSwigger: Cross Site Scripting](https://portswigger.net/web-security/cross-site-scripting)
 - Source: [sec-context](https://github.com/Arcanum-Sec/sec-context)

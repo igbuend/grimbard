@@ -9,7 +9,7 @@ description: "Security anti-pattern for XPath injection vulnerabilities (CWE-643
 
 ## Summary
 
-XPath Injection is a vulnerability that occurs when user-supplied input is insecurely embedded into an XPath (XML Path Language) query. XPath is used to navigate and query XML documents. Similar to SQL Injection, attackers can inject special characters into the input, manipulating the XPath query's logic. This can lead to authentication bypass, unauthorized access to sensitive XML data, or information disclosure about the XML document structure.
+XPath Injection occurs when applications insecurely embed user input into XPath queries without proper escaping or parameterization. XPath is used to navigate and query XML documents. Similar to SQL Injection, attackers can inject special characters into the input, manipulating the XPath query's logic. This can lead to authentication bypass, unauthorized access to sensitive XML data, or information disclosure about the XML document structure.
 
 ## The Anti-Pattern
 
@@ -106,7 +106,19 @@ def authenticate_user_secure(username, password):
 ## Prevention
 
 - [ ] **Use parameterized XPath queries:** This is the most effective defense. Many XML libraries provide mechanisms to pass variables to XPath expressions separately from the query string, which handles escaping automatically.
-- [ ] **Escape user input:** If parameterization is not available, all user-supplied input used in XPath queries must be properly escaped. Be careful with strings that contain both single and double quotes, as these require special handling (e.g., using `concat()` in XPath).
+- [ ] **Escape user input:** If parameterization is not available, all user-supplied input used in XPath queries must be properly escaped. Be careful with strings that contain both single and double quotes, as these require special handling (e.g., using `concat()` in XPath):
+
+```python
+def escape_xpath_string(s):
+    # Handle strings with both quotes using concat()
+    if "'" in s and '"' in s:
+        return "concat('" + s.replace("'", "',\"'\",'") + "')"
+    elif "'" in s:
+        return '"' + s + '"'
+    else:
+        return "'" + s + "'"
+```
+
 - [ ] **Validate input:** Use a strict allowlist to validate user input before it's used in any XPath query. For example, if a username is expected, ensure it only contains alphanumeric characters.
 - [ ] **Avoid building dynamic XPath expressions:** Whenever possible, use static XPath expressions and rely on parameters or DOM traversal for dynamic selection.
 

@@ -9,33 +9,29 @@ description: "Security anti-pattern for timing side-channel vulnerabilities (CWE
 
 ## Summary
 
-A timing attack is a side-channel attack where an attacker observes the time it takes for a cryptographic operation or a secret comparison to complete. If an application's code for comparing a secret (like a password or an API key) stops as soon as it finds a mismatch, it leaks information. For example, comparing `ABCDEF` to `ABCDEG` will take slightly longer than comparing `ABCDEF` to `XBCDEF` because more characters are compared before a mismatch is found. An attacker can use these minute timing differences to guess the secret character by character, eventually recovering the entire secret.
+Attackers measure operation timing to extract secrets. Early-exit comparisons leak information: comparing `ABCDEF` to `ABCDEG` takes longer than `ABCDEF` to `XBCDEF` (more matching characters before mismatch). These timing differences enable character-by-character secret recovery.
 
 ## The Anti-Pattern
 
-The anti-pattern is using a comparison function that returns early upon finding a difference when comparing two sensitive values (e.g., passwords, tokens, cryptographic hashes).
+The anti-pattern is comparison functions returning early upon finding differences in sensitive values (passwords, tokens, hashes).
 
 ### BAD Code Example
 
 ```python
-# VULNERABLE: Naive string comparison that leaks timing information.
-import time
+# VULNERABLE: String comparison leaking timing information.
 
 def insecure_compare(s1, s2):
-    # This comparison function exits as soon as a mismatch is found.
-    # If s1 and s2 differ at the first character, it returns quickly.
-    # If they differ at the last character, it takes longer.
+    # Exits on first mismatch (early exit).
+    # First character mismatch returns quickly.
+    # Last character mismatch takes longer.
     if len(s1) != len(s2):
         return False
     for i in range(len(s1)):
         if s1[i] != s2[i]:
-            return False # Early exit.
-        # Adding a small, consistent delay here might make the timing difference more apparent
-        # for an attacker, but doesn't fix the fundamental flaw.
-        # time.sleep(0.000001)
+            return False # Early exit leaks timing.
     return True
 
-SECRET_TOKEN = "abcdef123456" # This is the secret the attacker wants to guess.
+SECRET_TOKEN = "abcdef123456"
 
 @app.route("/check_token")
 def check_token():
@@ -44,30 +40,26 @@ def check_token():
         return "Token valid!"
     return "Token invalid!"
 
-# Attacker's strategy:
-# 1. Guess the first character: 'a', 'b', 'c', etc.
-#    - Request `/check_token?token=X` -> very fast response.
-#    - Request `/check_token?token=a` -> slightly slower response (first char matches).
-# 2. Once 'a' is confirmed, guess the second: 'ab', 'ac', etc.
-#    - Request `/check_token?token=aX` -> slightly slower than 'X'.
-#    - Request `/check_token?token=ab` -> even slower (first two chars match).
-# This allows the attacker to discover the secret character by character.
+# Attack: Measure response times to discover secret character-by-character.
+# token=X -> fast (first char wrong)
+# token=a -> slower (first char matches)
+# token=ab -> even slower (two chars match)
 ```
 
 ### GOOD Code Example
 
 ```python
-# SECURE: Use a constant-time comparison function that always takes the same amount of time.
-import hmac # Python's `hmac` module provides `compare_digest` for constant-time comparison.
-import secrets # For securely generating random tokens
+# SECURE: Constant-time comparison prevents timing leaks.
+import hmac
+import secrets
 
 def secure_compare(s1_bytes, s2_bytes):
-    # `hmac.compare_digest` compares two byte strings in a "constant-time" manner.
-    # It ensures that the execution time does not depend on the values of the strings,
-    # only on their length. It performs a full comparison of both strings.
+    # `hmac.compare_digest` performs constant-time comparison.
+    # Execution time depends only on length, not values.
+    # Always compares all bytes.
     return hmac.compare_digest(s1_bytes, s2_bytes)
 
-SECRET_TOKEN = secrets.token_bytes(16) # A truly random, 16-byte (128-bit) secret.
+SECRET_TOKEN = secrets.token_bytes(16) # Secure 128-bit token.
 
 @app.route("/check_token_secure")
 def check_token_secure():
@@ -77,8 +69,7 @@ def check_token_secure():
     except ValueError:
         return "Token invalid!", 400
 
-    # Ensure the length of the provided token is the same as the secret.
-    # If lengths differ, `hmac.compare_digest` handles it safely, returning False.
+    # Length check handled safely by compare_digest.
     if len(provided_token_bytes) != len(SECRET_TOKEN):
         return "Token invalid!", 400
 
@@ -95,15 +86,15 @@ def check_token_secure():
 
 ## Prevention
 
-- [ ] **Always use a constant-time comparison function** when comparing secrets or other security-sensitive values.
-- [ ] **Know your language's constant-time comparison functions:**
-  - **Python:** `hmac.compare_digest()` or `secrets.compare_digest()`.
-  - **Node.js:** `crypto.timingSafeEqual()`.
-  - **Go:** `subtle.ConstantTimeCompare()`.
-  - **Java:** `MessageDigest.isEqual()` (for byte arrays).
-  - **PHP:** `hash_equals()`.
-- [ ] **For password hashing verification:** Always use the library's provided verification function (e.g., `bcrypt.checkpw()` or `argon2.verify()`), as these are designed to be timing-safe.
-- [ ] **Ensure the lengths of the values being compared are the same.** If they are not, `hmac.compare_digest` and similar functions will typically return `False` in a constant-time manner.
+- [ ] **Use constant-time comparison for secrets:** Never use standard equality operators for sensitive values.
+- [ ] **Know constant-time functions:**
+  - **Python:** `hmac.compare_digest()` or `secrets.compare_digest()`
+  - **Node.js:** `crypto.timingSafeEqual()`
+  - **Go:** `subtle.ConstantTimeCompare()`
+  - **Java:** `MessageDigest.isEqual()` (byte arrays)
+  - **PHP:** `hash_equals()`
+- [ ] **Use password library verification:** Libraries like bcrypt/argon2 provide timing-safe verification (`bcrypt.checkpw()`, `argon2.verify()`).
+- [ ] **Verify equal lengths:** Constant-time functions handle length mismatches safely, but pre-checking improves clarity.
 
 ## Related Security Patterns & Anti-Patterns
 

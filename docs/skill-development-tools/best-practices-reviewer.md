@@ -57,7 +57,7 @@ npx add-skill igbuend/grimbard
 ### Install standalone
 
 ```bash
-npx add-skill igbuend/grimbard/skills/skill-best-practices-reviewer
+npx add-skill igbuend/grimbard/skills/best-practices-reviewer
 ```
 
 ## Usage
@@ -65,19 +65,19 @@ npx add-skill igbuend/grimbard/skills/skill-best-practices-reviewer
 ### Review a specific skill
 
 ```
-/skill-best-practices-reviewer .claude/skills/my-skill/SKILL.md
+/best-practices-reviewer .claude/skills/my-skill/SKILL.md
 ```
 
 ### Review all skills in your project
 
 ```
-Review all SKILL.md files in .claude/skills/ using /skill-best-practices-reviewer
+Review all SKILL.md files in .claude/skills/ using /best-practices-reviewer
 ```
 
 ### Validate a skill draft
 
 ```
-Use /skill-best-practices-reviewer to check this skill:
+Use /best-practices-reviewer to check this skill:
 
 ---
 name: my-skill
@@ -90,7 +90,7 @@ description: Does something useful
 ### Get recommendations before publishing
 
 ```
-Use /skill-best-practices-reviewer to audit all skills in the skills/ directory before I publish this repository
+Use /best-practices-reviewer to audit all skills in the skills/ directory before I publish this repository
 ```
 
 ## Validation Criteria
@@ -392,7 +392,7 @@ Consider adding to the Request/Response Format section:
 Run the reviewer frequently while developing skills:
 
 ```
-/skill-best-practices-reviewer .claude/skills/my-new-skill/SKILL.md
+/best-practices-reviewer .claude/skills/my-new-skill/SKILL.md
 ```
 
 This catches issues early when they're easier to fix.
@@ -402,7 +402,7 @@ This catches issues early when they're easier to fix.
 Always review before publishing or sharing:
 
 ```
-Review all skills in this repository using /skill-best-practices-reviewer before I publish to GitHub
+Review all skills in this repository using /best-practices-reviewer before I publish to GitHub
 ```
 
 This ensures consistent quality across your skill collection.
@@ -412,7 +412,7 @@ This ensures consistent quality across your skill collection.
 Periodically audit existing skills:
 
 ```
-Use /skill-best-practices-reviewer to audit the top 10 most-used skills in .claude/skills/ and suggest improvements
+Use /best-practices-reviewer to audit the top 10 most-used skills in .claude/skills/ and suggest improvements
 ```
 
 Skills evolve, and periodic reviews catch staleness.
@@ -422,7 +422,7 @@ Skills evolve, and periodic reviews catch staleness.
 Use as a quality gate in your team's workflow:
 
 ```
-Review the skill in this PR using /skill-best-practices-reviewer
+Review the skill in this PR using /best-practices-reviewer
 ```
 
 This maintains consistent quality across team contributions.
@@ -438,7 +438,7 @@ Add to `.pre-commit-config.yaml`:
   hooks:
     - id: skill-review
       name: Review skills for best practices
-      entry: claude -p "Review changed SKILL.md files using /skill-best-practices-reviewer"
+      entry: claude -p "Review changed SKILL.md files using /best-practices-reviewer"
       language: system
       files: 'SKILL\.md$'
 ```
@@ -450,7 +450,7 @@ Add to GitHub Actions:
 ```yaml
 - name: Review Skills
   run: |
-    claude -p "Review all SKILL.md files using /skill-best-practices-reviewer and fail if any critical issues found"
+    claude -p "Review all SKILL.md files using /best-practices-reviewer and fail if any critical issues found"
 ```
 
 ### IDE Integration
@@ -461,7 +461,7 @@ Configure as a task in VS Code (`.vscode/tasks.json`):
 {
   "label": "Review Skill",
   "type": "shell",
-  "command": "claude -p '/skill-best-practices-reviewer ${file}'"
+  "command": "claude -p '/best-practices-reviewer ${file}'"
 }
 ```
 

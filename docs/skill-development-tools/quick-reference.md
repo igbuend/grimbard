@@ -10,7 +10,7 @@ Quick reference guide for skill development and validation tools in the grimbard
 
 **Usage:**
 ```
-/skill-best-practices-reviewer path/to/SKILL.md
+/best-practices-reviewer path/to/SKILL.md
 ```
 
 **What it checks:**
@@ -152,7 +152,7 @@ Use /my-skill to [do the thing] in a test environment
 ### 2. Review
 
 ```
-/skill-best-practices-reviewer .claude/skills/my-skill/SKILL.md
+/best-practices-reviewer .claude/skills/my-skill/SKILL.md
 ```
 
 ### 3. Iterate
@@ -174,7 +174,7 @@ Use /my-skill for a real task and observe results
   hooks:
     - id: skill-review
       name: Review skills
-      entry: claude -p "Review SKILL.md using /skill-best-practices-reviewer"
+      entry: claude -p "Review SKILL.md using /best-practices-reviewer"
       language: system
       files: 'SKILL\.md$'
 ```
@@ -191,12 +191,12 @@ Use /my-skill for a real task and observe results
 
 ```makefile
 review-skills:
-	@claude -p "Review all skills in .claude/skills/ using /skill-best-practices-reviewer"
+	@claude -p "Review all skills in .claude/skills/ using /best-practices-reviewer"
 ```
 
 ## Resources
 
-- [Full Documentation](./skill-best-practices-reviewer.md)
+- [Full Documentation](./best-practices-reviewer.md)
 - [Claude Code Best Practices](https://code.claude.com/docs/en/best-practices)
 - [Skills Guide](https://code.claude.com/docs/en/skills)
 - [grimbard Repository](https://github.com/igbuend/grimbard)

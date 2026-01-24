@@ -1,5 +1,5 @@
 ---
-name: skill-best-practices-reviewer
+name: best-practices-reviewer
 description: Reviews skills against Claude Code best practices. Use when auditing skill files for adherence to recommendations.
 ---
 
@@ -555,15 +555,15 @@ Based on official Claude Code best practices:
 
 ### Review a skill file
 ```
-/skill-best-practices-reviewer .claude/skills/my-skill/SKILL.md
+/best-practices-reviewer .claude/skills/my-skill/SKILL.md
 ```
 
 ### Review all skills
 ```
-Review all skill files in .claude/skills/ using the skill-best-practices-reviewer
+Review all skill files in .claude/skills/ using the best-practices-reviewer
 ```
 
 ### Quick validation
 ```
-Use /skill-best-practices-reviewer to check if this skill follows best practices [paste skill content]
+Use /best-practices-reviewer to check if this skill follows best practices [paste skill content]
 ```

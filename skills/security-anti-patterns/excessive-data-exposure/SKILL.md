@@ -9,11 +9,11 @@ description: "Security anti-pattern for excessive data exposure (CWE-200). Use w
 
 ## Summary
 
-Excessive Data Exposure is a common vulnerability where an application, particularly an API, reveals more information than is necessary for the client to function. This anti-pattern often occurs when an API endpoint returns a raw database object or a model class directly, without filtering out sensitive or internal fields. Even if the client-side UI hides this data, an attacker can easily intercept the API response to access it, leading to the exposure of personal information (PII), credentials, and internal system details.
+Excessive Data Exposure occurs when APIs return more data than necessary for client functionality. This happens when endpoints serialize raw database objects or model classes without filtering sensitive fields. Attackers intercept API responses to access exposed PII, credentials, and internal system details, even when client-side UI hides this data.
 
 ## The Anti-Pattern
 
-The anti-pattern is to serialize and return an entire object from a database or internal model, assuming the client will pick what it needs. This sends all properties of the object, including sensitive ones, over the wire.
+Never serialize and return entire database objects or internal models. This exposes all object properties, including sensitive ones, assuming the client will filter what it needs.
 
 ### BAD Code Example
 
@@ -75,11 +75,109 @@ def get_user(user_id):
     return jsonify(user_dto.__dict__)
 ```
 
+### Language-Specific Implementations
+
+**JavaScript/TypeScript (NestJS):**
+```typescript
+// VULNERABLE: Returning raw entity
+@Get(':id')
+async getUser(@Param('id') id: string) {
+  const user = await this.userRepository.findOne(id);
+  return user; // Exposes all fields including passwordHash, ssn
+}
+
+// SECURE: Use class-transformer with explicit @Expose decorators
+import { Expose } from 'class-transformer';
+
+export class UserPublicDto {
+  @Expose()
+  id: number;
+
+  @Expose()
+  username: string;
+
+  // password, ssn, etc. not decorated - won't serialize
+}
+
+@Get(':id')
+async getUser(@Param('id') id: string) {
+  const user = await this.userRepository.findOne(id);
+  return plainToClass(UserPublicDto, user, { excludeExtraneousValues: true });
+}
+```
+
+**Java (Spring Boot):**
+```java
+// VULNERABLE: Returning raw JPA entity
+@GetMapping("/users/{id}")
+public User getUser(@PathVariable Long id) {
+    return userRepository.findById(id).orElseThrow();
+    // Exposes all fields including passwordHash, ssn
+}
+
+// SECURE: Use @JsonView to control serialization
+public class Views {
+    public static class Public {}
+    public static class Internal extends Public {}
+}
+
+@Entity
+public class User {
+    @JsonView(Views.Public.class)
+    private Long id;
+
+    @JsonView(Views.Public.class)
+    private String username;
+
+    // No @JsonView - won't serialize in public view
+    private String passwordHash;
+    private String ssn;
+}
+
+@GetMapping("/users/{id}")
+@JsonView(Views.Public.class)
+public User getUser(@PathVariable Long id) {
+    return userRepository.findById(id).orElseThrow();
+}
+```
+
+**C# (ASP.NET Core):**
+```csharp
+// VULNERABLE: Returning raw entity model
+[HttpGet("{id}")]
+public ActionResult<User> GetUser(int id)
+{
+    var user = _context.Users.Find(id);
+    return user; // Exposes PasswordHash, Ssn, etc.
+}
+
+// SECURE: Use DTOs with AutoMapper or manual mapping
+public class UserPublicDto
+{
+    public int Id { get; set; }
+    public string Username { get; set; }
+    // No PasswordHash, Ssn, etc.
+}
+
+[HttpGet("{id}")]
+public ActionResult<UserPublicDto> GetUser(int id)
+{
+    var user = _context.Users.Find(id);
+    if (user == null) return NotFound();
+
+    return new UserPublicDto
+    {
+        Id = user.Id,
+        Username = user.Username
+    };
+}
+```
+
 ## Detection
 
-- **Review API responses:** Look for endpoints that return large, complex JSON objects. Check if these objects contain fields that are not used by the front-end application or that seem internal or sensitive (e.g., `passwordHash`, `ssn`, `internalNotes`).
-- **Analyze database queries:** Search for `SELECT *` queries that feed directly into API responses.
-- **Inspect serialization logic:** Look for generic `.toJSON()` or `serialize()` methods on model objects that dump all properties without a filter.
+- **Review API responses:** Use Burp Suite or OWASP ZAP to intercept API calls. Identify endpoints returning unused, internal, or sensitive fields (e.g., `passwordHash`, `ssn`, `internalNotes`).
+- **Analyze database queries:** Grep for `SELECT *` queries feeding API responses.
+- **Inspect serialization logic:** Find generic `.toJSON()` or `serialize()` methods dumping all object properties without filtering.
 
 ## Prevention
 

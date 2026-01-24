@@ -18,22 +18,21 @@ Never create endpoints accessing sensitive data or functionality without verifyi
 ### BAD Code Example
 
 ```python
-# VULNERABLE: A critical API endpoint that lacks any authentication check.
+# VULNERABLE: Critical API endpoint without authentication check
 from flask import request, jsonify
 from db import User, session
 
 @app.route("/api/users/<int:user_id>/profile")
 def get_user_profile(user_id):
-    # This endpoint takes a user ID and returns the user's profile data.
-    # CRITICAL FLAW: It never checks who is making the request.
-    # Any user (or an unauthenticated attacker) can request the profile of any other user
-    # simply by changing the user_id in the URL.
+    # Takes user ID and returns profile data
+    # CRITICAL FLAW: Never checks who makes the request
+    # Any user can access any profile by changing user_id in URL
     user = session.query(User).filter_by(id=user_id).first()
 
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # The endpoint returns sensitive profile information to the attacker.
+    # Returns sensitive profile information without verification
     return jsonify({
         "id": user.id,
         "username": user.username,
@@ -45,20 +44,20 @@ def get_user_profile(user_id):
 ### GOOD Code Example
 
 ```python
-# SECURE: The endpoint is protected by an authentication and authorization layer.
+# SECURE: Endpoint protected by authentication and authorization
 from flask import request, jsonify
 from db import User, session
-from auth import require_authentication # A decorator or middleware for auth.
+from auth import require_authentication # Decorator for auth
 
 @app.route("/api/users/<int:user_id>/profile")
-@require_authentication # This decorator ensures a valid user session exists.
+@require_authentication # Ensures valid user session exists
 def get_user_profile_secure(current_user, user_id):
-    # The `require_authentication` decorator decodes the session token (e.g., JWT)
-    # and passes the authenticated user object (`current_user`) to the function.
+    # `require_authentication` decorator decodes session token (JWT)
+    # and passes authenticated user object to function
 
     # AUTHORIZATION CHECK:
-    # After authenticating, we must now authorize. Is this user allowed to see this data?
-    # A user should only be able to see their own profile, unless they are an admin.
+    # Verify user can access this data
+    # Users see only their own profile unless admin
     if current_user.id != user_id and not current_user.is_admin:
         return jsonify({"error": "Access denied. You are not authorized to view this profile."}), 403
 
@@ -67,7 +66,7 @@ def get_user_profile_secure(current_user, user_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # Now it is safe to return the data.
+    # Safe to return data after authentication and authorization
     return jsonify({
         "id": user.id,
         "username": user.username,
@@ -95,18 +94,19 @@ def get_user_profile_secure(current_user, user_id):
 
 ## Prevention
 
-- [ ] **Default to deny:** Implement a framework or middleware that requires authentication for all endpoints by default. Endpoints that are intended to be public (like a login or registration page) can be explicitly marked as exempt.
-- [ ] **Centralize authentication logic:** Use middleware (in Express), decorators (in Flask/Django), or filters (in Java) to handle authentication checks in a single, reusable, and well-tested place. Avoid repeating authentication logic in every function.
-- [ ] **Distinguish between authentication and authorization:**
-  - **Authentication** is verifying who the user is.
-  - **Authorization** is verifying if that user has permission to perform the requested action. An endpoint must perform both.
-- [ ] **Use a robust authentication mechanism:** Implement standard, well-vetted authentication patterns like JWTs, OAuth2, or secure session management. Do not "roll your own" authentication scheme.
+- [ ] **Default to deny:** Require authentication for all endpoints by default. Explicitly mark public endpoints (login, registration) as exempt
+- [ ] **Centralize authentication logic:** Use middleware (Express), decorators (Flask/Django), or filters (Java) for authentication. Avoid repeating logic across functions
+- [ ] **Distinguish authentication from authorization:**
+  - **Authentication:** Verify user identity
+  - **Authorization:** Verify user permissions for action
+  - Endpoints must perform both
+- [ ] **Use robust authentication:** Implement JWTs, OAuth2, or secure session management. Never roll your own authentication
 
 ## Related Security Patterns & Anti-Patterns
 
-- [Session Fixation Anti-Pattern](../session-fixation/): Relates to how session identifiers are managed after a user logs in.
-- [JWT Misuse Anti-Pattern](../jwt-misuse/): Covers common mistakes in implementing token-based authentication.
-- [Missing Rate Limiting Anti-Pattern](../missing-rate-limiting/): Login endpoints without rate limiting are vulnerable to brute-force attacks.
+- [Session Fixation Anti-Pattern](../session-fixation/): Session identifier management after login
+- [JWT Misuse Anti-Pattern](../jwt-misuse/): Common token-based authentication mistakes
+- [Missing Rate Limiting Anti-Pattern](../missing-rate-limiting/): Login brute-force protection
 
 ## References
 

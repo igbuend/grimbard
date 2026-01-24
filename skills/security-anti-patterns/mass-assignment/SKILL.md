@@ -18,41 +18,41 @@ Never use user-provided data dictionaries to update models without filtering for
 ### BAD Code Example
 
 ```python
-# VULNERABLE: The incoming request data is used directly to update the user model.
+# VULNERABLE: Incoming request data used directly to update user model
 from flask import request
 from db import User, session
 
 @app.route("/api/users/me", methods=["POST"])
 def update_profile():
-    # Assume user is already authenticated.
+    # User already authenticated
     user = get_current_user()
 
-    # Attacker crafts a JSON body:
+    # Attacker crafts JSON body:
     # {
     #   "email": "new.email@example.com",
     #   "is_admin": true
     # }
     request_data = request.get_json()
 
-    # Many ORMs allow updating an object from a dictionary.
-    # If the User model has an `is_admin` property, it will be updated here.
+    # ORMs allow updating objects from dictionaries
+    # If User model has `is_admin` property, it updates here
     for key, value in request_data.items():
-        setattr(user, key, value) # Direct, unsafe assignment.
+        setattr(user, key, value) # Direct, unsafe assignment
 
     session.commit()
     return {"message": "Profile updated."}
 
-# The attacker has just made themselves an administrator.
+# Attacker just became administrator
 ```
 
 ### GOOD Code Example
 
 ```python
-# SECURE: Use a Data Transfer Object (DTO) or an explicit allowlist to control which fields can be updated.
+# SECURE: Use DTO or explicit allowlist to control updatable fields
 from flask import request
 from db import User, session
 
-# Option 1: Use an allowlist of fields.
+# Option 1: Allowlist of fields
 ALLOWED_UPDATE_FIELDS = {"email", "first_name", "last_name"}
 
 @app.route("/api/users/me", methods=["POST"])
@@ -61,7 +61,7 @@ def update_profile_allowlist():
     request_data = request.get_json()
 
     for key, value in request_data.items():
-        # Only update the attribute if it's in our explicit allowlist.
+        # Update only if in explicit allowlist
         if key in ALLOWED_UPDATE_FIELDS:
             setattr(user, key, value)
 
@@ -69,12 +69,12 @@ def update_profile_allowlist():
     return {"message": "Profile updated."}
 
 
-# Option 2 (Better): Use a DTO or schema to define and validate the input.
+# Option 2 (Better): Use DTO or schema for validation
 from pydantic import BaseModel, EmailStr
 
 class UserUpdateDTO(BaseModel):
-    # This class defines the *only* fields that can be submitted.
-    # The `is_admin` field is not here, so it can't be set by the user.
+    # Defines *only* submittable fields
+    # `is_admin` not included, can't be set by user
     email: EmailStr
     first_name: str
     last_name: str
@@ -83,7 +83,7 @@ class UserUpdateDTO(BaseModel):
 def update_profile_dto():
     user = get_current_user()
     try:
-        # Pydantic will raise a validation error if extra fields like `is_admin` are present.
+        # Pydantic raises validation error if extra fields present
         update_data = UserUpdateDTO(**request.get_json())
     except ValidationError as e:
         return {"error": str(e)}, 400
@@ -113,15 +113,15 @@ def update_profile_dto():
 
 ## Prevention
 
-- [ ] **Use an allowlist approach:** Never use a blocklist to filter incoming data. Always use an allowlist of properties that are permitted to be set by the user.
-- [ ] **Use Data Transfer Objects (DTOs)** or dedicated input schemas to strictly define the expected request body. This is the most robust solution.
-- [ ] **Set sensitive properties explicitly** in your code, outside of any mass assignment operation (e.g., `new_user.is_admin = False`).
-- [ ] **Be aware of framework features:** Some frameworks have built-in protections against mass assignment. Understand how to use them correctly.
+- [ ] **Use allowlists:** Never use blocklists. Always use allowlists of user-settable properties
+- [ ] **Use DTOs or schemas:** Strictly define expected request body. Most robust solution
+- [ ] **Set sensitive properties explicitly:** Outside mass assignment (e.g., `new_user.is_admin = False`)
+- [ ] **Know framework features:** Some frameworks include mass assignment protections. Use them correctly
 
 ## Related Security Patterns & Anti-Patterns
 
-- [Excessive Data Exposure Anti-Pattern](../excessive-data-exposure/): The inverse of mass assignment. Instead of accepting too much data, the application returns too much data.
-- [Missing Authentication Anti-Pattern](../missing-authentication/): If an endpoint is also missing proper authentication, mass assignment becomes even more dangerous, as an unauthenticated user could modify any object.
+- [Excessive Data Exposure Anti-Pattern](../excessive-data-exposure/): Inverse of mass assignment—returns too much data instead of accepting too much
+- [Missing Authentication Anti-Pattern](../missing-authentication/): Unauthenticated mass assignment allows anyone to modify objects
 
 ## References
 

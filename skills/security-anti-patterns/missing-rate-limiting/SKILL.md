@@ -9,11 +9,11 @@ description: "Security anti-pattern for missing rate limiting (CWE-770). Use whe
 
 ## Summary
 
-Missing rate limiting is a vulnerability where an application fails to restrict the number of times an action can be performed within a given timeframe. This allows an attacker to make an unlimited number of requests to a specific endpoint, which can be abused for various attacks. The most common abuses include brute-forcing credentials on a login page, scraping sensitive data from an API, or causing a denial-of-service (DoS) by overwhelming the application with resource-intensive requests.
+Applications fail to restrict action frequency, allowing unlimited requests to endpoints. Enables brute-force attacks, data scraping, and denial-of-service through resource-intensive requests.
 
 ## The Anti-Pattern
 
-The anti-pattern is exposing any endpoint—especially authentication or resource-intensive ones—to the internet without any mechanism to control how frequently it can be called by a single user or IP address.
+The anti-pattern is exposing endpoints (especially authentication/resource-intensive) without controlling request frequency per user or IP.
 
 ### BAD Code Example
 
@@ -26,20 +26,20 @@ def login():
     username = request.form.get("username")
     password = request.form.get("password")
 
-    # This endpoint can be called thousands of times per minute from the same IP address.
-    # An attacker can use a password list to perform a brute-force or credential stuffing attack,
-    # trying millions of passwords against a single user account until they find the right one.
+    # Endpoint callable thousands of times per minute from same IP.
+    # Attacker uses password lists for brute-force/credential stuffing,
+    # trying millions of passwords until finding correct one.
     if check_credentials(username, password):
         return jsonify({"status": "success", "token": generate_token(username)})
     else:
         return jsonify({"status": "failed"}), 401
 
-# Another example: A search endpoint without rate limiting.
+# Search endpoint without rate limiting.
 @app.route("/api/search")
 def search():
     query = request.args.get("q")
-    # An attacker could write a script to rapidly hit this endpoint, scraping all
-    # the site's data or causing a DoS by making the database do heavy work.
+    # Attacker rapidly hits endpoint, scraping data or causing
+    # DoS through heavy database work.
     results = perform_complex_search(query)
     return jsonify(results)
 ```
@@ -59,33 +59,33 @@ def rate_limit(limit, per, scope_func):
         @wraps(f)
         def decorated_function(*args, **kwargs):
             key = f"rate-limit:{scope_func(request)}:{request.endpoint}"
-            # Increment the count for the current key.
-            # Set it to expire after `per` seconds on the first request in the window.
+            # Increment count for current key.
+            # Expire after `per` seconds on first request in window.
             p = redis.pipeline()
             p.incr(key)
             p.expire(key, per)
             count = p.execute()[0]
 
             if count > limit:
-                return jsonify({"error": "Rate limit exceeded"}), 429 # 429 Too Many Requests
+                return jsonify({"error": "Rate limit exceeded"}), 429
 
             return f(*args, **kwargs)
         return decorated_function
     return decorator
 
-# Define a function to get the identifier for the rate limit scope (e.g., IP address).
+# Get identifier for rate limit scope (IP address).
 def get_ip(request):
     return request.remote_addr
 
-# Apply different rate limits to different endpoints.
+# Apply different rate limits per endpoint.
 @app.route("/api/login", methods=["POST"])
-@rate_limit(limit=10, per=60*5, scope_func=get_ip) # 10 requests per 5 minutes per IP.
+@rate_limit(limit=10, per=60*5, scope_func=get_ip) # 10 requests/5min per IP
 def login_secure():
     # ... login logic ...
     pass
 
 @app.route("/api/search")
-@rate_limit(limit=100, per=60, scope_func=get_ip) # 100 requests per minute per IP.
+@rate_limit(limit=100, per=60, scope_func=get_ip) # 100 requests/min per IP
 def search_secure():
     # ... search logic ...
     pass
@@ -100,12 +100,12 @@ def search_secure():
 
 ## Prevention
 
-- [ ] **Implement IP-based rate limiting** on all public-facing endpoints, especially authentication and other sensitive ones.
-- [ ] **Implement user/account-based rate limiting** for authenticated users to prevent a single user from abusing the system.
-- [ ] **Use an appropriate algorithm:** Common choices are Token Bucket, Leaky Bucket, or Fixed/Sliding Window counters. Most modern web frameworks have middleware or libraries for this.
-- [ ] **Return a `429 Too Many Requests` status code** when a limit is exceeded. Include a `Retry-After` header to tell the client when they can try again.
-- [ ] **Log rate limit violations:** This can help you identify and respond to potential attacks.
-- [ ] **For login endpoints, consider account lockouts** after a certain number of failed attempts as an additional layer of defense.
+- [ ] **Implement IP-based rate limiting:** All public endpoints, especially authentication/sensitive ones.
+- [ ] **Implement account-based rate limiting:** Prevent authenticated users from abusing system.
+- [ ] **Use appropriate algorithm:** Token Bucket, Leaky Bucket, or Fixed/Sliding Window. Most frameworks have middleware.
+- [ ] **Return `429 Too Many Requests`:** Include `Retry-After` header indicating retry time.
+- [ ] **Log rate limit violations:** Identify and respond to potential attacks.
+- [ ] **Consider account lockouts for login:** Additional defense after failed attempts.
 
 ## Related Security Patterns & Anti-Patterns
 

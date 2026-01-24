@@ -9,11 +9,11 @@ description: "Security anti-pattern for missing security headers (CWE-16). Use w
 
 ## Summary
 
-HTTP security headers are a crucial, browser-level defense mechanism against common web application attacks like Cross-Site Scripting (XSS), clickjacking, and man-in-the-middle attacks. This anti-pattern occurs when a web application fails to send these headers in its HTTP responses. Without them, the application is leaving the browser to rely on default, often less secure, behaviors, thereby missing an opportunity for a powerful, declarative security layer.
+HTTP security headers defend against XSS, clickjacking, and man-in-the-middle attacks at the browser level. Applications failing to send these headers rely on insecure browser defaults, missing a powerful declarative security layer.
 
 ## The Anti-Pattern
 
-The anti-pattern is simply not including recommended security headers in HTTP responses. By default, browsers have permissive policies, and it is the server's responsibility to instruct the browser to enforce stricter security controls.
+The anti-pattern is omitting security headers from HTTP responses. Browsers default to permissive policies; servers must instruct stricter controls.
 
 ### BAD Code Example
 
@@ -25,10 +25,10 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    # The response is sent with default headers, which are not secure.
-    # - No Content-Security-Policy means scripts from any origin can be executed.
-    # - No X-Frame-Options means any site can embed this page in an iframe for clickjacking.
-    # - No HSTS means the connection can be downgraded to HTTP on the first visit.
+    # Response sent with insecure default headers.
+    # - No CSP: scripts from any origin can execute
+    # - No X-Frame-Options: any site can iframe for clickjacking
+    # - No HSTS: connection can downgrade to HTTP
     response = make_response("<h1>Welcome to the site!</h1>")
     return response
 
@@ -51,20 +51,19 @@ app = Flask(__name__)
 
 @app.after_request
 def add_security_headers(response):
-    # Content-Security-Policy (CSP): A powerful tool to prevent XSS.
-    # This policy allows resources (scripts, styles, etc.) only from the same origin ('self').
+    # CSP: Prevents XSS. Allows resources only from same origin ('self').
     response.headers['Content-Security-Policy'] = "default-src 'self'"
 
-    # X-Frame-Options: Prevents the page from being rendered in an iframe, mitigating clickjacking.
+    # X-Frame-Options: Prevents iframe embedding, mitigates clickjacking.
     response.headers['X-Frame-Options'] = 'DENY'
 
-    # HTTP Strict-Transport-Security (HSTS): Instructs the browser to only communicate using HTTPS.
+    # HSTS: Instructs browser to use only HTTPS.
     response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
 
-    # X-Content-Type-Options: Prevents the browser from MIME-sniffing a response away from the declared content-type.
+    # X-Content-Type-Options: Prevents MIME-sniffing.
     response.headers['X-Content-Type-Options'] = 'nosniff'
 
-    # Referrer-Policy: Controls how much referrer information is sent with requests.
+    # Referrer-Policy: Controls referrer information sent with requests.
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
     return response
 
@@ -96,12 +95,12 @@ def index_secure():
 
 Implement a middleware or a global response filter in your application that adds the following headers to all outgoing responses.
 
-- [ ] **`Content-Security-Policy` (CSP):** The most important header for preventing XSS. It defines a strict allowlist of sources from which content (like scripts, styles, and images) can be loaded. A good starting point is `default-src 'self'`.
-- [ ] **`Strict-Transport-Security` (HSTS):** Instructs the browser that it should only ever communicate with the site using HTTPS. This prevents downgrade attacks.
-- [ ] **`X-Frame-Options`:** Prevents your site from being embedded in an `<iframe>` on other sites, which is the primary defense against clickjacking. Set to `DENY` or `SAMEORIGIN`.
-- [ ] **`X-Content-Type-Options`:** Set to `nosniff` to prevent the browser from trying to guess the content type of a resource, which can be abused to execute malicious scripts.
-- [ ] **`Referrer-Policy`:** Controls how much referrer information is sent when a user navigates away from your site. A good default is `strict-origin-when-cross-origin`.
-- [ ] **`Permissions-Policy` (formerly Feature-Policy):** Allows you to selectively enable or disable browser features and APIs (like microphone, camera, geolocation) on your site.
+- [ ] **`Content-Security-Policy` (CSP):** Most important XSS defense. Defines strict allowlist for content sources (scripts, styles, images). Start with `default-src 'self'`.
+- [ ] **`Strict-Transport-Security` (HSTS):** Browser uses only HTTPS. Prevents downgrade attacks.
+- [ ] **`X-Frame-Options`:** Primary clickjacking defense. Prevents iframe embedding. Set to `DENY` or `SAMEORIGIN`.
+- [ ] **`X-Content-Type-Options`:** Set to `nosniff`. Prevents MIME-sniffing abuse for script execution.
+- [ ] **`Referrer-Policy`:** Controls referrer information sent on navigation. Default: `strict-origin-when-cross-origin`.
+- [ ] **`Permissions-Policy`:** Selectively enable/disable browser features (microphone, camera, geolocation).
 
 ## Related Security Patterns & Anti-Patterns
 

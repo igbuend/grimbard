@@ -135,12 +135,25 @@ For skills Claude applies automatically when relevant:
 
 ### 9. Language & Tone
 
-**Style:**
+**Technical Writing Principles:**
 - [ ] Uses imperative voice for instructions ("Run tests" not "You should run tests")
-- [ ] Concise and direct
+- [ ] Concise and direct - eliminates filler words and redundancy
+- [ ] Precise terminology - uses exact technical terms, avoids ambiguity
+- [ ] Active voice preferred over passive voice
+- [ ] One idea per sentence for clarity
 - [ ] Avoids unnecessary adjectives or superlatives
 - [ ] Professional and objective tone
 - [ ] No emojis (unless explicitly part of the domain)
+
+**Common Verbosity Patterns to Eliminate:**
+- "In order to" → "To"
+- "It is important to note that" → (delete, just state the fact)
+- "You should" / "You need to" → Use imperative ("Run", "Check", "Verify")
+- "Please note that" → (delete)
+- "Going forward" / "Moving forward" → (delete)
+- "At this point in time" → "Now" or (delete)
+- "For the purpose of" → "To" or "For"
+- "With regard to" → "About" or "Regarding"
 
 ### 10. Maintenance & Evolution
 
@@ -150,6 +163,79 @@ For skills Claude applies automatically when relevant:
 - [ ] Includes dates or context for time-sensitive information
 - [ ] Can be updated incrementally
 
+## Technical Writing for Context Efficiency
+
+Skills must be maximally concise while remaining clear. Apply these technical writing principles:
+
+### Precision Over Description
+
+**BAD (vague):**
+> "Make sure your code is well-organized and follows good practices"
+
+**GOOD (precise):**
+> "Use dependency injection. Limit functions to 50 lines."
+
+### Eliminate Filler Words
+
+**Common filler patterns:**
+- "basically", "essentially", "generally", "typically"
+- "very", "really", "quite", "actually"
+- "kind of", "sort of", "a bit"
+- "simply", "just", "merely"
+
+**BAD:**
+> "You should basically just run the tests to make sure everything is actually working correctly"
+
+**GOOD:**
+> "Run tests to verify functionality"
+
+### Use Concrete Numbers and Specifics
+
+**BAD:**
+> "Keep functions small and avoid deeply nested code"
+
+**GOOD:**
+> "Limit functions to 50 lines. Limit nesting to 3 levels."
+
+### Prefer Active Voice
+
+**BAD (passive):**
+> "The configuration should be validated before the application is started"
+
+**GOOD (active):**
+> "Validate configuration before starting the application"
+
+### Front-Load Important Information
+
+**BAD:**
+> "When you're working with user input, which could potentially contain malicious data, it's important to remember that you should always validate and sanitize it"
+
+**GOOD:**
+> "Always validate and sanitize user input"
+
+### Use Parallel Structure
+
+**BAD (inconsistent):**
+- Check that the file exists
+- Making sure permissions are correct
+- You should verify the contents
+
+**GOOD (parallel):**
+- Check file exists
+- Verify permissions
+- Validate contents
+
+### Delete Hedge Words
+
+**BAD:**
+> "This might help improve performance somewhat"
+
+**GOOD:**
+> "This improves performance by 30%"
+
+Or if uncertain:
+> "This may improve performance. Benchmark to verify."
+
 ## Review Process
 
 When reviewing a skill:
@@ -157,11 +243,12 @@ When reviewing a skill:
 1. **Read the entire skill** to understand its purpose and scope
 2. **Check frontmatter** for required fields and appropriate flags
 3. **Evaluate context efficiency** - is every sentence necessary?
-4. **Verify structure** - clear sections, logical flow, scannable format
-5. **Test examples** - are code examples correct and complete?
-6. **Check for anti-patterns** - does it avoid common mistakes?
-7. **Assess scope** - is it focused enough? Too broad?
-8. **Validate verification** - does it include ways for Claude to check its work?
+4. **Apply technical writing check** - concise, precise, active voice
+5. **Verify structure** - clear sections, logical flow, scannable format
+6. **Test examples** - are code examples correct and complete?
+7. **Check for anti-patterns** - does it avoid common mistakes?
+8. **Assess scope** - is it focused enough? Too broad?
+9. **Validate verification** - does it include ways for Claude to check its work?
 
 ## Output Format
 
@@ -197,6 +284,14 @@ Provide review results in this format:
 - 3: Acceptable, some areas could be tightened
 - 2: Verbose, significant trimming needed
 - 1: Bloated, major revision required
+
+### Technical Writing Quality
+[Rating 1-5]: [Brief explanation]
+- 5: Precise, concise, active voice, no filler
+- 4: Mostly clear, minor improvements needed
+- 3: Acceptable, some verbosity or vagueness
+- 2: Significant clarity issues, passive voice, filler words
+- 1: Unclear, verbose, imprecise terminology
 
 ### Overall Assessment
 [Pass/Pass with Recommendations/Needs Revision]
@@ -239,6 +334,10 @@ Watch for these indicators of poorly-designed skills:
 ### The Assumption Maker
 **Symptom:** "Update the config file" without specifying which file or where
 **Fix:** Be explicit about file paths, patterns, or how to find them
+
+### The Verbose Writer
+**Symptom:** Excessive filler words, passive voice, redundant explanations
+**Fix:** Apply technical writing principles - concise, precise, active voice
 
 ## Example Reviews
 
@@ -397,6 +496,53 @@ Always write clean code that is easy to read and understand. Make sure your code
 - Include verification commands
 - Make it context-efficient
 - Add clear "When to Use" section
+
+### Example 4: Technical Writing Improvements
+
+**BEFORE (verbose, vague):**
+```markdown
+## Error Handling
+
+When you're working with API calls, it's really important to note that you
+should always make sure to handle errors properly. Basically, you need to
+catch exceptions and then you should log them appropriately so that you can
+debug issues later. It's also a good idea to provide meaningful error messages
+to users so they understand what went wrong.
+
+In order to handle errors effectively, you should consider implementing a
+centralized error handling mechanism that can be used throughout your application.
+```
+
+**AFTER (concise, precise):**
+```markdown
+## Error Handling
+
+**API Error Handling:**
+- Catch all exceptions
+- Log to monitoring system (Sentry, Datadog)
+- Return user-friendly messages (hide stack traces)
+
+**Implementation:**
+```javascript
+try {
+  await api.call()
+} catch (error) {
+  logger.error('API call failed', { error, context })
+  throw new UserError('Unable to process request. Try again.')
+}
+```
+
+**Centralized Handler:**
+- Create `errorHandler.js` middleware
+- Apply globally in `app.js`
+```
+
+**Improvements:**
+- Eliminated filler: "it's important to note", "basically", "really"
+- Active voice: "Catch" vs "you should catch"
+- Specific: "Sentry, Datadog" vs "log appropriately"
+- Code example instead of prose description
+- 60% reduction in word count while adding more information
 
 ## References
 

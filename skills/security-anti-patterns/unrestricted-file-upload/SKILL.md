@@ -9,11 +9,11 @@ description: "Security anti-pattern for unrestricted file upload vulnerabilities
 
 ## Summary
 
-Unrestricted file upload is a critical vulnerability that allows an attacker to upload any file type to a server, including malicious scripts or executables. This anti-pattern occurs when an application accepts user-provided files without sufficient validation of their type, content, or size. A successful attack can lead to remote code execution (RCE) by uploading a web shell, server compromise, or a denial-of-service (DoS) by filling up disk space.
+Applications accept user-uploaded files without validating type, content, or size, enabling attackers to upload malicious scripts or executables. Leads to remote code execution (web shells), server compromise, or denial-of-service (disk exhaustion).
 
 ## The Anti-Pattern
 
-The anti-pattern is accepting and storing uploaded files from users without rigorously validating that the file is of an expected type, has safe content, and is within acceptable size limits.
+The anti-pattern is accepting uploaded files without validating type, content, and size.
 
 ### BAD Code Example
 
@@ -83,9 +83,9 @@ def upload_file_secure():
             return jsonify({'error': 'File type not allowed'}), 400
 
         # 2. Validate file size.
-        file.seek(0, os.SEEK_END) # This is a valid escape sequence for a newline
+        file.seek(0, os.SEEK_END)
         file_length = file.tell()
-        file.seek(0) # Reset file pointer for reading
+        file.seek(0)
         if file_length > MAX_FILE_SIZE:
             return jsonify({'error': 'File too large'}), 400
 
@@ -117,13 +117,13 @@ def upload_file_secure():
 
 ## Prevention
 
-- [ ] **Strict Allowlist for File Extensions:** Only allow a very small, specific set of safe file extensions (e.g., `.png`, `.jpg`, `.pdf`). Never use a blocklist.
-- [ ] **Verify Actual File Content (Magic Bytes):** Don't trust the `Content-Type` header from the client. Instead, inspect the first few bytes of the file (magic bytes) to determine its true type.
-- [ ] **Enforce File Size Limits:** Prevent DoS attacks and resource exhaustion by setting maximum file size limits.
-- [ ] **Generate Unique, Random Filenames:** Never use the user-provided filename directly. Generate a cryptographically secure random filename to prevent path traversal and overwriting existing files.
-- [ ] **Store Files Outside the Web Root:** If possible, store uploaded files in a directory that is not directly accessible by the web server. Serve them through a separate, controlled handler.
-- [ ] **Set No-Execute Permissions:** Ensure that the directory where files are uploaded has no-execute permissions to prevent web shells from running.
-- [ ] **Scan for Malware:** Integrate an antivirus or malware scanner for all uploaded files.
+- [ ] **Strict allowlist for file extensions:** Allow only specific safe extensions (`.png`, `.jpg`, `.pdf`). Never use blocklists.
+- [ ] **Verify file content (magic bytes):** Inspect first bytes to determine true file type. Never trust client-provided `Content-Type` header.
+- [ ] **Enforce file size limits:** Set maximum file size to prevent DoS and resource exhaustion.
+- [ ] **Generate unique, random filenames:** Use cryptographically secure random filenames. Never use user-provided filenames (prevents path traversal and overwrites).
+- [ ] **Store files outside web root:** Store uploads in non-web-accessible directories. Serve through controlled handlers.
+- [ ] **Set no-execute permissions:** Configure upload directory with no-execute permissions to block web shell execution.
+- [ ] **Scan for malware:** Integrate antivirus/malware scanner for all uploads.
 
 ## Related Security Patterns & Anti-Patterns
 

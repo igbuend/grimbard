@@ -9,11 +9,11 @@ description: "Security anti-pattern for verbose error messages (CWE-209). Use wh
 
 ## Summary
 
-Verbose error messages are a security anti-pattern where an application reveals too much internal information when an error occurs. This can include full stack traces, database error messages, internal file paths, or system configuration details. Attackers can use this information to understand the application's architecture, identify potential vulnerabilities, or craft more targeted attacks. While detailed errors are helpful during development, they must be suppressed or generalized for production environments.
+Applications expose internal information (stack traces, database errors, file paths, configuration details) in error messages, enabling attackers to understand architecture, identify vulnerabilities, and craft targeted attacks. Suppress detailed errors in production.
 
 ## The Anti-Pattern
 
-The anti-pattern is presenting raw, detailed exception messages or system errors directly to the end-user.
+The anti-pattern is presenting raw exception messages or system errors directly to end-users.
 
 ### BAD Code Example
 
@@ -85,13 +85,13 @@ def user_profile_secure():
             return "User not found", 404
 
     except Exception as e:
-        # 1. Log the full details of the exception internally for debugging.
-        #    Include a unique error ID for easy correlation with user reports.
-        error_id = str(uuid.uuid4()) # Generate a unique ID for this error.
+        # 1. Log full exception details internally for debugging.
+        #    Include unique error ID for correlation with user reports.
+        error_id = str(uuid.uuid4())
         logging.error(f"Error ID: {error_id}. Detailed error: {e}\n{traceback.format_exc()}")
 
-        # 2. Return a generic, non-informative error message to the end-user.
-        #    Include the error ID so the user can reference it if they contact support.
+        # 2. Return generic error message to end-user.
+        #    Include error ID for support reference.
         return jsonify({
             "error": "An internal server error occurred.",
             "message": "Please try again later. If the problem persists, contact support with Error ID: " + error_id
@@ -118,11 +118,11 @@ def login():
 
 ## Prevention
 
-- [ ] **Return generic error messages to users:** Never display raw exception messages, stack traces, or detailed system errors to the end-user. A simple "An unexpected error occurred" is usually sufficient.
-- [ ] **Log detailed errors internally:** While generic messages are for users, robust internal logging is essential for debugging. Log full stack traces, request details, and any exception information to a secure, internal logging system.
-- [ ] **Use a unique error ID:** Generate a unique ID for each internal error and include it in the generic message returned to the user. This allows support staff to quickly find the corresponding detailed log entry.
-- [ ] **Consolidate authentication error messages:** For login, password reset, and registration, return a single, generic message like "Invalid credentials" regardless of whether the username was not found or the password was incorrect. This prevents user enumeration.
-- [ ] **Configure custom error pages:** Implement custom error pages (e.g., 404 Not Found, 500 Internal Server Error) to provide a better user experience without revealing sensitive information.
+- [ ] **Return generic error messages to users:** Never display raw exception messages, stack traces, or system errors. Use "An unexpected error occurred" or similar.
+- [ ] **Log detailed errors internally:** Log full stack traces, request details, and exception information to secure internal logging systems for debugging.
+- [ ] **Use unique error IDs:** Generate a unique ID for each error and include it in user-facing messages. Enables support staff to locate detailed log entries.
+- [ ] **Consolidate authentication error messages:** Return single generic message ("Invalid credentials") for all authentication failures (username not found, wrong password). Prevents user enumeration.
+- [ ] **Configure custom error pages:** Implement custom 404/500 pages without exposing sensitive information.
 
 ## Related Security Patterns & Anti-Patterns
 

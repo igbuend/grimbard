@@ -9,16 +9,16 @@ description: "Security anti-pattern for Unicode-related vulnerabilities (CWE-176
 
 ## Summary
 
-Unicode, while essential for global communication, introduces a complex set of security challenges. This anti-pattern arises when an application fails to properly handle the various ways characters can be represented in Unicode, leading to vulnerabilities like username spoofing, phishing, and validation bypasses. Issues include:
+Applications fail to handle Unicode character representation variants, enabling username spoofing, phishing, and validation bypasses through:
 
-1. **Confusable Characters (Homoglyphs):** Characters from different scripts that look identical (e.g., Latin 'a' vs. Cyrillic 'а').
-2. **Normalization Issues:** Multiple byte sequences representing the same character (e.g., a single accented character vs. base character + combining accent).
-3. **Zero-Width Characters:** Non-printing characters that can hide malicious content or alter string lengths.
-4. **Bidirectional Text Overrides:** Special control characters that can reorder text display, potentially obfuscating file extensions (e.g., `exe.pdf`).
+1. **Confusable Characters (Homoglyphs):** Identical-looking characters from different scripts (Latin 'a' vs. Cyrillic 'а').
+2. **Normalization Issues:** Multiple byte sequences for the same character (precomposed vs. base + combining accent).
+3. **Zero-Width Characters:** Non-printing characters hiding malicious content or altering string lengths.
+4. **Bidirectional Text Overrides:** Control characters reordering display (obfuscating `exe.pdf` as `fdp.exe`).
 
 ## The Anti-Pattern
 
-The anti-pattern is processing, validating, or displaying user-controlled Unicode strings without performing proper normalization, confusable detection, or stripping of dangerous control characters.
+The anti-pattern is processing Unicode strings without normalization, confusable detection, or control character stripping.
 
 ### BAD Code Example
 
@@ -57,21 +57,20 @@ import unicodedata
 import re
 
 def normalize_and_sanitize_username(username):
-    # 1. Normalize to a canonical form (e.g., NFC) for consistent comparison.
-    #    NFC ensures that combining characters are replaced by precomposed characters where possible.
+    # 1. Normalize to canonical form (NFC) for consistent comparison.
+    #    NFC replaces combining characters with precomposed equivalents.
     normalized = unicodedata.normalize('NFC', username)
 
-    # 2. Strip dangerous zero-width and bidirectional control characters.
-    #    These characters can manipulate display order or hide malicious content.
+    # 2. Strip zero-width and bidirectional control characters.
+    #    Prevents display manipulation and hidden content.
     sanitized = re.sub(r'[\u200B-\u200F\u202A-\u202E\u2066-\u2069]', '', normalized)
 
-    # 3. Apply confusable detection (optional but recommended for critical identifiers).
-    #    This often involves converting to a "skeleton" form for comparison
-    #    or using a database of known confusables.
-    #    (Implementation details for this step would depend on specific libraries/algorithms).
+    # 3. Apply confusable detection (recommended for critical identifiers).
+    #    Convert to "skeleton" form or use confusables database.
+    #    (Implementation depends on specific libraries/algorithms).
 
-    # 4. Enforce an allowlist of permitted characters, especially for security-sensitive fields.
-    #    For usernames, often restricting to ASCII alphanumeric and a few symbols is best.
+    # 4. Enforce allowlist of permitted characters.
+    #    For usernames, restrict to ASCII alphanumeric and limited symbols.
     if not re.fullmatch(r'^[a-zA-Z0-9_.-]+$', sanitized):
         raise ValueError("Username contains disallowed characters.")
 
@@ -99,11 +98,11 @@ def authenticate_user_secure(provided_username, password):
 
 ## Prevention
 
-- [ ] **Normalize all Unicode input:** Convert all incoming Unicode strings to a single, consistent normalization form (typically NFC - Normalization Form C) before any validation, storage, or comparison.
-- [ ] **Strip dangerous control characters:** Remove zero-width spaces (`\u200B`), bidirectional overrides (`\u202E`), and other non-printing control characters from user input.
-- [ ] **Implement confusable detection:** For security-critical identifiers like usernames or domain names, implement checks for homoglyphs (confusable characters). This often involves converting strings to a "skeleton" form for comparison.
-- [ ] **Restrict character sets:** For very sensitive identifiers, consider restricting input to a limited, well-defined character set (e.g., ASCII alphanumeric) as much as possible.
-- [ ] **Be consistent:** Apply the same Unicode processing rules (normalization, stripping, filtering) consistently across the entire application, from input to storage to comparison and display.
+- [ ] **Normalize all Unicode input:** Convert all strings to NFC (Normalization Form C) before validation, storage, or comparison.
+- [ ] **Strip dangerous control characters:** Remove zero-width spaces (`\u200B`), bidirectional overrides (`\u202E`), and non-printing characters.
+- [ ] **Implement confusable detection:** For critical identifiers (usernames, domains), check for homoglyphs using skeleton forms or confusables databases.
+- [ ] **Restrict character sets:** For sensitive identifiers, limit to well-defined character sets (ASCII alphanumeric preferred).
+- [ ] **Apply consistently:** Use identical Unicode processing (normalization, stripping, filtering) throughout application (input, storage, comparison, display).
 
 ## Related Security Patterns & Anti-Patterns
 

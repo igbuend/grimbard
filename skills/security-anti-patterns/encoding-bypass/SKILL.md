@@ -9,11 +9,11 @@ description: "Security anti-pattern for encoding bypass vulnerabilities (CWE-838
 
 ## Summary
 
-Encoding bypass vulnerabilities occur when an application's security checks can be evaded by using alternate or multiple encodings for malicious input. This anti-pattern typically happens when data is validated *before* it is fully decoded or normalized. An attacker can submit a payload that appears safe in its encoded form but becomes malicious after the application processes it. This can lead to the bypass of web application firewalls (WAFs), input filters, and other security mechanisms, enabling attacks like XSS and SQL Injection.
+Encoding bypass evades security checks via alternate encodings. Occurs when validation happens before decoding/normalization. Encoded payload appears safe but becomes malicious after processing. Bypasses WAFs, input filters, enables XSS and SQL injection.
 
 ## The Anti-Pattern
 
-The core of this anti-pattern is a flawed order of operations: **Validate then Decode/Normalize**. Security checks are performed on encoded or non-canonical data, and the application later uses a decoded or normalized version of that same data, re-introducing the vulnerability.
+Flawed order of operations: **Validate then Decode/Normalize**. Security checks run on encoded data, application later uses decoded version, re-introducing the vulnerability.
 
 ### BAD Code Example
 
@@ -68,16 +68,147 @@ def create_user_profile(username):
     return f"<div>Welcome, {normalized_username}</div>"
 ```
 
+### JavaScript/Node.js Examples
+
+**BAD:**
+```javascript
+// VULNERABLE: Validation before URL decoding in path traversal
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+app.get('/file/:filename', (req, res) => {
+    const filename = req.params.filename;
+
+    // Check for path traversal - but filename is still encoded
+    if (filename.includes('..')) {
+        return res.status(400).send('Invalid filename');
+    }
+
+    // Express automatically decodes URL parameters
+    // Attack: filename = "..%2F..%2Fetc%2Fpasswd"
+    // After decoding: "../../etc/passwd" - bypasses the check
+    const filePath = path.join('/uploads', filename);
+    res.sendFile(filePath);
+});
+
+// Attack payload: GET /file/..%252F..%252Fetc%252Fpasswd
+// Double encoding: %252F becomes %2F, then becomes /
+```
+
+**GOOD:**
+```javascript
+// SECURE: Decode then validate
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+app.get('/file/:filename', (req, res) => {
+    // Express already decoded once, but check for double encoding
+    let filename = decodeURIComponent(req.params.filename);
+
+    // Normalize to canonical form
+    filename = path.normalize(filename);
+
+    // Now validate the normalized path
+    if (filename.includes('..') || path.isAbsolute(filename)) {
+        return res.status(400).send('Invalid filename');
+    }
+
+    // Safe to use
+    const filePath = path.join('/uploads', filename);
+    res.sendFile(filePath);
+});
+```
+
+### Java Examples
+
+**BAD:**
+```java
+// VULNERABLE: SQL injection via URL decoding bypass
+import java.net.URLDecoder;
+import java.sql.*;
+
+public void searchUser(String encodedQuery) {
+    // Validate before decoding
+    if (encodedQuery.contains("'") || encodedQuery.contains("--")) {
+        throw new SecurityException("Invalid characters");
+    }
+
+    // Decode after validation
+    String query = URLDecoder.decode(encodedQuery, "UTF-8");
+
+    // Attack: encodedQuery = "admin%27%20OR%20%271%27%3D%271"
+    // After decode: "admin' OR '1'='1" - bypasses the check
+    String sql = "SELECT * FROM users WHERE name = '" + query + "'";
+    Statement stmt = connection.createStatement();
+    ResultSet rs = stmt.executeQuery(sql);
+}
+```
+
+**GOOD:**
+```java
+// SECURE: Decode then validate (but use parameterized queries)
+import java.net.URLDecoder;
+import java.sql.*;
+import java.util.regex.Pattern;
+
+public void searchUser(String encodedQuery) {
+    // Decode to canonical form first
+    String query = URLDecoder.decode(encodedQuery, "UTF-8");
+
+    // Validate the decoded form
+    if (!Pattern.matches("^[a-zA-Z0-9_]+$", query)) {
+        throw new SecurityException("Invalid characters");
+    }
+
+    // Use parameterized query (best practice)
+    String sql = "SELECT * FROM users WHERE name = ?";
+    PreparedStatement stmt = connection.prepareStatement(sql);
+    stmt.setString(1, query);
+    ResultSet rs = stmt.executeQuery();
+}
+```
+
 ## Detection
 
-- **Review the order of operations:** Check if security validation (e.g., checking for bad characters, path traversal patterns) occurs before or after decoding (e.g., URL decoding, Base64 decoding) and normalization (e.g., Unicode normalization).
-- **Test with multiple encodings:** Send payloads with various encodings to see if they bypass filters. Common techniques include:
-  - **URL encoding:** `%3c` for `<`
-  - **Double URL encoding:** `%253c` for `<`
-  - **Unicode escape sequences:** `\u003c` for `<`
-  - **HTML entities:** `&#60;` for `<`
-  - **Full-width and other Unicode variants:** `＜` (U+FF1C) for `<`
-- Look for places where data is decoded more than once in the request pipeline.
+**Python:**
+- Validation before `unicodedata.normalize()`
+- Input checks before `urllib.parse.unquote()`
+- Regex patterns before string normalization
+- HTML entity validation before `html.unescape()`
+
+**JavaScript/Node.js:**
+- Validation before `decodeURIComponent()`
+- Path checks before `path.normalize()`
+- Express middleware order (validate before decode)
+- Input checks before `Buffer.from(input, 'base64')`
+
+**Java:**
+- Validation before `URLDecoder.decode()`
+- Security checks before `Normalizer.normalize()`
+- Input validation before `StringEscapeUtils.unescapeHtml()`
+- Path validation before `Paths.get().normalize()`
+
+**PHP:**
+- Validation before `urldecode()`
+- Input checks before `html_entity_decode()`
+- Path validation before `realpath()`
+
+**Search Patterns:**
+- Grep: `normalize\(|decode\(|unescape\(|URLDecoder|decodeURIComponent`
+- Look for validation logic (if statements, regex) before these functions
+- Check for double decoding: multiple decode calls in sequence
+- Review web framework routing (automatic decoding may occur)
+
+**Common Encoding Bypass Techniques:**
+- **URL encoding:** `%3c` for `<`, `%2e%2e%2f` for `../`
+- **Double URL encoding:** `%253c` for `<` (decoded twice)
+- **Unicode variants:** `＜` (U+FF1C) for `<`
+- **HTML entities:** `&#60;` or `&lt;` for `<`
+- **Unicode escapes:** `\u003c` for `<`
+- **Mixed encoding:** `%u003c` or `%c0%bc` for `<`
+- **Path traversal:** `..%2f`, `..%5c`, `%2e%2e/`
 
 ## Prevention
 
@@ -86,6 +217,67 @@ def create_user_profile(username):
 - [ ] **Enforce strict character encoding** for all input (e.g., reject any data that is not valid UTF-8).
 - [ ] **Be aware of implicit decoding** performed by your web framework or libraries and ensure your validation logic runs after it.
 - [ ] **Canonicalize paths** and URLs before validating them to prevent path traversal attacks.
+
+## Testing for Encoding Bypass
+
+**Manual Testing:**
+1. Test URL encoding: `%3cscript%3e`, `..%2f..%2f`
+2. Test double encoding: `%253cscript%253e`, `..%252f..%252f`
+3. Test Unicode variants: `＜script＞`, `．．／`
+4. Test HTML entities: `&#60;script&#62;`, `&lt;script&gt;`
+5. Test mixed encoding: `%u003cscript%u003e`
+6. Verify filters catch all encoding variants
+
+**Automated Testing:**
+- **Static Analysis:** Semgrep, CodeQL to detect validation-before-decode patterns
+- **DAST:** Burp Suite Intruder with encoding payloads, OWASP ZAP fuzzer
+- **Payload Lists:** SecLists encoding bypass payloads
+- **Custom Scripts:** Automated encoding variant generation
+
+**Example Test:**
+```python
+# Test that validation occurs after normalization
+def test_encoding_bypass_prevention():
+    # Unicode variant of '<script>'
+    malicious_input = "＜script＞alert(1)＜/script＞"
+
+    try:
+        create_user_profile(malicious_input)
+        assert False, "Should reject encoded malicious input"
+    except ValueError:
+        pass  # Expected
+
+    # Double URL encoding
+    encoded_input = "%253cscript%253e"
+    try:
+        search_user(encoded_input)
+        assert False, "Should reject double-encoded input"
+    except SecurityException:
+        pass  # Expected
+```
+
+**Burp Suite Test:**
+```
+# Intruder payload positions
+GET /file/§..%2f..%2fetc%2fpasswd§
+
+# Payload list (encoding variants)
+..%2f..%2f
+..%252f..%252f
+．．／．．／
+%2e%2e%2f%2e%2e%2f
+```
+
+## Remediation Steps
+
+1. **Identify decoding operations** - Use detection patterns to find decode/normalize functions
+2. **Trace data flow** - Follow user input from entry to security validation
+3. **Check validation order** - Verify decode/normalize happens before validation
+4. **Reverse order if needed** - Move normalization before security checks
+5. **Add missing normalization** - Insert decode/normalize if absent
+6. **Test with encoding variants** - Use payload list from Testing section
+7. **Verify canonicalization** - Ensure all paths/URLs are normalized
+8. **Review framework behavior** - Check for automatic decoding in web framework
 
 ## Related Security Patterns & Anti-Patterns
 

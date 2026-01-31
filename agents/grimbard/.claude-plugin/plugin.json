@@ -1,0 +1,16 @@
+{
+  "name": "grimbard",
+  "version": "1.0.0",
+  "description": "Security-focused code review agent combining automated static analysis with structured manual review workflows",
+  "author": {
+    "name": "igbuend",
+    "url": "https://github.com/igbuend"
+  },
+  "homepage": "https://github.com/igbuend/grimbard",
+  "repository": "https://github.com/igbuend/grimbard",
+  "license": "MIT",
+  "keywords": ["security", "code-review", "sast", "sarif", "compliance"],
+  "agents": "../agents/",
+  "skills": "../../../skills/",
+  "hooks": "../hooks/hooks.json"
+}

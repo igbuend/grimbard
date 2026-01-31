@@ -1,13 +1,12 @@
 ---
-name: best-practices-reviewer
+name: skill-reviewer
 description: Reviews skills against Claude Code best practices. Use when auditing skill files for adherence to recommendations.
 disable-model-invocation: true
 aliases:
-  - skill-reviewer
   - review-skill
 ---
 
-# Skill Best Practices Reviewer
+# Skill Reviewer
 
 Reviews skill files against Claude Code best practices.
 

@@ -1,48 +1,5 @@
 ---
-name: grimbard
-version: 1.0.0
-description: Security-focused code review agent using static analysis tools and manual review workflows
-author: igbuend
-license: MIT
-repository: https://github.com/igbuend/grimbard
-claude-code-version: ">=2.0.0"
-
-skills-required:
-  - semgrep
-  - opengrep
-  - gitleaks
-  - kics
-  - noir
-  - osv-scanner
-  - depscan
-  - application-inspector
-  - sarif-issue-reporter
-
-commands:
-  - name: grimbard-review
-    description: Complete 6-phase security review
-    workflow: workflows/secure-code-review.md
-
-  - name: grimbard-quick
-    description: Quick automated scan (15-30 min)
-    workflow: workflows/quick-scan.md
-
-  - name: grimbard-triage
-    description: SARIF triage and prioritization
-    workflow: workflows/vulnerability-triage.md
-
-  - name: grimbard-compliance
-    description: Compliance-focused audit
-    workflow: workflows/compliance-audit.md
-
-dependencies:
-  runtime:
-    - python: ">=3.11"
-    - docker: ">=20.0"
-
-  optional:
-    - codeql: "For deep cross-file analysis"
-    - trivy: "For container security scanning"
+description: Security-focused code review agent documentation. See .claude-plugin/plugin.json for plugin configuration.
 ---
 
 # Grimbard Security Review Agent
@@ -228,7 +185,7 @@ Security controls:
 ## Environment Variables
 
 ```bash
-# Output directory (default: ./security-review-output)
+# Output directory (default: ./grimbard-security-review)
 export GRIMBARD_OUTPUT_DIR=./custom-output
 
 # Tool configuration directory
@@ -254,20 +211,6 @@ All tools output SARIF v2.1.0 for unified processing:
 | **OSV-Scanner** | Dependency vulnerabilities | ✓ |
 | **Depscan** | Advanced SCA, SBOM, VDR | ✓ |
 | **Application Inspector** | Technology profiling | ✓ |
-
-## Examples
-
-See `examples/` directory for:
-
-- **nodejs-express-api** - Web API security review
-- **python-django-app** - Full-stack application audit
-- **terraform-infrastructure** - IaC security assessment
-
-Each example includes:
-- Sample codebase
-- Expected findings
-- Generated reports
-- Remediation examples
 
 ## Requirements
 
@@ -296,8 +239,6 @@ This installs:
 ### Optional Tools
 
 - **CodeQL** - For deep cross-file analysis
-- **Trivy** - For container security scanning
-- **Snyk** - For additional dependency scanning
 
 ## Documentation
 
@@ -305,7 +246,6 @@ This installs:
 - [Workflows](workflows/README.md) - Detailed workflow descriptions
 - [Configuration](config/README.md) - Configuration guide
 - [Templates](templates/README.md) - Report template customization
-- [Examples](examples/README.md) - Example usage and outputs
 
 ## Supported Languages
 

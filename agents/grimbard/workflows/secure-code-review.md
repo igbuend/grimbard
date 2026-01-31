@@ -91,17 +91,6 @@ trufflehog filesystem . --only-verified
 
 ```bash
 # Run dependency vulnerability scanners
-// turbo
-npm audit  # for Node.js
-pip-audit  # for Python
-snyk test  # multi-language
-trivy fs . # multi-language
-# Run dependency vulnerability scanners
-// turbo
-npm audit  # for Node.js
-pip-audit  # for Python
-snyk test  # multi-language
-trivy fs . # multi-language
 # Google OSV Scanner
 osv-scanner -r . --format sarif --output osv-results.sarif
 # OWASP Depscan
@@ -117,14 +106,6 @@ docker run --rm -v ${PWD}:/app ghcr.io/owasp-dep-scan/dep-scan --src /app --repo
 ```bash
 # Run SAST tools
 // turbo
-semgrep scan --config auto .
-codeql database create codeql-db --language=<lang>
-codeql database analyze codeql-db --format=sarif-latest --output=results.sarif
-bandit -r . -f json -o bandit-results.json  # Python
-gosec ./...  # Go
-brakeman -o brakeman-results.json  # Ruby on Rails
-# Run SAST tools
-// turbo
 # Opengrep (Semgrep fork)
 opengrep scan --config auto . --sarif --output opengrep-results.sarif
 
@@ -132,15 +113,9 @@ opengrep scan --config auto . --sarif --output opengrep-results.sarif
 codeql database create codeql-db --language=<lang>
 codeql database analyze codeql-db --format=sarif-latest --output=results.sarif
 
-# Language-specific
-bandit -r . -f json -o bandit-results.json  # Python
-gosec ./...  # Go
-brakeman -o brakeman-results.json  # Ruby on Rails
-```
-
 - [ ] Run language-specific security analyzers
-- [ ] Use Semgrep with security-focused rulesets
-- [ ] Apply framework-specific analyzers (e.g., Brakeman for Rails)
+- [ ] Use Opengrep (preferred) or Semgrep with security-focused rulesets
+- [ ] Use CodeQL if the code is open-source (check LICENSE.md)
 - [ ] Collect SARIF outputs for consolidated analysis
 
 ### 2.4 Code Quality & Complexity Analysis
@@ -260,7 +235,7 @@ For each finding discovered, document immediately:
 
 ```markdown
 ## [FINDING-ID]: [Title]
-**Severity:** Critical/High/Medium/Low
+**Severity:** Critical/High/Medium/Low (CVSS 3.1 base vector string)
 **CWE:** CWE-XXX
 **Location:** `path/to/file.py:123`
 
@@ -359,7 +334,6 @@ grep -rn "dangerouslySetInnerHTML" --include="*.jsx" .
 
 ### 6.4 Metrics & Tracking
 
-- [ ] Create JIRA/GitHub issues for each finding
 - [ ] Link issues to specific code locations
 - [ ] Assign severity and due dates
 - [ ] Track remediation progress
@@ -371,7 +345,7 @@ grep -rn "dangerouslySetInnerHTML" --include="*.jsx" .
 | Category | Tools |
 |----------|-------|
 | Secret Scanning | [Gitleaks](https://github.com/gitleaks/gitleaks), [TruffleHog](https://github.com/trufflesecurity/trufflehog) |
-| Dependency Scanning | [Snyk](https://snyk.io/), [Trivy](https://trivy.dev/), [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) |
+| Dependency Scanning | [OWASP Dependency-Check](https://owasp.org/www-project-dependency-check/) |
 | SAST | [Semgrep](https://semgrep.dev/), [CodeQL](https://codeql.github.com/), [Bandit](https://bandit.readthedocs.io/) (Python), [Gosec](https://securego.io/) (Go) |
 | Complexity | [Lizard](https://github.com/terryyin/lizard), [Radon](https://radon.readthedocs.io/) (Python) |
 | SARIF Viewers | [VS Code SARIF Viewer](https://marketplace.visualstudio.com/items?itemName=MS-SarifVSCode.sarif-viewer) |

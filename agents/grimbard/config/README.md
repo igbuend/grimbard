@@ -46,7 +46,7 @@ tools:
     - application-inspector  # Enable for tech profiling
 
 output:
-  directory: ./security-review-output
+  directory: ./grimbard-security-review
 
   formats:
     - sarif

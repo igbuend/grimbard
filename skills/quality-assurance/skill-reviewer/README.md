@@ -25,7 +25,7 @@ Use this skill when:
 ## Installation
 
 ```bash
-npx add-skill igbuend/grimbard/skills/skill-best-practices-reviewer
+npx add-skill igbuend/grimbard/skills/skill-reviewer
 ```
 
 Or install the entire grimbard repository:
@@ -39,19 +39,19 @@ npx add-skill igbuend/grimbard
 ### Review a specific skill
 
 ```
-/skill-best-practices-reviewer .claude/skills/my-skill/SKILL.md
+/skill-reviewer .claude/skills/my-skill/SKILL.md
 ```
 
 ### Review all skills in a directory
 
 ```
-Review all skill files in .claude/skills/ using the skill-best-practices-reviewer
+Review all skill files in .claude/skills/ using the skill-reviewer
 ```
 
 ### Quick validation
 
 ```
-Use /skill-best-practices-reviewer to validate this skill draft:
+Use /skill-reviewer to validate this skill draft:
 [paste skill content]
 ```
 

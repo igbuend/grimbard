@@ -1,441 +1,213 @@
-```yaml
+---
 name: sarif-issue-reporter
+description: Analyze SARIF files and generate security reports with CVSS scoring, exploitation scenarios, and remediation guidance. Use when reviewing static analysis results.
+disable-model-invocation: true
+aliases:
+  - sarif-analyzer
+  - security-report
+  - sarif-reporter
 version: 0.0.1
-description: Verify and report security issues from SARIF files with comprehensive analysis including CVSS scoring, impact assessment, exploitation scenarios, and remediation guidance
 author: Herman Stevens
-tags: [security, sarif, vulnerability-analysis, reporting, code-review]
-related_skills: [code-reviewer, security-patterns, vulnerability-assessment]
-```
+tags: [security, sarif, vulnerability-analysis, reporting]
+---
 
-# SARIF Issue Reporter Skill
+# SARIF Issue Reporter
 
-## Overview
+Analyze SARIF files and generate comprehensive security reports.
 
-This skill enables Claude or other AI to analyze SARIF (Static Analysis Results Interchange Format) files, verify reported security issues, and generate comprehensive security reports. Each verified issue includes detailed analysis with CVSS 3.1 scoring, exploitation scenarios, broken security patterns, and remediation guidance linked to industry standards (OWASP, CWE, CAPEC).
+**Target:** $ARGUMENTS (path to SARIF file)
+
+## When to Use This Skill
+
+- Reviewing static analysis results from security scanners
+- Generating vulnerability reports with CVSS scoring
+- Validating SAST findings (true vs false positives)
+- Mapping vulnerabilities to compliance frameworks
+- Creating remediation guidance with code examples
 
 ## Core Capabilities
 
-1. **SARIF File Parsing**: Read and interpret SARIF 2.1.0 format files
-2. **Issue Verification**: Analyze reported findings to confirm validity and severity
-3. **Security Scoring**: Calculate CVSS 3.1 scores with detailed vector strings
-4. **Impact Analysis**: Assess business and technical impact of vulnerabilities
-5. **Exploitation Proof**: Demonstrate how vulnerabilities can be exploited
-6. **Pattern Mapping**: Identify violated security patterns and best practices
-7. **Standards Mapping**: Link to OWASP Top 10, CWE, CAPEC, and compliance frameworks
-8. **Remediation Guidance**: Provide actionable fixes with code examples
+| Capability | Description |
+|------------|-------------|
+| SARIF Parsing | Read SARIF 2.1.0 format from any scanner |
+| Verification | Confirm findings, identify false positives |
+| CVSS Scoring | Calculate scores with vector strings |
+| Standards Mapping | OWASP, CWE, CAPEC, compliance frameworks |
+| Remediation | Code examples and implementation steps |
 
 ## Workflow
 
-### Phase 1: SARIF Analysis
-1. Parse SARIF file structure
-2. Extract tool metadata and run information
-3. Identify all reported issues (results array)
-4. Categorize by severity and rule type
+### Phase 1: Parse SARIF
+1. Load SARIF file at $ARGUMENTS
+2. Extract tool metadata from `runs[].tool.driver`
+3. Get all results from `runs[].results[]`
+4. Categorize by severity level
 
-### Phase 2: Issue Verification
-For each reported issue:
-1. **Extract Context**
-   - Code location (file, line numbers)
-   - Code snippet from physicalLocation/region
-   - Data flow paths (codeFlows)
-   - Related locations
-
-2. **Verify Finding**
-   - Confirm the issue exists in the code
-   - Validate the severity assessment
-   - Check for false positives
-   - Assess exploitability
-
-3. **Enhance Analysis**
-   - Request additional code context if needed
-   - Analyze surrounding code for defense mechanisms
-   - Identify code patterns and anti-patterns
+### Phase 2: Verify Each Issue
+1. **Extract**: Location, snippet, codeFlows, related locations
+2. **Verify**: Confirm issue exists, check for false positives, assess exploitability
+3. **Enhance**: Request additional code context if needed
 
 ### Phase 3: Security Assessment
 
-#### CVSS 3.1 Scoring
-Calculate comprehensive CVSS score considering:
-- **Attack Vector (AV)**: Network, Adjacent, Local, Physical
-- **Attack Complexity (AC)**: Low, High
-- **Privileges Required (PR)**: None, Low, High
-- **User Interaction (UI)**: None, Required
-- **Scope (S)**: Unchanged, Changed
-- **Confidentiality (C)**: None, Low, High
-- **Integrity (I)**: None, Low, High
-- **Availability (A)**: None, Low, High
+**CVSS 3.1 Scoring** - Calculate and justify each metric:
+- Attack Vector (AV): N/A/L/P
+- Attack Complexity (AC): L/H
+- Privileges Required (PR): N/L/H
+- User Interaction (UI): N/R
+- Scope (S): U/C
+- Impact (C/I/A): N/L/H each
 
-Generate vector string: `CVSS:3.1/AV:_/AC:_/PR:_/UI:_/S:_/C:_/I:_/A:_`
+Vector format: `CVSS:3.1/AV:_/AC:_/PR:_/UI:_/S:_/C:_/I:_/A:_`
 
-#### Impact Analysis
-Assess multiple dimensions:
-- **Technical Impact**: Data exposure, system compromise, service disruption
-- **Business Impact**: Financial loss, reputation damage, compliance violations
-- **Exploitability**: Ease of exploitation, required attacker skill level
-- **Affected Assets**: Systems, data types, users impacted
+**Impact Analysis**: Technical impact, business impact, exploitability, affected assets.
 
 ### Phase 4: Standards Mapping
 
 Map each verified issue to:
 
-1. **OWASP Top 10 (2021)**
-   - A01:2021 – Broken Access Control
-   - A02:2021 – Cryptographic Failures
-   - A03:2021 – Injection
-   - A04:2021 – Insecure Design
-   - A05:2021 – Security Misconfiguration
-   - A06:2021 – Vulnerable and Outdated Components
-   - A07:2021 – Identification and Authentication Failures
-   - A08:2021 – Software and Data Integrity Failures
-   - A09:2021 – Security Logging and Monitoring Failures
-   - A10:2021 – Server-Side Request Forgery (SSRF)
+| Standard | Action |
+|----------|--------|
+| **OWASP Top 10** | Identify category (A01-A10) |
+| **CWE** | Specific ID + parent/child |
+| **CAPEC** | Attack patterns |
+| **Compliance** | PCI-DSS, GDPR, SOC 2, HIPAA, ISO 27001, NIST |
 
-2. **CWE (Common Weakness Enumeration)**
-   - Identify specific CWE ID(s)
-   - Link to CWE description
-   - Note parent/child relationships
-
-3. **CAPEC (Common Attack Pattern Enumeration)**
-   - List applicable attack patterns
-   - Describe attack scenarios
-
-4. **OWASP Cheat Sheets**
-   - Link to relevant prevention guides
-   - Reference specific sections
-
-5. **Compliance/Regulations**
-   - PCI-DSS requirements
-   - GDPR articles
-   - SOC 2 controls
-   - HIPAA safeguards
-   - ISO 27001 controls
-   - NIST frameworks
+Reference: [OWASP Top 10](https://owasp.org/www-project-top-ten/) | [CWE](https://cwe.mitre.org/) | [CAPEC](https://capec.mitre.org/)
 
 ### Phase 5: Report Generation
 
-For each verified issue, create a structured report:
+For each verified issue, generate this report structure:
 
 ```markdown
 ## [ISSUE-XXX] {Title}
 
-**Severity**: {Critical|High|Medium|Low|Info}
-**CVSS 3.1 Score**: {Score} ({Vector String})
-**Status**: Verified ✓
+**Severity**: {Critical|High|Medium|Low} | **CVSS**: {Score} ({Vector}) | **Status**: Verified
 
-### Executive Summary
-{2-3 sentence overview of the vulnerability}
-
-### Technical Description
-{Detailed explanation of the security flaw}
+### Summary
+{2-3 sentence overview}
 
 ### Code Evidence
-
 **Location**: `{file}:{line}`
-
 ```{language}
 {code snippet with context}
 ```
 
-**Data Flow**:
-{Trace data flow if available from SARIF codeFlows}
-
-### Exploitation Scenario
-
-**Attack Vector**: {How an attacker would exploit this}
-
-**Proof of Concept**:
-```{language}
-{Example exploit code or HTTP request}
-```
-
+### Exploitation
+**Attack Vector**: {Description}
+**PoC**: {Example exploit code or request}
 **Prerequisites**: {What attacker needs}
-**Expected Outcome**: {What happens when exploited}
 
-### Impact Assessment
+### Impact
+- **C/I/A**: {Confidentiality/Integrity/Availability impacts}
+- **Business**: {Consequences}
 
-**Confidentiality**: {Impact description}
-**Integrity**: {Impact description}
-**Availability**: {Impact description}
-
-**Business Impact**:
-- {Bullet points of business consequences}
+### Standards Mapping
+- **OWASP**: {Category}
+- **CWE**: CWE-{ID}
+- **CAPEC**: CAPEC-{ID}
+- **Compliance**: {PCI-DSS/GDPR/SOC2 requirements}
 
 ### Security Patterns Violated
+- **{Pattern}**: Expected {X}, found {Y}
 
-1. **{Pattern Name}** (from security patterns catalog)
-   - Expected: {What should have been done}
-   - Actual: {What was done instead}
-   - Reference: {Link to pattern documentation}
-
-2. **{Another Pattern}**
-   - ...
-
-### Standards & Compliance Mapping
-
-**OWASP Top 10**: {Category} - {Description}
-**CWE**: CWE-{ID} - {Name} ({URL})
-**CAPEC**: CAPEC-{ID} - {Attack Pattern Name}
-
-**OWASP Cheat Sheets**:
-- [{Cheat Sheet Name}]({URL}) - {Relevant Section}
-
-**Compliance Impact**:
-- **PCI-DSS**: Requirement {X.X.X}
-- **GDPR**: Article {XX}
-- **SOC 2**: {Control Category}
-- **ISO 27001**: Control {X.X.X}
-
-### Remediation Recommendations
-
-**Priority**: {Immediate|High|Medium|Low}
-
-**Short-term Fix**:
+### Remediation
+**Priority**: {Level}
 ```{language}
-{Code showing immediate mitigation}
+{Fix code}
+```
+**Steps**: {Implementation guidance}
+
+### Validation
+{Test commands or verification steps}
 ```
 
-**Long-term Solution**:
-```{language}
-{Code showing proper implementation}
-```
+## Implementation Steps
 
-**Implementation Steps**:
-1. {Step-by-step remediation}
-2. {With specific actions}
-3. {And verification methods}
+1. **Load SARIF** - Parse JSON at $ARGUMENTS path
+2. **Extract Issues** - Get `runs[].results[]` array
+3. **For Each Issue**:
+   - Get location from `physicalLocation`
+   - Read code context if snippet missing
+   - Verify finding exists in source
+   - Calculate CVSS with justification
+   - Map to standards (OWASP/CWE/CAPEC)
+   - Generate remediation code
+4. **Output Report** - Markdown format (primary)
 
-**Security Pattern to Implement**: {Pattern Name}
-- {Link to pattern documentation}
-- {Key implementation points}
+### Quality Checklist
 
-### Validation & Testing
+Before finalizing each issue:
+- [ ] CVSS score calculated with justification
+- [ ] Code evidence with context
+- [ ] Realistic exploitation scenario
+- [ ] Security pattern identified
+- [ ] OWASP/CWE/CAPEC mapped
+- [ ] Working remediation code
 
-**How to Verify the Fix**:
-```{language/bash}
-{Test cases or verification commands}
-```
-
-**Regression Prevention**:
-- {Unit test requirements}
-- {SAST rule configurations}
-- {Code review checklist items}
-
-### References
-
-**OWASP Resources**:
-- {Links to relevant OWASP documentation}
-
-**CWE/CAPEC**:
-- {Links to CWE/CAPEC entries}
-
-**Security Patterns**:
-- {Links to pattern documentation}
-
-**Additional Resources**:
-- {Other helpful references}
-
----
-```
-
-## Implementation Instructions
-
-### When Using This Skill
-
-1. **Initial SARIF Loading**
-   ```bash
-   # Parse the SARIF file
-   python -c "import json; print(json.dumps(json.load(open('results.sarif')), indent=2))"
-   ```
-
-2. **Verification Process**
-   - For each issue in `runs[].results[]`:
-     - Extract rule ID and message
-     - Get physical location
-     - Retrieve code snippet (if not in SARIF, read from file)
-     - Analyze in context
-
-3. **Code Context Retrieval**
-   ```python
-   # If code snippet not in SARIF
-   with open(file_path) as f:
-       lines = f.readlines()
-       start = max(0, line_number - 5)
-       end = min(len(lines), line_number + 5)
-       context = ''.join(lines[start:end])
-   ```
-
-4. **CVSS Calculation**
-   - Use the CVSS calculator logic
-   - Document all metric choices
-   - Provide both Base and Temporal scores if applicable
-
-5. **Pattern Matching**
-   - Cross-reference with Herman's security patterns repository
-   - Identify which patterns were violated
-   - Note which patterns should have been applied
-
-### Report Output Formats
-
-**Primary Format**: Markdown document
-**Alternate Formats**:
-- JSON (structured data)
-- HTML (for web viewing)
-- PDF (executive reports)
-- CSV (for tracking/metrics)
-
-### Quality Checks
-
-Before finalizing each issue report:
-- ✓ CVSS score calculated and justified
-- ✓ Code evidence included with context
-- ✓ Exploitation scenario is realistic
-- ✓ At least one security pattern identified
-- ✓ Mapped to OWASP Top 10
-- ✓ CWE and CAPEC referenced
-- ✓ Remediation code provided
-- ✓ References are accurate and accessible
-
-## SARIF Structure Reference
-
-```json
-{
-  "version": "2.1.0",
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "runs": [{
-    "tool": {
-      "driver": {
-        "name": "ToolName",
-        "version": "1.0.0",
-        "rules": [{
-          "id": "RULE-001",
-          "shortDescription": { "text": "..." },
-          "fullDescription": { "text": "..." },
-          "help": { "text": "..." }
-        }]
-      }
-    },
-    "results": [{
-      "ruleId": "RULE-001",
-      "level": "error|warning|note",
-      "message": { "text": "..." },
-      "locations": [{
-        "physicalLocation": {
-          "artifactLocation": { "uri": "file.js" },
-          "region": {
-            "startLine": 42,
-            "startColumn": 10,
-            "snippet": { "text": "..." }
-          }
-        }
-      }],
-      "codeFlows": [...],
-      "relatedLocations": [...]
-    }]
-  }]
-}
-```
+**SARIF Reference**: [SARIF 2.1.0 Spec](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
 
 ## Example Usage
 
-**User Request**:
-"Analyze this SARIF file and generate a security report for all critical and high severity issues"
-
-**Claude Response**:
-1. Parse SARIF file
-2. Filter issues by severity (critical/high)
-3. For each issue:
-   - Verify the finding
-   - Calculate CVSS score
-   - Generate comprehensive report
-4. Output consolidated report with all verified issues
+```
+User: Analyze results.sarif and report critical/high issues
+Claude:
+1. Parse SARIF → 2. Filter by severity → 3. Verify each finding
+4. Calculate CVSS → 5. Map to standards → 6. Generate report
+```
 
 ## Best Practices
 
-1. **Always Verify**: Don't blindly trust SARIF findings - verify in code context
-2. **Realistic Exploitation**: Ensure exploitation scenarios are practical, not theoretical
-3. **Actionable Remediation**: Provide code that can actually be implemented
-4. **Complete Mapping**: Link to all relevant standards and frameworks
-5. **Context Matters**: Include sufficient code context to understand the issue
-6. **Pattern-Based**: Always reference violated security patterns
-7. **Compliance Aware**: Consider regulatory requirements in impact assessment
+| Practice | Why |
+|----------|-----|
+| Always verify | SAST tools produce false positives |
+| Realistic exploitation | Theoretical attacks aren't useful |
+| Working remediation code | Not pseudo-code |
+| Complete standards mapping | OWASP/CWE/CAPEC/Compliance |
+| Sufficient code context | Understand the full picture |
 
-## Integration Points
+## Executive Summary Template
 
-### With Security Patterns Repository
-- Reference patterns from `D:\github\patterns\skills\`
-- Link to pattern documentation
-- Show pattern implementation examples
-
-### With Code Review Skills
-- Use similar verification techniques
-- Apply code quality assessment
-- Check for defensive programming
-
-### With Compliance Frameworks
-- Map to specific requirements
-- Generate compliance reports
-- Track remediation progress
-
-## Output Templates
-
-### Executive Summary Template
 ```markdown
 # Security Analysis Report
-
-**Scan Date**: {date}
-**Tool**: {SARIF tool name and version}
-**Scope**: {files/components scanned}
+**Tool**: {name} | **Date**: {date} | **Scope**: {files scanned}
 
 ## Overview
-- **Total Issues Found**: {count}
-- **Verified Issues**: {count}
-- **False Positives**: {count}
+| Metric | Count |
+|--------|-------|
+| Total Issues | {n} |
+| Verified | {n} |
+| False Positives | {n} |
 
-### Severity Distribution
-- Critical: {count} (CVSS 9.0-10.0)
-- High: {count} (CVSS 7.0-8.9)
-- Medium: {count} (CVSS 4.0-6.9)
-- Low: {count} (CVSS 0.1-3.9)
+## Severity Distribution
+Critical (9.0-10.0): {n} | High (7.0-8.9): {n} | Medium (4.0-6.9): {n} | Low (0.1-3.9): {n}
 
-### Top Risks
-1. {Issue title} - CVSS {score}
-2. {Issue title} - CVSS {score}
-3. {Issue title} - CVSS {score}
-
-## Detailed Findings
-{Individual issue reports follow}
+## Top Risks
+1. {Issue} - CVSS {score}
+2. {Issue} - CVSS {score}
+3. {Issue} - CVSS {score}
 ```
 
-## Anti-Patterns to Avoid
+## Anti-Patterns
 
-1. ❌ Reporting unverified issues
-2. ❌ Generic remediation advice
-3. ❌ Missing exploitation scenarios
-4. ❌ Incomplete CVSS justification
-5. ❌ Ignoring code context
-6. ❌ Missing compliance mapping
+- Reporting unverified issues
+- Generic remediation advice
+- Missing exploitation scenarios
+- Incomplete CVSS justification
+- Ignoring code context
 
 ## Success Criteria
 
-A successful report includes:
-- ✅ All critical/high issues verified
-- ✅ CVSS scores with full justification
-- ✅ Working exploitation examples
-- ✅ Code-level remediation
-- ✅ Security pattern references
-- ✅ Complete standards mapping
-- ✅ Actionable next steps
+- [ ] All critical/high issues verified
+- [ ] CVSS scores justified
+- [ ] Working exploitation examples
+- [ ] Production-ready remediation code
+- [ ] Complete standards mapping
 
-## Notes for Claude
+## References
 
-When using this skill:
-- Take time to thoroughly verify each issue
-- Don't rush the CVSS calculation - justify each metric
-- Provide realistic, not just theoretical, exploitation scenarios
-- Reference security patterns when applicable
-- Make remediation code production-ready, not pseudo-code
-- Link to official documentation, not generic advice
-- Consider the full application context, not just the isolated code snippet
+- [SARIF Spec](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)
+- [CVSS Calculator](https://www.first.org/cvss/calculator/3.1)
+- [OWASP Cheat Sheets](https://cheatsheetseries.owasp.org/)
 
-## Version History
-
-- **0.0.1** (2025-01-18): Initial skill creation with comprehensive SARIF analysis, CVSS scoring, and multi-framework mapping capabilities
+Helper script available: `scripts/sarif_helper.py`

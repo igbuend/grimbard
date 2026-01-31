@@ -433,25 +433,6 @@ git diff --name-only origin/main...HEAD | \
   xargs semgrep scan --config p/security-audit --sarif -o diff-scan.sarif
 ```
 
-### 5. Baldwin.sh Integration
-
-While baldwin.sh uses Opengrep, Semgrep commands are identical:
-
-```bash
-# Equivalent to opengrep in baldwin.sh
-semgrep scan \
-  -f /workspace/data/semgrep-rules \
-  -f /workspace/data/trailofbits-rules \
-  --dataflow-traces \
-  --severity=WARNING \
-  --severity=ERROR \
-  --exclude=test \
-  --exclude=tests \
-  --sarif \
-  -o /workspace/output/sarif/semgrep.sarif \
-  /workspace/src
-```
-
 ## Understanding Output
 
 ### SARIF Structure
@@ -652,4 +633,3 @@ semgrep scan --time --config rules/ test-codebase/
 - GitHub Action: <https://github.com/returntocorp/semgrep-action>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
 - Initial Source: [Trail of Bits skills](https://github.com/trailofbits/skills)
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>

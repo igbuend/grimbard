@@ -332,18 +332,6 @@ diff <(jq -r '.endpoints[].url' old-endpoints.json | sort) \
      <(jq -r '.endpoints[].url' new-endpoints.json | sort)
 ```
 
-### 5. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-noir \
-  -b /workspace/src \
-  --format sarif \
-  -o /workspace/output/sarif/noir.sarif \
-  -T \
-  --no-color
-```
-
 ## Advanced Features
 
 ### Technology Detection
@@ -456,4 +444,3 @@ noir -b /repo -q --format sarif -o results.sarif
 - OWASP Project: <https://owasp.org/www-project-noir/>
 - Supported Technologies: <https://owasp-noir.github.io/noir/techs/>
 - SARIF Output: <https://owasp-noir.github.io/noir/usage/output_formats/sarif/>
-

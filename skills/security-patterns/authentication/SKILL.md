@@ -7,6 +7,16 @@ description: Security pattern for implementing authentication in software system
 
 Authentication verifies that a subject (user, service, device) is who they claim to be before allowing system access. This pattern is a prerequisite for authorization and auditing.
 
+## When to Use
+
+Use this pattern when:
+
+- Designing a new login or identity verification system
+- Reviewing existing authentication mechanisms for flaws
+- Integrating with external identity providers (OAuth, SAML)
+- Implementing API authentication (keys, tokens)
+- Establishing audit trails for user actions
+
 ## Core Components
 
 ### Roles
@@ -53,6 +63,7 @@ Registration establishes the credential/evidence pair. Three approaches:
 3. **System-assigned**: System generates both identifier and credential
 
 Key requirements:
+
 - Verify Subject actually owns the claimed identity (e.g., email verification)
 - Protect credential transmission during registration
 - Consider secure channels for initial credential delivery
@@ -60,11 +71,13 @@ Key requirements:
 ## Credential and Evidence Selection
 
 Credential factors:
+
 - **Something you know**: passwords, PINs
 - **Something you have**: tokens, keys, devices
 - **Something you are**: biometrics
 
 Evidence guidelines:
+
 - Never store credentials directly; use derived evidence (e.g., hashed passwords)
 - Evidence leakage should not directly reveal credentials
 - Protect evidence integrity to prevent tampering
@@ -72,33 +85,40 @@ Evidence guidelines:
 ## Security Considerations
 
 ### Enforcer Placement
+
 - Must be impossible to bypass
 - Place at system boundary where all requests enter
 - Consider defense in depth with multiple enforcement points
 
 ### Evidence Protection
+
 - Encrypt evidence at rest
 - Implement integrity checks to detect tampering
 - Limit access to Evidence Provider
 
 ### Rate Limiting
+
 Prevent brute-force attacks:
+
 - Limit authentication attempts per time window
 - Implement exponential backoff
 - Consider account lockout policies
 - Protect against DoS on authentication endpoints
 
 ### Credential Change
+
 - Require current credential verification before changes
 - Force re-authentication after credential updates
 - Invalidate active sessions on credential change
 
 ### Credential Reset
+
 - Use out-of-band verification (email, SMS)
 - Time-limit reset tokens
 - Never expose whether an account exists
 
 ### Logging
+
 - Log authentication attempts (success and failure)
 - Never log credentials
 - Include timestamps and source identifiers
@@ -120,6 +140,68 @@ Prevent brute-force attacks:
 - Insecure credential storage
 - Session fixation
 - Bypassing authentication checks
+
+## Implementation Examples
+
+### Python (Secure Password Verification)
+
+**BAD (Vulnerable):**
+
+```python
+# ❌ VULNERABILITY: Plaintext comparison and timing attack risk
+def login(username, password):
+    user = database.get_user(username)
+    if user and user.password == password:  # Never store plaintext!
+        return True
+    return False
+```
+
+**GOOD (Secure):**
+
+```python
+import hmac
+from werkzeug.security import check_password_hash
+
+def login(username, password):
+    user = database.get_user(username)
+    # ✅ Use robust hashing (Argon2/PBKDF2/bcrypt) via verified library
+    if user and check_password_hash(user.password_hash, password):
+        return True
+    return False
+```
+
+### JavaScript (Node.js/Express)
+
+**BAD (Vulnerable):**
+
+```javascript
+// ❌ VULNERABILITY: Broken Logic
+app.post('/login', (req, res) => {
+  const user = db.findUser(req.body.username);
+  if (user && user.password === req.body.password) { // Plaintext
+    res.status(200).send({ token: user.id }); // Leaking ID as token
+  }
+});
+```
+
+**GOOD (Secure):**
+
+```javascript
+const bcrypt = require('bcrypt'); // or argon2
+
+app.post('/login', async (req, res) => {
+  const user = await db.findUser(req.body.username);
+
+  // ✅ Robust comparison, handle timing attacks implicitly by library
+  if (user && await bcrypt.compare(req.body.password, user.hash)) {
+    req.session.userId = user.id; // Use secure session
+    return res.status(200).send({ message: "Authenticated" });
+  }
+
+  // Generic error message to prevent enumeration
+  res.status(401).send({ error: "Invalid credentials" });
+});
+```
 
 ## Implementation Checklist
 

@@ -457,19 +457,6 @@ docker run --rm -v $(pwd):/app ghcr.io/owasp-dep-scan/dep-scan \
   depscan --src /app --reports-dir /app/reports
 ```
 
-### 5. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-depscan \
-  --src /workspace/src \
-  --reports-dir /workspace/output \
-  --report-template sarif \
-  --no-banner
-
-# SARIF output will be in /workspace/output/depscan.sarif
-```
-
 ## Understanding Output
 
 ### SARIF Structure

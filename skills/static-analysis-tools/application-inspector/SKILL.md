@@ -315,19 +315,6 @@ appinspector analyze -s /code \
   -f sarif -o credentials-report.sarif
 ```
 
-### 4. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-appinspector analyze \
-  -s /workspace/src \
-  --output-file-format sarif \
-  --output-file-path /workspace/output/sarif/appinspector.sarif \
-  --single-threaded \
-  --file-timeout 500000 \
-  --disable-archive-crawling
-```
-
 ## Interpreting Results
 
 ### SARIF Structure
@@ -376,4 +363,3 @@ sarif filter --level error --rule-id "DS.*Credentials.*" results.sarif
 - Documentation: <https://github.com/microsoft/ApplicationInspector/wiki>
 - Default Rules: <https://github.com/microsoft/ApplicationInspector/tree/main/AppInspector/rules>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
-

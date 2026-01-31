@@ -418,28 +418,6 @@ git diff --cached --name-only --diff-filter=ACMR | \
   xargs opengrep scan -f p/security-audit
 ```
 
-### 4. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-opengrep scan \
-  -f /workspace/data/opengrep-rules \
-  -f /workspace/data/trailofbits-rules \
-  --exclude-rule="data.opengrep-rules.typescript.react.best-practice.define-styled-components-on-module-level" \
-  --exclude-rule="data.opengrep-rules.typescript.react.portability.i18next.jsx-not-internationalized" \
-  --dataflow-traces \
-  --taint-intrafile \
-  --severity=WARNING \
-  --severity=ERROR \
-  --exclude=test \
-  --exclude=tests \
-  --sarif \
-  --experimental \
-  --project-root=/workspace/src \
-  /workspace/src \
-  > /workspace/output/sarif/opengrep.sarif
-```
-
 ### 5. Diff Scan (Changed Files Only)
 
 ```bash
@@ -564,7 +542,6 @@ sed -i 's/semgrep/opengrep/g' .github/workflows/security.yml
 - Trail of Bits Rules: <https://github.com/trailofbits/semgrep-rules>
 - Comparison with Semgrep: <https://semgrep.dev/docs/faq/comparisons/opengrep>
 - Launch Announcement: <https://www.aikido.dev/blog/launching-opengrep-why-we-forked-semgrep>
-- Baldwin.sh Integration: <https://github.com/igbuend/baldwin.sh>
 
 **Articles:**
 

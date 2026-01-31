@@ -359,16 +359,6 @@ osv-scanner scan --lockfile backend/go.mod --format json > go-vulns.json
 osv-scanner scan --lockfile api/requirements.txt --format json > python-vulns.json
 ```
 
-### 5. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-osv-scanner scan \
-  -r /workspace/src \
-  --format sarif \
-  > /workspace/output/sarif/osv-scanner.sarif
-```
-
 ## Understanding Output
 
 ### SARIF Structure
@@ -497,4 +487,3 @@ osv-scanner scan --offline --db-path ./osv-db /path/to/project
 - GitHub Action: <https://github.com/google/osv-scanner-action>
 - Output Formats: <https://google.github.io/osv-scanner/output/>
 - SARIF Spec: <https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html>
-

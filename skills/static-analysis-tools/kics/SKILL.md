@@ -350,20 +350,6 @@ kics scan -p . \
   --report-formats sarif
 ```
 
-### 5. Baldwin.sh Integration
-
-```bash
-# Match baldwin.sh justfile pattern
-kics scan \
-  -p /workspace/src \
-  --report-formats sarif \
-  --output-path /workspace/output/sarif \
-  --output-name kics \
-  --exclude-gitignore \
-  --silent \
-  --no-color
-```
-
 ## Understanding Output
 
 ### SARIF Structure
@@ -504,4 +490,3 @@ kics scan -p . --minimal-ui --silent --no-progress
 - GitHub Action: <https://github.com/checkmarx/kics-github-action>
 - SARIF Documentation: <https://github.com/Checkmarx/kics/blob/master/docs/results.md>
 - CIS Benchmarks: <https://www.cisecurity.org/cis-benchmarks>
-

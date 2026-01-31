@@ -1,11 +1,17 @@
 ---
 name: best-practices-reviewer
 description: Reviews skills against Claude Code best practices. Use when auditing skill files for adherence to recommendations.
+disable-model-invocation: true
+aliases:
+  - skill-reviewer
+  - review-skill
 ---
 
 # Skill Best Practices Reviewer
 
-Reviews skill files against Claude Code best practices and recommendations to ensure skills are well-designed, context-efficient, and effective.
+Reviews skill files against Claude Code best practices.
+
+**Target:** $ARGUMENTS (path to skill file or directory)
 
 ## When to Use This Skill
 
@@ -163,9 +169,9 @@ For skills Claude applies automatically when relevant:
 - [ ] Includes dates or context for time-sensitive information
 - [ ] Can be updated incrementally
 
-## Technical Writing for Context Efficiency
+## Technical Writing Principles
 
-Skills must be maximally concise while remaining clear. Apply these technical writing principles:
+Maximize conciseness without sacrificing clarity:
 
 ### Precision Over Description
 
@@ -240,7 +246,7 @@ Or if uncertain:
 
 When reviewing a skill:
 
-1. **Read the entire skill** to understand its purpose and scope
+1. **Read the skill** at $ARGUMENTS to understand purpose and scope
 2. **Check frontmatter** for required fields and appropriate flags
 3. **Evaluate context efficiency** - is every sentence necessary?
 4. **Apply technical writing check** - concise, precise, active voice

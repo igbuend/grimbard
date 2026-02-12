@@ -96,7 +96,7 @@ Secure design patterns from [DistriNet Research](https://securitypatterns.distri
 
 ### Static Analysis Tools (10 skills)
 
-Skills that teach AI agents how to run and interpret results from security tools:
+Skills that teach AI agents how to run and interpret results from security tools. Each skill includes installation instructions — ask your AI agent to install a tool and it will guide you through it.
 
 | Tool | Purpose |
 |------|---------|
@@ -143,7 +143,7 @@ See [agents/grimbard/AGENT.md](agents/grimbard/AGENT.md) for full documentation.
 
 ### DevContainer
 
-A DevContainer is included for development with all tools pre-installed. Open the repo in VS Code with the Remote Containers extension, or use GitHub Codespaces.
+A DevContainer is included with all security tools pre-installed — no manual setup needed. Open the repo in VS Code with the Remote Containers extension, or use GitHub Codespaces.
 
 ## FAQ
 

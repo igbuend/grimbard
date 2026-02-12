@@ -236,6 +236,10 @@ This installs:
 - Security pattern skills
 - Security anti-pattern skills
 
+### Security Tools
+
+The workflows use tools like Opengrep, Gitleaks, KICS, Noir, OSV-Scanner, Depscan, and others. Each tool has its own skill with installation instructions — the agent will load the relevant skill and guide you through installation when needed.
+
 ### Optional Tools
 
 - **CodeQL** - For deep cross-file analysis

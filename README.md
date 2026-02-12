@@ -142,6 +142,10 @@ The agent provides structured workflows:
 
 See [agents/grimbard/AGENT.md](agents/grimbard/AGENT.md) for full documentation.
 
+### Example Review
+
+See a complete grimbard-style security review of [OWASP Juice Shop](docs/example-review-juice-shop.md) — 14 findings across P0–P3, each mapped to the grimbard skill that detects it.
+
 ### DevContainer
 
 A DevContainer is included with all security tools pre-installed — no manual setup needed. Open the repo in VS Code with the Remote Containers extension, or use GitHub Codespaces.

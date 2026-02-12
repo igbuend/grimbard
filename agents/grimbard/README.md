@@ -23,12 +23,12 @@ Grimbard is a security-focused agent for Claude Code that automates vulnerabilit
 
 ```bash
 # Install via NPM (recommended)
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 
 # Or install from source
 git clone https://github.com/igbuend/grimbard.git
 cd grimbard
-npx add-skill .
+npx skills add .
 ```
 
 ### Run Your First Security Review
@@ -258,7 +258,7 @@ my-custom-tool:
 All grimbard skills must be installed:
 
 ```bash
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 ```
 
 This includes:

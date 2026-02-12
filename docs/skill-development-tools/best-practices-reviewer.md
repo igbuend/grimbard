@@ -51,13 +51,13 @@ Recognizes different skill types and applies appropriate criteria:
 ### Install from grimbard repository
 
 ```bash
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 ```
 
 ### Install standalone
 
 ```bash
-npx add-skill igbuend/grimbard/skills/best-practices-reviewer
+npx skills add igbuend/grimbard/skills/best-practices-reviewer
 ```
 
 ## Usage

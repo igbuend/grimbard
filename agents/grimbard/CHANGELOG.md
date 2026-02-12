@@ -127,7 +127,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 1. Update skill installation:
 ```bash
-npx add-skill igbuend/grimbard@latest
+npx skills add igbuend/grimbard@latest
 ```
 
 2. Old workflow references need updating:

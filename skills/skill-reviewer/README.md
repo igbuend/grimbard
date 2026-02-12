@@ -25,13 +25,13 @@ Use this skill when:
 ## Installation
 
 ```bash
-npx add-skill igbuend/grimbard/skills/skill-reviewer
+npx skills add igbuend/grimbard/skills/skill-reviewer
 ```
 
 Or install the entire grimbard repository:
 
 ```bash
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 ```
 
 ## Usage

@@ -227,7 +227,7 @@ All grimbard skills must be installed:
 
 ```bash
 # Install all skills
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 ```
 
 This installs:

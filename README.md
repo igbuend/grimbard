@@ -29,7 +29,7 @@ That's it. Your AI agent now has 77 security skills covering:
 After installing, ask your AI agent:
 
 ```
-Review this file for security vulnerabilities
+Review this folder for security vulnerabilities
 ```
 
 The agent automatically loads the relevant anti-pattern skills based on the code context — XSS patterns for HTML rendering, SQLi patterns for database queries, etc.

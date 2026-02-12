@@ -1,5 +1,9 @@
 # Grimbard Agent Configuration
 # High-level settings for workflows, tools, output, and performance
+#
+# NOTE: This file is AI-readable guidance, not runtime configuration.
+# The AI agent reads these settings to understand how to behave during reviews.
+# No tool or script parses this file programmatically.
 
 agent:
   name: grimbard

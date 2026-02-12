@@ -1,5 +1,9 @@
 # Grimbard Tool Configuration
 # Per-tool settings, flags, rules, and output configurations
+#
+# NOTE: This file is AI-readable guidance, not runtime configuration.
+# The AI agent reads these settings to know which flags, rules, and
+# exclusions to use when running each tool. No tool parses this directly.
 
 # Opengrep - Pattern-based SAST (Open source Semgrep fork)
 opengrep:

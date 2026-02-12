@@ -1,5 +1,9 @@
 # Grimbard Permissions Configuration
 # Security controls and resource limits for agent execution
+#
+# NOTE: This file is AI-readable guidance, not runtime configuration.
+# The AI agent reads these constraints to understand what it should and
+# should not do. No tool enforces these limits programmatically.
 
 # Filesystem Access Controls
 filesystem:

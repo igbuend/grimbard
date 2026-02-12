@@ -1,0 +1,125 @@
+name: Validate Skills
+
+on:
+  push:
+    paths:
+      - 'skills/**'
+      - '.github/workflows/validate-skills.yml'
+  pull_request:
+    paths:
+      - 'skills/**'
+      - '.github/workflows/validate-skills.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate skill structure
+        run: |
+          errors=0
+
+          for dir in skills/*/; do
+            dirname=$(basename "$dir")
+            skillfile="$dir/SKILL.md"
+
+            # Check SKILL.md exists
+            if [ ! -f "$skillfile" ]; then
+              echo "❌ $dirname: missing SKILL.md"
+              errors=$((errors + 1))
+              continue
+            fi
+
+            # Check frontmatter exists (starts with ---)
+            if ! head -1 "$skillfile" | grep -q '^---$'; then
+              echo "❌ $dirname: SKILL.md missing frontmatter (must start with ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+
+            # Check frontmatter has closing ---
+            closing=$(tail -n +2 "$skillfile" | grep -n '^---$' | head -1 | cut -d: -f1)
+            if [ -z "$closing" ]; then
+              echo "❌ $dirname: SKILL.md frontmatter not closed (missing closing ---)"
+              errors=$((errors + 1))
+              continue
+            fi
+
+            # Extract name from frontmatter
+            skillname=$(sed -n '2,'"$((closing))"'p' "$skillfile" | grep '^name:' | head -1 | sed 's/^name: *"\?\([^"]*\)"\?/\1/')
+
+            if [ -z "$skillname" ]; then
+              echo "❌ $dirname: SKILL.md frontmatter missing 'name' field"
+              errors=$((errors + 1))
+              continue
+            fi
+
+            # Check name matches directory
+            if [ "$dirname" != "$skillname" ]; then
+              echo "❌ $dirname: name '$skillname' does not match directory name"
+              errors=$((errors + 1))
+            fi
+
+            # Check description exists
+            has_desc=$(sed -n '2,'"$((closing))"'p' "$skillfile" | grep '^description:')
+            if [ -z "$has_desc" ]; then
+              echo "❌ $dirname: SKILL.md frontmatter missing 'description' field"
+              errors=$((errors + 1))
+            fi
+
+            # Check not empty after frontmatter
+            body_lines=$(tail -n +"$((closing + 2))" "$skillfile" | grep -c '[^ ]')
+            if [ "$body_lines" -lt 3 ]; then
+              echo "⚠️  $dirname: SKILL.md has very little content after frontmatter ($body_lines non-empty lines)"
+            fi
+          done
+
+          echo ""
+          echo "Scanned $(ls -d skills/*/ | wc -l) skills"
+
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors error(s) found"
+            exit 1
+          else
+            echo "✅ All skills valid"
+          fi
+
+      - name: Check naming conventions
+        run: |
+          errors=0
+
+          for dir in skills/*/; do
+            dirname=$(basename "$dir")
+
+            # Anti-pattern skills must end with -anti-pattern
+            if echo "$dirname" | grep -q "anti-pattern" && ! echo "$dirname" | grep -q -- '-anti-pattern$'; then
+              echo "❌ $dirname: anti-pattern skill must end with '-anti-pattern'"
+              errors=$((errors + 1))
+            fi
+
+            # Pattern skills (not anti-pattern, not tools) should end with -pattern
+            # This is a soft check — tools and other skills don't need -pattern suffix
+          done
+
+          if [ $errors -gt 0 ]; then
+            echo "❌ $errors naming error(s) found"
+            exit 1
+          else
+            echo "✅ Naming conventions OK"
+          fi
+
+      - name: Count skills and verify README
+        run: |
+          actual=$(ls -d skills/*/ | wc -l)
+          readme_count=$(grep -oP '\*\*\d+ security skills' README.md | grep -oP '\d+')
+
+          echo "Actual skills: $actual"
+          echo "README claims: $readme_count"
+
+          if [ "$actual" != "$readme_count" ]; then
+            echo "⚠️  README skill count ($readme_count) doesn't match actual ($actual)"
+            # Warning only, not a failure
+          else
+            echo "✅ Skill count matches README"
+          fi

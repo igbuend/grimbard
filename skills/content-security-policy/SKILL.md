@@ -483,6 +483,6 @@ Before finalizing:
 
 ## Related Skills
 
-- [Missing Security Headers](../security-anti-patterns/missing-security-headers/): CSP is one of several critical security headers
-- [Cross-Site Scripting (XSS)](../security-anti-patterns/xss/): CSP is a primary XSS defense layer
-- [DOM Clobbering](../security-anti-patterns/dom-clobbering/): Trusted Types (CSP L3) mitigates DOM clobbering
+- [Missing Security Headers](../missing-security-headers-anti-pattern/): CSP is one of several critical security headers
+- [Cross-Site Scripting (XSS)](../xss-anti-pattern/): CSP is a primary XSS defense layer
+- [DOM Clobbering](../dom-clobbering-anti-pattern/): Trusted Types (CSP L3) mitigates DOM clobbering

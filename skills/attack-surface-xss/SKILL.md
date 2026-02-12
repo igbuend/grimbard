@@ -405,7 +405,7 @@ Before finalizing:
 
 - [Content Security Policy](../content-security-policy/): Deep CSP analysis — delegate with `/content-security-policy $URL`
 - [XSS Finder](../xss-finder/): Active XSS testing — run after reconnaissance with `/xss-finder $URL`
-- [Cross-Site Scripting (XSS)](../security-anti-patterns/xss/): Reflected, stored, and DOM XSS patterns
-- [DOM Clobbering](../security-anti-patterns/dom-clobbering/): Global variable clobbering detection
-- [Mutation XSS](../security-anti-patterns/mutation-xss/): Sanitizer bypass via mXSS
-- [Missing Security Headers](../security-anti-patterns/missing-security-headers/): Header assessment baseline
+- [Cross-Site Scripting (XSS)](../xss-anti-pattern/): Reflected, stored, and DOM XSS patterns
+- [DOM Clobbering](../dom-clobbering-anti-pattern/): Global variable clobbering detection
+- [Mutation XSS](../mutation-xss-anti-pattern/): Sanitizer bypass via mXSS
+- [Missing Security Headers](../missing-security-headers-anti-pattern/): Header assessment baseline

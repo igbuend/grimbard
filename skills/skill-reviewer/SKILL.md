@@ -410,7 +410,7 @@ Fix security issue $ARGUMENTS following our security review process.
 
 3. **Implement the fix**
    - Address root cause, not symptoms
-   - Follow secure coding patterns from `.claude/skills/security-patterns/`
+   - Follow secure coding patterns from the installed security pattern skills
    - Update all affected locations
 
 4. **Write security tests**

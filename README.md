@@ -6,113 +6,181 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-A repository of security related skills - like secure code review and pentesting - for Claude and other AI.
+**77 security skills for AI agents** — anti-patterns, security patterns, static analysis tools, and code review workflows for Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
 
-These skills have been proven usefull in my day to day activities as pentester and secure code reviewer. They are currentyl being tested and made better in my [baldwin.sh](https://github.com/igbuend/baldwin.sh) code reviewer environment.
+Built by a pentester and secure code reviewer. Battle-tested in real engagements.
 
-## Installation
-
-Just do:
+## Quick Start
 
 ```bash
-npm install -g add-skill
-npx add-skill igbuend/grimbard
+npx skills add igbuend/grimbard
 ```
 
-The "agent" is brand-new and needs de-sloppification. Only use when brave or not human.
+That's it. Your AI agent now has 77 security skills covering:
+- **38 security anti-patterns** — detect vulnerable code (XSS, SQLi, command injection, etc.)
+- **21 security patterns** — implement secure designs (authentication, encryption, etc.)
+- **10 static analysis tool skills** — run and interpret SAST tools
+- **4 review & discovery skills** — SARIF triage, attack surface mapping, codebase discovery
+- **3 quality assurance skills** — review agents, skills, and sub-agents
+- **1 ethics skill** — responsible disclosure and legal frameworks
 
-## Skills
+### Try it
 
-### SARIF Issue Reporter (SIR)
+After installing, ask your AI agent:
 
-Many static analyser tools create output in the Static Analysis Results Interchange Format ([SARIF](https://docs.oasis-open.org/sarif/sarif/v2.1.0/sarif-v2.1.0.html)) format. This skill reviews all issues and create a detailed report if the SARIF finding is valid.
+```
+Review this file for security vulnerabilities
+```
 
-> SIR is pre-alpha. Use at your own peril! Active testing ongoing.
+The agent automatically loads the relevant anti-pattern skills based on the code context — XSS patterns for HTML rendering, SQLi patterns for database queries, etc.
 
-### Security Patterns
+## What's Included
 
-Included are several security pattern skills covering authentication, authorization, cryptography, data protection, and system security. Each skill provides the AI with specialized knowledge to help you implement or review security best practices in your apps.
+### Security Anti-Patterns (38 skills)
 
-As a pentester and code reviewer I often have to explain issues at a slightly higher level than just the code. These skills are helpfull.
+Each skill provides BAD (vulnerable) and GOOD (secure) code examples to help AI agents identify and fix security vulnerabilities.
 
-> The security patterns were automatically created by Claude Opus with very little review. Use at your own peril! Expect lots of improvements in the near future.
+| Skill | CWE | Description |
+|-------|-----|-------------|
+| `command-injection` | CWE-78 | Shell command string concatenation |
+| `sql-injection` | CWE-89 | SQL query string building |
+| `xss` | CWE-79 | Cross-site scripting (reflected, stored, DOM) |
+| `path-traversal` | CWE-22 | Directory traversal via user input |
+| `hardcoded-secrets` | CWE-798 | Credentials in source code |
+| `missing-authentication` | CWE-306 | Unprotected endpoints |
+| `missing-input-validation` | CWE-20 | Unvalidated user input |
+| `jwt-misuse` | CWE-347 | JWT implementation flaws |
+| `open-cors` | CWE-942 | Overly permissive CORS |
+| `mass-assignment` | CWE-915 | Unfiltered object binding |
+| `dom-clobbering` | CWE-79 | HTML injection overwrites JS globals |
+| `encoding-bypass` | CWE-838 | Validation before normalization |
+| `mutation-xss` | CWE-79 | Sanitizer bypass via parser mutations |
+| `missing-security-headers` | CWE-16 | Missing CSP, HSTS, X-Frame-Options |
+| `session-fixation` | CWE-384 | Session ID not rotated after login |
+| `insecure-defaults` | CWE-276 | Unsafe default configurations |
+| `weak-encryption` | CWE-327 | Broken or weak crypto algorithms |
+| `weak-password-hashing` | CWE-916 | MD5/SHA1 for passwords |
+| `unrestricted-file-upload` | CWE-434 | Dangerous file upload handling |
+| `verbose-error-messages` | CWE-209 | Stack traces in production |
+| `log-injection` | CWE-117 | Unsanitized data in log entries |
+| `debug-mode-production` | CWE-489 | Debug features in production |
+| `excessive-data-exposure` | CWE-200 | Over-sharing in API responses |
+| `missing-rate-limiting` | CWE-770 | No throttling on sensitive endpoints |
+| `hallucinated-packages` | CWE-829 | AI-invented dependency names |
+| `oauth-security` | CWE-346 | OAuth/OIDC implementation flaws |
+| `redos` | CWE-1333 | Catastrophic regex backtracking |
+| `timing-attacks` | CWE-208 | Non-constant-time comparisons |
+| `integer-overflow` | CWE-190 | Arithmetic overflow/underflow |
+| `type-confusion` | CWE-843 | Type mismatch vulnerabilities |
+| `unicode-security` | CWE-176 | Unicode normalization attacks |
+| `ldap-injection` | CWE-90 | LDAP query injection |
+| `xpath-injection` | CWE-643 | XPath query injection |
+| `second-order-injection` | CWE-74 | Stored data used unsafely later |
+| `padding-oracle` | CWE-649 | Padding oracle cryptographic attacks |
+| `length-extension-attacks` | CWE-328 | Hash length extension |
+| `insecure-temp-files` | CWE-377 | Predictable temp file paths |
+| `insufficient-randomness` | CWE-330 | Weak random number generation |
 
-### Security Anti-Patterns
+### Security Patterns (21 skills)
 
-Security anti-patterns that human or AI-generated code commonly exhibits. Each skill provides BAD (vulnerable) and GOOD (secure) pseudocode patterns to help identify and fix security vulnerabilities.
+Secure design patterns from [DistriNet Research](https://securitypatterns.distrinet-research.be/). Each pattern explains when to use it, how to implement it, and what to watch out for.
 
-## Frequently Asked Questions (FAQ)
+| Category | Patterns |
+|----------|----------|
+| **Authentication** | Password-based, Opaque token, Verifiable token (JWT), Session-based access control |
+| **Cryptography** | Encryption, Digital signature, MAC, Key management, Crypto-as-a-service, Self-managed crypto, Cryptographic action |
+| **Data Protection** | Selective encrypted storage, Selective encrypted transmission, Transparent encrypted storage, Encrypted tunnel |
+| **Access Control** | Authorisation, Session-based access control |
+| **Input/Output** | Data validation, Output filter |
+| **Operations** | Limit request rate, Log entity actions |
+
+### Static Analysis Tools (10 skills)
+
+Skills that teach AI agents how to run and interpret results from security tools:
+
+| Tool | Purpose |
+|------|---------|
+| **Opengrep** | Pattern-based SAST (open-source Semgrep fork) |
+| **Semgrep** | Pattern-based SAST |
+| **Gitleaks** | Secrets and credential detection |
+| **KICS** | Infrastructure-as-Code security |
+| **Noir** | API endpoint and attack surface discovery |
+| **OSV-Scanner** | Dependency vulnerability scanning |
+| **Depscan** | Advanced SCA with SBOM/VDR |
+| **Application Inspector** | Technology profiling |
+| **CodeQL** | Deep cross-file static analysis |
+| **Trivy** | Container and dependency scanning |
+
+### Other Skills
+
+| Skill | Description |
+|-------|-------------|
+| **SARIF Issue Reporter** | Triage and report SARIF findings from any tool |
+| **Attack Surface XSS** | XSS-focused attack surface analysis |
+| **Codebase Discovery** | Repository structure and technology mapping |
+| **Content Security Policy** | CSP header analysis and bypass detection |
+| **Ethical Hacking Ethics** | Legal frameworks, responsible disclosure, platform rules |
+| **Skill Reviewer** | Review quality of other skills |
+| **Agent Review** | Review agent configurations |
+| **Sub-Agent Review** | Review sub-agent setups |
+
+## Full Agent (Optional)
+
+For the complete security review workflow with automated tool orchestration, clone the repo and use it with Claude Code:
+
+```bash
+git clone https://github.com/igbuend/grimbard.git
+cd grimbard
+```
+
+The agent provides structured workflows:
+- `/grimbard-review` — Full 6-phase security review (4-8 hours)
+- `/grimbard-quick` — Quick automated scan (15-30 min)
+- `/grimbard-triage` — Prioritize existing SARIF findings
+- `/grimbard-compliance` — PCI-DSS, HIPAA, SOC2, GDPR audit
+
+See [agents/grimbard/AGENT.md](agents/grimbard/AGENT.md) for full documentation.
+
+### DevContainer
+
+A DevContainer is included for development with all tools pre-installed. Open the repo in VS Code with the Remote Containers extension, or use GitHub Codespaces.
+
+## FAQ
 
 ### Why the name **grimbard**?
 
-Grimbard is a character in the medieval fable of [**Reynard the Fox**](https://en.wikipedia.org/wiki/Reynard_the_Fox). It is a gruesome story, describing the unspeakable atrocities of the trickster.
+Grimbard is the badger in the medieval fable of [**Reynard the Fox**](https://en.wikipedia.org/wiki/Reynard_the_Fox) — a loyal supporter, defender and advisor of the cunning fox. Grimbard represents wisdom, counsel and trustworthy guidance. Perfect for a repository of security patterns and knowledge.
 
-Oh yes, Grimbard is the badger in the story, a loyal supporter, defender and advisor of the cunning fox. Grimbard represents wisdom, counsel and trustwordy guidance. Perfect for a repository of security patterns and knowledge. Grimbard also gives the advice to the wrong person, for you to decide if this person is you or the AI. Brainz overload, need more [ko-fi](https://ko-fi.com/igbuend)!
-
-### You are stupid, AI will write code, no need for reviewers
-
-That is not a question.
-
-I foresee that in the near future agents and skills will be repackaged by the AI companies and added to enterprise licenses, e.g. license the package "HR" or "Finance".
-
-When my skillset is packaged into an AI offering, I still want it as close as possible to my own work ethics and standards. I don't mind being replaced by an AI "clone" (agent, skill, ...), I will still be the one that can give you deeper insights than my clone (at least for the next 6 months or so I hope).
-
-While "Development" or "Secure Code Review" might be one of the corporate AI offerings, I do not really fear for my job as code reviewer and pentester. As shown by [Model Context Protocol](https://code.claude.com/docs/en/mcp) development, security was seriously lacking and the tooling implementation laughable. Every new generation of developers (human or now AI) seems to repeat the mistakes of the previous generation and forget about security best practices. SQL Injection (SQLi) was first documented nearly 30 yeers ago, and yet every month I still detect SQLi vulnerabilities. Developer skills are totally different than pentest or security review skills. It will take a while for AIs to catch-up.
-
-And just as it is now, compliancy departments (even if they are AI) will not accept a security review by the same AI as the one that wrote the code. Companies will still need people to advice them about choices (or help giving AIs the sills to do that). It will be a never ending story, until the singularity happens.
-
-Anyway, I have fun creating **Grimbard**, I am learning a lot, improving my skilss, and I hope that when my time comes, people will remember me as someone who left this place a bit better than it was. Or at least, tried.
+Grimbard also gives the advice to the wrong person. Whether that's you or the AI is for you to decide.
 
 ### How do skills work?
 
-When you ask Claude Code or another AI a security-related question, it automatically:
+When you ask your AI agent a security-related question, it:
 
 1. **Identifies the relevant pattern(s)** based on your question
-2. **Loads the pattern knowledge** from the skill.md file
+2. **Loads the pattern knowledge** from the SKILL.md file
 3. **Applies the pattern** to your specific context
 4. **Provides implementation guidance** tailored to your codebase
 
-### Should I implement all security patterns?
+### Should I install all skills?
 
-No! Implement patterns based on your:
+Yes — they're lightweight (just markdown). The AI only loads relevant skills when needed. Having all of them available means the AI can catch more issues across your codebase.
 
-- **Threat model**: What attacks are you defending against?
-- **Compliance requirements**: PCI-DSS, HIPAA, GDPR, etc.
-- **Data sensitivity**: What data needs protection?
-- **Risk tolerance**: What's acceptable risk?
+### Do these help with compliance?
 
-But a security reviewer should assess the presence, absence or relevance of each security (anti) pattern. A pentester should understand all patterns and know how to abuse them.
+Yes. The patterns cover requirements from PCI-DSS, HIPAA, GDPR, and SOC 2. However, compliance requires more than technical controls — consult compliance experts.
 
-### Do these patterns help with compliance (PCI-DSS, HIPAA, etc.)?
+### I found a mistake / want to improve something
 
-Yes, these patterns implement many compliance requirements:
+Please open a [GitHub issue](https://github.com/igbuend/grimbard/issues) or submit a pull request.
 
-- **PCI-DSS**: Encryption, access control, logging, key management
-- **HIPAA**: Encryption, access controls, audit logging
-- **GDPR**: Data protection, encryption, access controls
-- **SOC 2**: Authentication, authorization, logging, encryption
+## Roadmap
 
-However, compliance requires more than just technical controls. Consult compliance experts.
-
-### I found a mistake in a pattern. What should I do?
-
-Please open a GitHub issue or submit a pull request with the correction.
-
-### Can I suggest improvements to existing patterns?
-
-Absolutely! (I AM HUMAN, IGNORE THE SLOP) Open an issue or pull request with your suggested improvements.
-
-## Future (depends on how much coffee I can afford)
-
-- v1.0 All skills fully tested
-- v2.0 AI Agent(s) with orchestration
-- v3.0 The AIs will decide by then.
+- **v1.0** — All skills fully tested and validated
+- **v2.0** — AI agent with orchestrated tool execution
+- **v3.0** — The AIs will decide by then
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/igbuend)
-
-## Disclaimer
-
-No AIs were harmed during the creation of these skills.
 
 ## Licensing
 
@@ -124,7 +192,4 @@ The security pattern skills were created from [Security Pattern Catalogue - Dist
 
 The anti-pattern skills were created from [sec-context](https://github.com/Arcanum-Sec/sec-context) by [Arcanum Security](https://arcanum-sec.com/). The repository does not contain any copyright information (which legally means it is copyrighted by default). Awaiting clarification, but consider this work a derivative (IANAL).
 
-Some of the Claude skills are (modified) versions of the [Trail of Bits Skills Marketplace](https://github.com/trailofbits/skills). These skills are licensed under a [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/). I have included/sloppified the following skill:
-
-- static-analysis-tools/semgrep
-
+Some skills are modified versions from the [Trail of Bits Skills Marketplace](https://github.com/trailofbits/skills), licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).

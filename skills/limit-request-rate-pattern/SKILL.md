@@ -1,5 +1,5 @@
 ---
-name: limit-request-rate
+name: limit-request-rate-pattern
 description: Security pattern for implementing rate limiting and throttling. Use when protecting against brute-force attacks, DoS/DDoS mitigation, preventing resource exhaustion, or limiting API abuse. Addresses "Entity absorbs excessive resources" problem.
 ---
 

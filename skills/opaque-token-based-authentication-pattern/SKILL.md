@@ -1,5 +1,5 @@
 ---
-name: opaque-token-based-authentication
+name: opaque-token-based-authentication-pattern
 description: Security pattern for server-side token authentication (e.g., session IDs). Use when implementing session management, designing stateful authentication where server maintains token-to-principal mapping, or building systems requiring immediate token revocation. Specialization of Authentication pattern.
 ---
 

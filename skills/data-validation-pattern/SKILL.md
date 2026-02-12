@@ -1,5 +1,5 @@
 ---
-name: data-validation
+name: data-validation-pattern
 description: Security pattern for input validation and sanitization. Use when implementing input handling, preventing injection attacks (SQL, XSS, command), ensuring data integrity, or processing data from untrusted sources. Addresses "Entity provides unexpected data" problem.
 ---
 

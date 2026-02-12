@@ -1,5 +1,5 @@
 ---
-name: self-managed-cryptography
+name: self-managed-cryptography-pattern
 description: Security pattern for systems that manage cryptographic keys themselves rather than delegating to an external service. Use when the application must store, retrieve, and manage cryptographic keys directly. Implementation of Cryptographic Key Management pattern. Covers key storage security, key derivation from passwords, limiting key exposure, and protecting key confidentiality and integrity throughout the lifecycle.
 ---
 

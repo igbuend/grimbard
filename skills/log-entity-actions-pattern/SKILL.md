@@ -1,5 +1,5 @@
 ---
-name: log-entity-actions
+name: log-entity-actions-pattern
 description: Security pattern for implementing security logging and audit trails. Use when designing logging systems for security events, implementing non-repudiation, creating audit trails, or addressing security monitoring and incident response needs. Addresses "Entity repudiates action request" problem.
 ---
 

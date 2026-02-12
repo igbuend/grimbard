@@ -1,5 +1,5 @@
 ---
-name: encrypted-tunnel
+name: encrypted-tunnel-pattern
 description: Security pattern for channel-level encryption (TLS/SSH). Use when implementing HTTPS, securing all communication between endpoints, setting up TLS connections, or when infrastructure should handle encryption transparently. Addresses "Leak action request or data in transit" problem.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: verifiable-token-based-authentication
+name: verifiable-token-based-authentication-pattern
 description: Security pattern for self-contained token authentication (e.g., JWT). Use when implementing stateless authentication, designing tokens with embedded claims, or building systems where tokens contain principal information and can be verified without server-side storage. Specialization of Authentication pattern.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: cryptography-as-a-service
+name: cryptography-as-a-service-pattern
 description: Security pattern for delegating cryptographic operations and key management to an external service. Use when designing systems that should not possess cryptographic keys directly. Implementation of Cryptographic Key Management pattern. Examples include Android Keystore, iOS KeyChain, AWS KMS, Azure Key Vault, Google Cloud KMS. Reduces risk of key leakage and cipher misconfiguration.
 ---
 

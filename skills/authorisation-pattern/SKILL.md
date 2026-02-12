@@ -1,5 +1,5 @@
 ---
-name: authorisation
+name: authorisation-pattern
 description: Security pattern for implementing access control and authorization. Use when designing permission systems, implementing RBAC/ABAC, preventing unauthorized access, addressing privilege escalation, or ensuring users can only perform allowed actions on permitted resources. Addresses "Entity performs disallowed action" problem.
 ---
 

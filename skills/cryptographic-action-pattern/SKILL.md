@@ -1,5 +1,5 @@
 ---
-name: cryptographic-action
+name: cryptographic-action-pattern
 description: Base security pattern for integrating cryptographic primitives into software systems. Use when implementing encryption, digital signatures, MACs, or any cryptographic operations. Provides guidance on library selection, key usage, configuration protection, and designing for cryptographic agility. Foundation pattern for Encryption, Digital signature, and MAC patterns.
 ---
 

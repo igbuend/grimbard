@@ -1,5 +1,5 @@
 ---
-name: session-based-access-control
+name: session-based-access-control-pattern
 description: Security pattern combining session authentication with authorization. Use when implementing web application security requiring both user authentication via session IDs and authorization checks for resource access. Combines Opaque token-based authentication with Authorisation pattern.
 ---
 

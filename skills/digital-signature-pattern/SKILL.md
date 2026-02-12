@@ -1,5 +1,5 @@
 ---
-name: digital-signature
+name: digital-signature-pattern
 description: Security pattern for implementing digital signatures. Use when implementing document signing, code signing, certificate signing, non-repudiation, or verifying authenticity and integrity of messages using asymmetric cryptography (RSA, ECDSA, Ed25519).
 ---
 

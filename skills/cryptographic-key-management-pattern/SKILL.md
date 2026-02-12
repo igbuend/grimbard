@@ -1,5 +1,5 @@
 ---
-name: cryptographic-key-management
+name: cryptographic-key-management-pattern
 description: Security pattern for managing cryptographic keys throughout their lifecycle. Use when integrating cryptography requiring key generation, storage, distribution, or usage. Provides guidance on key confidentiality, integrity, configuration protection, and key information handling. Foundation for Cryptography as a service and Self-managed cryptography patterns.
 ---
 

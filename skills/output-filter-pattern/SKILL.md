@@ -1,5 +1,5 @@
 ---
-name: output-filter
+name: output-filter-pattern
 description: Security pattern for filtering data before sending to external entities. Use when preventing excessive data exposure, implementing data minimization, protecting sensitive information in API responses, or ensuring clients receive only necessary data. Addresses "Entity receives excessive data" problem and OWASP API3:2019 Excessive Data Exposure.
 ---
 

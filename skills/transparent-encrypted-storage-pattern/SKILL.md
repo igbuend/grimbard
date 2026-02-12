@@ -1,5 +1,5 @@
 ---
-name: transparent-encrypted-storage
+name: transparent-encrypted-storage-pattern
 description: Security pattern for full-disk or database-level encryption at rest. Use when implementing Transparent Data Encryption (TDE), full-disk encryption, or when storage infrastructure should handle encryption without application changes. Addresses "Leak data at rest" problem.
 ---
 

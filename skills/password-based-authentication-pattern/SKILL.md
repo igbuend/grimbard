@@ -1,5 +1,5 @@
 ---
-name: password-based-authentication
+name: password-based-authentication-pattern
 description: Security pattern for implementing password-based authentication. Use when designing login systems with username/password, implementing password storage, hashing, salting, peppering, password policies, or password reset flows. Specialization of the Authentication pattern.
 ---
 

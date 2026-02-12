@@ -1,5 +1,5 @@
 ---
-name: message-authentication-code-mac
+name: message-authentication-code-pattern
 description: Security pattern for implementing Message Authentication Codes (MACs) to ensure data integrity and origin authentication. Use when implementing HMAC, CMAC, or other MAC algorithms, verifying message integrity, authenticating message origin with shared secrets, or when non-repudiation is NOT required. Specialization of Cryptographic action pattern.
 ---
 

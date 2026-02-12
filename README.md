@@ -42,44 +42,44 @@ Each skill provides BAD (vulnerable) and GOOD (secure) code examples to help AI 
 
 | Skill | CWE | Description |
 |-------|-----|-------------|
-| `command-injection` | CWE-78 | Shell command string concatenation |
-| `sql-injection` | CWE-89 | SQL query string building |
-| `xss` | CWE-79 | Cross-site scripting (reflected, stored, DOM) |
-| `path-traversal` | CWE-22 | Directory traversal via user input |
-| `hardcoded-secrets` | CWE-798 | Credentials in source code |
-| `missing-authentication` | CWE-306 | Unprotected endpoints |
-| `missing-input-validation` | CWE-20 | Unvalidated user input |
-| `jwt-misuse` | CWE-347 | JWT implementation flaws |
-| `open-cors` | CWE-942 | Overly permissive CORS |
-| `mass-assignment` | CWE-915 | Unfiltered object binding |
-| `dom-clobbering` | CWE-79 | HTML injection overwrites JS globals |
-| `encoding-bypass` | CWE-838 | Validation before normalization |
-| `mutation-xss` | CWE-79 | Sanitizer bypass via parser mutations |
-| `missing-security-headers` | CWE-16 | Missing CSP, HSTS, X-Frame-Options |
-| `session-fixation` | CWE-384 | Session ID not rotated after login |
-| `insecure-defaults` | CWE-276 | Unsafe default configurations |
-| `weak-encryption` | CWE-327 | Broken or weak crypto algorithms |
-| `weak-password-hashing` | CWE-916 | MD5/SHA1 for passwords |
-| `unrestricted-file-upload` | CWE-434 | Dangerous file upload handling |
-| `verbose-error-messages` | CWE-209 | Stack traces in production |
-| `log-injection` | CWE-117 | Unsanitized data in log entries |
-| `debug-mode-production` | CWE-489 | Debug features in production |
-| `excessive-data-exposure` | CWE-200 | Over-sharing in API responses |
-| `missing-rate-limiting` | CWE-770 | No throttling on sensitive endpoints |
-| `hallucinated-packages` | CWE-829 | AI-invented dependency names |
-| `oauth-security` | CWE-346 | OAuth/OIDC implementation flaws |
-| `redos` | CWE-1333 | Catastrophic regex backtracking |
-| `timing-attacks` | CWE-208 | Non-constant-time comparisons |
-| `integer-overflow` | CWE-190 | Arithmetic overflow/underflow |
-| `type-confusion` | CWE-843 | Type mismatch vulnerabilities |
-| `unicode-security` | CWE-176 | Unicode normalization attacks |
-| `ldap-injection` | CWE-90 | LDAP query injection |
-| `xpath-injection` | CWE-643 | XPath query injection |
-| `second-order-injection` | CWE-74 | Stored data used unsafely later |
-| `padding-oracle` | CWE-649 | Padding oracle cryptographic attacks |
-| `length-extension-attacks` | CWE-328 | Hash length extension |
-| `insecure-temp-files` | CWE-377 | Predictable temp file paths |
-| `insufficient-randomness` | CWE-330 | Weak random number generation |
+| `command-injection-anti-pattern` | CWE-78 | Shell command string concatenation |
+| `sql-injection-anti-pattern` | CWE-89 | SQL query string building |
+| `xss-anti-pattern` | CWE-79 | Cross-site scripting (reflected, stored, DOM) |
+| `path-traversal-anti-pattern` | CWE-22 | Directory traversal via user input |
+| `hardcoded-secrets-anti-pattern` | CWE-798 | Credentials in source code |
+| `missing-authentication-anti-pattern` | CWE-306 | Unprotected endpoints |
+| `missing-input-validation-anti-pattern` | CWE-20 | Unvalidated user input |
+| `jwt-misuse-anti-pattern` | CWE-347 | JWT implementation flaws |
+| `open-cors-anti-pattern` | CWE-942 | Overly permissive CORS |
+| `mass-assignment-anti-pattern` | CWE-915 | Unfiltered object binding |
+| `dom-clobbering-anti-pattern` | CWE-79 | HTML injection overwrites JS globals |
+| `encoding-bypass-anti-pattern` | CWE-838 | Validation before normalization |
+| `mutation-xss-anti-pattern` | CWE-79 | Sanitizer bypass via parser mutations |
+| `missing-security-headers-anti-pattern` | CWE-16 | Missing CSP, HSTS, X-Frame-Options |
+| `session-fixation-anti-pattern` | CWE-384 | Session ID not rotated after login |
+| `insecure-defaults-anti-pattern` | CWE-276 | Unsafe default configurations |
+| `weak-encryption-anti-pattern` | CWE-327 | Broken or weak crypto algorithms |
+| `weak-password-hashing-anti-pattern` | CWE-916 | MD5/SHA1 for passwords |
+| `unrestricted-file-upload-anti-pattern` | CWE-434 | Dangerous file upload handling |
+| `verbose-error-messages-anti-pattern` | CWE-209 | Stack traces in production |
+| `log-injection-anti-pattern` | CWE-117 | Unsanitized data in log entries |
+| `debug-mode-production-anti-pattern` | CWE-489 | Debug features in production |
+| `excessive-data-exposure-anti-pattern` | CWE-200 | Over-sharing in API responses |
+| `missing-rate-limiting-anti-pattern` | CWE-770 | No throttling on sensitive endpoints |
+| `hallucinated-packages-anti-pattern` | CWE-829 | AI-invented dependency names |
+| `oauth-security-anti-pattern` | CWE-346 | OAuth/OIDC implementation flaws |
+| `redos-anti-pattern` | CWE-1333 | Catastrophic regex backtracking |
+| `timing-attacks-anti-pattern` | CWE-208 | Non-constant-time comparisons |
+| `integer-overflow-anti-pattern` | CWE-190 | Arithmetic overflow/underflow |
+| `type-confusion-anti-pattern` | CWE-843 | Type mismatch vulnerabilities |
+| `unicode-security-anti-pattern` | CWE-176 | Unicode normalization attacks |
+| `ldap-injection-anti-pattern` | CWE-90 | LDAP query injection |
+| `xpath-injection-anti-pattern` | CWE-643 | XPath query injection |
+| `second-order-injection-anti-pattern` | CWE-74 | Stored data used unsafely later |
+| `padding-oracle-anti-pattern` | CWE-649 | Padding oracle cryptographic attacks |
+| `length-extension-attacks-anti-pattern` | CWE-328 | Hash length extension |
+| `insecure-temp-files-anti-pattern` | CWE-377 | Predictable temp file paths |
+| `insufficient-randomness-anti-pattern` | CWE-330 | Weak random number generation |
 
 ### Security Patterns (21 skills)
 

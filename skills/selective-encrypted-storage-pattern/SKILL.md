@@ -1,5 +1,5 @@
 ---
-name: selective-encrypted-storage
+name: selective-encrypted-storage-pattern
 description: Security pattern for field-level encryption at rest. Use when encrypting specific sensitive data fields before storage, implementing application-level encryption for databases, or when only certain data elements need encryption at rest. Addresses "Leak data at rest" problem.
 ---
 

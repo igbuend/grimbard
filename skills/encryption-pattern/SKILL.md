@@ -1,5 +1,5 @@
 ---
-name: encryption
+name: encryption-pattern
 description: Security pattern for implementing encryption and decryption operations. Use when encrypting data for confidentiality, selecting encryption algorithms (AES, RSA), configuring cipher modes (GCM, CBC), choosing key lengths, or implementing symmetric/asymmetric encryption. Specialization of Cryptographic action pattern addressing confidentiality requirements.
 ---
 

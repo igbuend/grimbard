@@ -1,5 +1,5 @@
 ---
-name: selective-encrypted-transmission
+name: selective-encrypted-transmission-pattern
 description: Security pattern for encrypting specific data before transmission. Use when only certain data elements need encryption, implementing field-level encryption for transit, or when entities must actively manage encryption decisions. Addresses "Leak action request or data in transit" problem.
 ---
 

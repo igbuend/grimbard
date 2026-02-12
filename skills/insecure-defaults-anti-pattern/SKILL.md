@@ -1,5 +1,5 @@
 ---
-name: insecure-defaults
+name: insecure-defaults-anti-pattern
 description: Security anti-pattern for fail-open defaults (CWE-1188). Use when reviewing code that uses fallback values for secrets, credentials, or security settings. Detects applications that run with weak defaults when configuration is missing.
 aliases:
   - fail-open

@@ -1,5 +1,5 @@
 ---
-name: authentication-security-pattern
+name: authentication-pattern
 description: Security pattern for implementing authentication in software systems. Use when designing or reviewing authentication mechanisms, implementing login systems, verifying user identity, protecting system access, or addressing OWASP authentication flaws. Provides guidance on enforcers, verifiers, evidence providers, subject registration, credential management, and security considerations.
 ---
 

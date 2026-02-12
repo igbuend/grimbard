@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-**78 security skills for AI agents** — anti-patterns, security patterns, static analysis tools, and code review workflows for Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
+**79 skills for AI agents** — anti-patterns, security patterns, static analysis tools, and code review workflows for Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
 
 Built by a pentester and secure code reviewer. Battle-tested in real engagements.
 
@@ -16,7 +16,7 @@ Built by a pentester and secure code reviewer. Battle-tested in real engagements
 npx skills add igbuend/grimbard
 ```
 
-That's it. Your AI agent now has 78 security skills covering:
+That's it. Your AI agent now has 79 skills covering:
 - **38 security anti-patterns** — detect vulnerable code (XSS, SQLi, command injection, etc.)
 - **21 security patterns** — implement secure designs (authentication, encryption, etc.)
 - **11 static analysis tool skills** — run and interpret SAST tools

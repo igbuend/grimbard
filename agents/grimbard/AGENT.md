@@ -231,7 +231,7 @@ npx skills add igbuend/grimbard
 ```
 
 This installs:
-- Static analysis tool skills (8 tools)
+- Static analysis tool skills (11 tools)
 - SARIF Issue Reporter skill
 - Security pattern skills
 - Security anti-pattern skills

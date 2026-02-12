@@ -6,7 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
 
-**77 security skills for AI agents** — anti-patterns, security patterns, static analysis tools, and code review workflows for Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
+**78 security skills for AI agents** — anti-patterns, security patterns, static analysis tools, and code review workflows for Claude Code, Cursor, Windsurf, Gemini CLI, and 30+ other agents.
 
 Built by a pentester and secure code reviewer. Battle-tested in real engagements.
 
@@ -16,10 +16,10 @@ Built by a pentester and secure code reviewer. Battle-tested in real engagements
 npx skills add igbuend/grimbard
 ```
 
-That's it. Your AI agent now has 77 security skills covering:
+That's it. Your AI agent now has 78 security skills covering:
 - **38 security anti-patterns** — detect vulnerable code (XSS, SQLi, command injection, etc.)
 - **21 security patterns** — implement secure designs (authentication, encryption, etc.)
-- **10 static analysis tool skills** — run and interpret SAST tools
+- **11 static analysis tool skills** — run and interpret SAST tools
 - **4 review & discovery skills** — SARIF triage, attack surface mapping, codebase discovery
 - **3 quality assurance skills** — review agents, skills, and sub-agents
 - **1 ethics skill** — responsible disclosure and legal frameworks
@@ -94,7 +94,7 @@ Secure design patterns from [DistriNet Research](https://securitypatterns.distri
 | **Input/Output** | Data validation, Output filter |
 | **Operations** | Limit request rate, Log entity actions |
 
-### Static Analysis Tools (10 skills)
+### Static Analysis Tools (11 skills)
 
 Skills that teach AI agents how to run and interpret results from security tools. Each skill includes installation instructions — ask your AI agent to install a tool and it will guide you through it.
 
@@ -110,6 +110,7 @@ Skills that teach AI agents how to run and interpret results from security tools
 | **Application Inspector** | Technology profiling |
 | **CodeQL** | Deep cross-file static analysis |
 | **Trivy** | Container and dependency scanning |
+| **SARIF Tools** | Process, merge, diff, and report on SARIF files |
 
 ### Other Skills
 

@@ -5,7 +5,7 @@ ENV USER_UID=1689
 ENV USER_GID=$USER_UID
 # docker uses "sh" by default, we want bash, since we need some buildin commands which might not not be buildin with lesser shells.
 SHELL ["/bin/bash", "-c"]
-# Please refer to the README.md. Baldwin is a character (the "ass" aka donkey) in the medieval fable of Reynard the Fox.
+# Please refer to the README.md. Grimbard is the badger in the medieval fable of Reynard the Fox.
 ENV USER_NAME=grimbard
 
 # TODO move this to separate file and use awk/xargs (standard install for Ubuntu and others ??)
@@ -87,7 +87,7 @@ RUN (type -p wget >/dev/null || (sudo apt update && sudo apt install wget -y)) \
 
 # Create the user, add to docker group
 RUN groupadd --non-unique --gid $USER_GID $USER_NAME \
-    && useradd --uid $USER_UID --gid $USER_GID -c "Account created by `baldwin`" -s /usr/bin/bash -m $USER_NAME \
+    && useradd --uid $USER_UID --gid $USER_GID -c "Account created by grimbard" -s /usr/bin/bash -m $USER_NAME \
     && echo $USER_NAME ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/$USER_NAME \
     && chmod 0440 /etc/sudoers.d/$USER_NAME \
     && getent group docker &>/dev/null|| groupadd docker \

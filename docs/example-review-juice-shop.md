@@ -12,13 +12,13 @@
 
 OWASP Juice Shop is an intentionally vulnerable web application used for security training. This review demonstrates the grimbard methodology by identifying the **most impactful** vulnerabilities across the server-side codebase using grimbard's security pattern and anti-pattern skills.
 
-The review uncovered **14 findings** across the scoped files, ranging from critical SQL injection and remote code execution to high-severity cryptographic and authorization flaws. Every finding maps to a specific grimbard skill, demonstrating how pattern-based detection surfaces real vulnerabilities.
+The review uncovered **16 findings** across the scoped files, ranging from critical SQL injection and remote code execution to high-severity cryptographic and authorization flaws. Every finding maps to a specific grimbard skill, demonstrating how pattern-based detection surfaces real vulnerabilities.
 
 | Severity | Count |
 |----------|-------|
 | P0 (Critical) | 4 |
-| P1 (High) | 5 |
-| P2 (Medium) | 4 |
+| P1 (High) | 6 |
+| P2 (Medium) | 5 |
 | P3 (Low) | 1 |
 
 ---
@@ -354,6 +354,69 @@ JSONP responses bypass Same-Origin Policy, allowing any website to read the auth
 
 ---
 
+### 15. Stored XSS via Username in Profile Page (with eval and CSP Bypass)
+
+| Field | Value |
+|-------|-------|
+| **Severity** | P1 — High |
+| **CWE** | CWE-79: Cross-Site Scripting (Stored) |
+| **Grimbard Skill** | `xss-anti-pattern` |
+| **Location** | `routes/userProfile.ts:58-66`, `routes/userProfile.ts:86-87` |
+
+**Description:**  
+The user profile page renders the username into a Pug template via string replacement — without sanitization:
+
+```typescript
+template = template.replace(/_username_/g, username)
+```
+
+Worse, if the username matches `#{(...)}`, it is passed to `eval()`:
+
+```typescript
+username = eval(code)
+```
+
+Additionally, the CSP header is built using the user's `profileImage` field:
+
+```typescript
+const CSP = `img-src 'self' ${user?.profileImage}; script-src 'self' 'unsafe-eval' ...`
+```
+
+An attacker can set their profile image to `; script-src 'unsafe-inline'` to bypass CSP, then set their username to `<script>alert('xss')</script>` for stored XSS that executes for anyone viewing the profile.
+
+**Impact:** Stored XSS affecting any user who views the attacker's profile. Session hijacking, account takeover, defacement. The `eval()` path enables server-side code execution.
+
+**Remediation:** Never use string replacement to inject user data into templates — use template engine's built-in escaping. Remove `eval()` entirely. Never construct CSP headers from user-controlled data.
+
+---
+
+### 16. DOM XSS via Video Subtitles Injection
+
+| Field | Value |
+|-------|-------|
+| **Severity** | P2 — Medium |
+| **CWE** | CWE-79: Cross-Site Scripting (DOM-based) |
+| **Grimbard Skill** | `xss-anti-pattern` |
+| **Location** | `routes/videoHandler.ts:64-65` |
+
+**Description:**  
+Subtitle file contents are injected directly into a `<script>` tag in the rendered HTML:
+
+```typescript
+compiledTemplate = compiledTemplate.replace(
+  '<script id="subtitle"></script>',
+  '<script id="subtitle" ...>' + subs + '</script>'
+)
+```
+
+If the subtitle file (or its config path) can be manipulated, `</script><script>alert('xss')</script>` breaks out of the script tag and executes arbitrary JavaScript.
+
+**Impact:** XSS via crafted subtitle content. Session hijacking for users viewing the promotion page.
+
+**Remediation:** HTML-encode subtitle content before injection, or load subtitles via a separate request with proper Content-Type.
+
+---
+
 ## P3 — Low Findings
 
 ### 14. Overly Permissive CORS Configuration
@@ -399,6 +462,8 @@ Combined with cookie-based authentication, this allows any website to make authe
 | 12 | YAML Deserialization Bomb | P2 | CWE-502 | `missing-input-validation-anti-pattern` | `routes/fileUpload.ts:100` |
 | 13 | JSONP User Data Leak | P2 | CWE-79 | `xss-anti-pattern` | `routes/currentUser.ts:18` |
 | 14 | Overly Permissive CORS | P3 | CWE-942 | `open-cors-anti-pattern` | `server.ts:134` |
+| 15 | Stored XSS via Username + CSP Bypass | P1 | CWE-79 | `xss-anti-pattern` | `routes/userProfile.ts:58` |
+| 16 | DOM XSS via Video Subtitles | P2 | CWE-79 | `xss-anti-pattern` | `routes/videoHandler.ts:64` |
 
 ---
 

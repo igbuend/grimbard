@@ -1,0 +1,39 @@
+{
+  "name": "grimbard",
+  "version": "1.0.0",
+  "description": "78 security skills for AI agents — anti-patterns, security patterns, static analysis tools, and code review workflows",
+  "author": {
+    "name": "Herman Stevens",
+    "url": "https://github.com/igbuend"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/igbuend/grimbard.git"
+  },
+  "homepage": "https://github.com/igbuend/grimbard",
+  "bugs": {
+    "url": "https://github.com/igbuend/grimbard/issues"
+  },
+  "keywords": [
+    "security",
+    "code-review",
+    "sast",
+    "sarif",
+    "anti-patterns",
+    "security-patterns",
+    "ai-agent",
+    "claude",
+    "cursor",
+    "windsurf",
+    "owasp",
+    "cwe",
+    "vulnerability",
+    "static-analysis",
+    "skills"
+  ],
+  "funding": {
+    "type": "ko-fi",
+    "url": "https://ko-fi.com/igbuend"
+  }
+}

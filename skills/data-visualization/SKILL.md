@@ -65,18 +65,32 @@ Processed in <200ms before conscious attention:
 
 ## Color
 
-### Palette Selection
+### Palette Types
 
 **Sequential**: Ordered data (low → high), single hue light to dark  
 **Diverging**: Data with meaningful midpoint, two hues meeting at neutral  
 **Categorical**: Nominal data, distinct equally-spaced hues (max 6-8)
 
-### Accessibility
+### Color-Blind Safe Palettes
 
-- **Never use red-green alone** to distinguish data
-- Use [ColorBrewer](colorbrewer2.org) for tested palettes
-- WCAG: minimum 4.5:1 contrast ratio for text
-- Add patterns, labels, or icons—don't rely on color alone
+~8% of men and 0.5% of women have color vision deficiency. Design for them by default.
+
+**Okabe-Ito Palette** (recommended default):
+- Black `#000000`, Orange `#E69F00`, Sky Blue `#56B4E9`
+- Bluish Green `#009E73`, Yellow `#F0E442`, Blue `#0072B2`
+- Vermillion `#D55E00`, Reddish Purple `#CC79A7`
+
+**Other tested palettes**: Viridis, Cividis, Paul Tol, ColorBrewer (colorblind filter)
+
+### Color Blindness Types
+
+| Type | Prevalence | Confusion |
+|------|-----------|-----------|
+| Deuteranomaly | 5% of men | Red-green (most common) |
+| Protanopia | 1% of men | Red-green |
+| Deuteranopia | 1.3% of men | Red-green |
+| Tritanopia | 0.0001% | Blue-yellow (rare) |
+| Achromatopsia | 0.003% | No color (greyscale) |
 
 ### Cultural Considerations
 
@@ -85,6 +99,99 @@ Processed in <200ms before conscious attention:
 | Red | Danger | Good luck | Death (some African) |
 | White | Purity | Death | |
 | Green | Environment | Infidelity | |
+
+## Accessibility
+
+### Fundamental Rule
+
+**Never use color alone to encode data.** Always combine with at least one other channel:
+- Color + pattern/texture (bar charts)
+- Color + line style: solid, dashed, dotted (line charts)
+- Color + shape (scatter plots)
+- Color + direct labels (all charts)
+
+### Contrast Requirements (WCAG)
+
+| Element | AA (minimum) | AAA (enhanced) |
+|---------|-------------|----------------|
+| Body text | 4.5:1 | 7:1 |
+| Large text (18pt+) | 3:1 | 4.5:1 |
+| Non-text (lines, bars, icons) | 3:1 | — |
+| Focus indicators | 3:1 | 3:1 + 2px space |
+
+### Low Vision Design
+
+~253 million people globally have visual impairment.
+
+**Typography in charts:**
+- Minimum 12px for labels (14px preferred)
+- Sans-serif fonts for readability
+- Line height ≥1.5×
+- High contrast text (4.5:1 minimum)
+
+**Layout:**
+- Support browser zoom to 200% without content loss
+- No horizontal scrolling at zoomed levels
+- Direct data labeling reduces magnification needs
+- Avoid cluttered, dense layouts
+
+**Dark mode:**
+- Avoid pure white (#fff) on pure black (#000) — causes halation
+- Use slightly heavier font weights on dark backgrounds
+- Maintain all contrast ratios
+
+### Screen Reader Accessibility
+
+**Alt text for charts** (follow the four-level model by Lundgard & Satyanarayan, 2021):
+1. **What**: Chart type and data ("Bar chart showing 2024 sales by region")
+2. **How**: Encoding method ("Bars represent revenue in USD")
+3. **Readout**: Key values ("North America leads at $450K")
+4. **Insight**: Patterns/trends ("45% year-over-year growth")
+
+**SVG accessibility:**
+```html
+<svg role="img" aria-labelledby="title desc">
+  <title id="title">2024 Sales by Region</title>
+  <desc id="desc">Bar chart. North America leads with 45% of revenue.</desc>
+</svg>
+```
+
+**Always provide**: data table alternative or detailed description for complex charts.
+
+### Multi-Modal Access
+
+Beyond visual, consider:
+- **Sonification**: Map data values to pitch/rhythm (Highcharts Sonification Studio, TwoTone)
+- **Tactile graphics**: Raised-surface charts for blind users (swell-touch paper, 3D print)
+- **Haptic feedback**: Vibration intensity proportional to data values
+- **MAIDR**: Multi-Access Interactive Data Representation (text + audio + tactile)
+
+### Accessibility Legislation
+
+| Jurisdiction | Law/Standard | Requirement |
+|-------------|-------------|-------------|
+| **US** | Section 508, ADA | WCAG 2.0/2.1 AA (federal); courts use WCAG for ADA |
+| **EU** | European Accessibility Act (2025), EN 301 549 | WCAG 2.1 AA for public + private sectors |
+| **UK** | Equality Act 2010, PSBAR 2018 | WCAG 2.1 AA for public sector |
+| **Japan** | JIS X 8341-3:2016 | Aligned with WCAG, AA recommended |
+| **Australia** | Disability Discrimination Act 1992 | WCAG 2.1 AA benchmark |
+| **Canada** | Accessible Canada Act, AODA (Ontario) | WCAG 2.0 AA minimum, moving to 2.1 |
+| **Singapore** | Digital Service Standards | WCAG 2.1 AA for government |
+| **China** | GB/T 37668-2019 | Aligned with WCAG 2.0 |
+| **South Korea** | KWCAG 2.1 | Aligned with WCAG 2.1 |
+
+### Accessibility Testing Checklist
+
+- [ ] Color not sole encoding method (WCAG 1.4.1)
+- [ ] Text contrast ≥4.5:1 (WCAG 1.4.3)
+- [ ] Non-text contrast ≥3:1 (WCAG 1.4.11)
+- [ ] Supports 200% zoom (WCAG 1.4.4)
+- [ ] Text spacing adjustable (WCAG 1.4.12)
+- [ ] Alt text or data table provided (WCAG 1.1.1)
+- [ ] Keyboard navigable (WCAG 2.1.1)
+- [ ] Test with color blindness simulator (Coblis, ColorOracle)
+- [ ] Test with screen reader (NVDA, VoiceOver)
+- [ ] Grayscale test: still understandable?
 
 ## Chart Selection
 
@@ -108,13 +215,15 @@ Data type:
 - 3D charts
 - Rainbow palettes without meaning
 - Over-plotting (too many points)
-- Color-only encoding
+- Color-only encoding (accessibility failure)
+- Insufficient contrast on chart elements
 
 ### Fixes
 - **Clutter** → Small multiples, sparklines
 - **No context** → Add baseline, benchmarks
 - **Hard to compare** → Consistent scales, aligned axes
 - **Data overload** → Filter, aggregate, progressive disclosure
+- **Inaccessible** → Redundant encoding, alt text, data tables
 
 ## Domain Guidance
 
@@ -128,36 +237,56 @@ Data type:
 - Heatmaps for activity over time
 - Network graphs for connection analysis
 - Sankey for traffic flow
-- Red/amber/green severity (with icons)
-- Dark theme preferred
+- Red/amber/green severity (**with icons** for color-blind users)
+- Dark theme preferred (reduce eye strain)
 
 ### Scientific
 - Vector graphics (SVG, PDF)
 - Field-specific conventions
 - Follow Nature 2025 checklist: clarity, accessibility
 - 300+ DPI, clear labeling
+- Color-blind safe palettes mandatory for publications
 
 ## Tools
 
 | Use Case | Tool |
 |----------|------|
-| Custom web viz | D3.js, Plotly |
+| Custom web viz | D3.js, Plotly, Olli (accessible) |
 | BI dashboards | Tableau, Power BI, Apache ECharts |
 | Static reports | Matplotlib, Seaborn, ggplot2 |
 | Rapid prototyping | Flourish, Google Data Studio |
 | AI/ML integration | Python (Matplotlib, Plotly, Altair) |
 
+### Accessibility Tools
+
+| Purpose | Tool |
+|---------|------|
+| Color blind simulation | Coblis, ColorOracle, Chrome "Let Me Color" |
+| Contrast checking | WebAIM Contrast Checker, axe DevTools |
+| Screen reader testing | NVDA (free), JAWS, VoiceOver |
+| Accessibility audit | WAVE, Lighthouse, Accessibility Insights |
+| Accessible charts | Olli (MIT), Highcharts Sonification |
+| Color palette design | ColorBrewer, Paul Tol, Accessible Colors |
+
 ## Quick Reference
 
 1. **Start with grayscale** — add color only to encode data
-2. **Small multiples** — same chart across subsets solves clutter
-3. **Tufte's test** — can you remove this element and still understand?
-4. **Accessibility first** — ColorBrewer + contrast checker + color blind test
+2. **Redundant encoding** — color + pattern/shape/label always
+3. **Okabe-Ito palette** — default color-blind safe choice
+4. **4.5:1 / 3:1** — text contrast / non-text contrast minimums
+5. **Small multiples** — same chart across subsets solves clutter
+6. **Tufte's test** — can you remove this element and still understand?
+7. **Alt text + data table** — provide text alternatives for every chart
+8. **Test accessibility** — simulator + screen reader + grayscale
 
 ## Resources
 
 - Tufte's 4 books (foundational)
 - Wilke, *Fundamentals of Data Visualization* (2019)
-- Healy, *Data Visualization* (2019)
+- Lundgard & Satyanarayan, "Accessible Visualization via Natural Language Descriptions" (2021)
+- Hajas et al., "Rich Screen Reader Experiences" (2022, MIT)
+- Nature 2025 scientific visualization checklist
+- W3C WAI: w3.org/WAI
 - ColorBrewer: colorbrewer2.org
-- Nature 2025 visualization checklist
+- WebAIM: webaim.org
+- DIAGRAM Center: diagramcenter.org

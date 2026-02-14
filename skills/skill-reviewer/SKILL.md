@@ -12,341 +12,291 @@ Reviews skill files against Claude Code best practices.
 
 **Target:** $ARGUMENTS (path to skill file or directory)
 
-## When to Use This Skill
+## When to Use
 
-Use this skill when:
-- Creating new skills to validate they follow best practices
-- Reviewing existing skills for improvement opportunities
-- Auditing skill files before publication or sharing
-- Debugging why a skill isn't behaving as expected
-- Ensuring skills are context-efficient and performant
+Use when:
+- Creating new skills to validate best practices
+- Reviewing existing skills for improvements
+- Auditing before publication
+- Debugging unexpected skill behavior
+- Ensuring context efficiency
 
-## Best Practices Checklist
+## Review Checklist
 
-When reviewing a skill, validate against these criteria:
+### Metadata
 
-### 1. Skill Metadata
+**Required frontmatter:**
+- [ ] `name` (kebab-case, descriptive)
+- [ ] `description` (when to use, not just what)
+- [ ] `disable-model-invocation: true` for workflows with side effects
+- [ ] `aliases` for common alternative names
 
-**Frontmatter Requirements:**
-- [ ] Has `name` field (kebab-case, descriptive)
-- [ ] Has clear `description` explaining when to use the skill
-- [ ] Uses `disable-model-invocation: true` for workflows with side effects
-- [ ] Includes `aliases` if the skill has common alternative names
+**Quality:**
+- Description: 1-2 sentences
+- Name: specific yet broadly applicable
 
-**Quality Indicators:**
-- Description is concise (1-2 sentences)
-- Description explains WHEN to use the skill, not just what it does
-- Name is specific enough to be discoverable but general enough to apply broadly
-
-### 2. Content Structure
+### Structure
 
 **Organization:**
-- [ ] Has clear sections with descriptive headers
-- [ ] Uses markdown formatting consistently
-- [ ] Includes examples where applicable
-- [ ] Has a "When to Use" section for context
+- [ ] Clear sections with descriptive headers
+- [ ] Consistent markdown formatting
+- [ ] Examples where applicable
+- [ ] "When to Use" section for context
 
-**Context Efficiency:**
-- [ ] Concise and focused - only includes essential information
-- [ ] Avoids redundant explanations Claude already knows
-- [ ] Uses bullet points and lists for scannability
-- [ ] Links to external docs rather than duplicating them
-- [ ] No unnecessary prose or filler content
+**Context efficiency:**
+- [ ] Concise - only essential information
+- [ ] No redundant explanations
+- [ ] Bullet points for scannability
+- [ ] Links to docs vs duplicating them
+- [ ] No filler content
 
-### 3. Workflow Skills (Invokable)
+### Workflow Skills (Invokable)
 
 For skills invoked with `/skill-name`:
 
-**Structure:**
-- [ ] Uses `disable-model-invocation: true` in frontmatter
-- [ ] Clearly numbered steps or phases
-- [ ] Each step is actionable and specific
-- [ ] Includes verification/validation steps
-- [ ] Uses `$ARGUMENTS` variable if it accepts parameters
+- [ ] Uses `disable-model-invocation: true`
+- [ ] Numbered steps or phases
+- [ ] Actionable, specific steps
+- [ ] Verification/validation steps
+- [ ] Uses `$ARGUMENTS` if accepts parameters
+- [ ] Logical step ordering
+- [ ] Error handling or fallback guidance
+- [ ] Clear when to ask user vs proceed autonomously
+- [ ] Clear success criteria
 
-**Quality:**
-- [ ] Steps are ordered logically
-- [ ] Includes error handling or fallback guidance
-- [ ] Specifies when to ask for user input vs. proceed autonomously
-- [ ] Has clear success criteria or completion conditions
+### Knowledge Skills (Auto-Applied)
 
-### 4. Knowledge Skills (Auto-Applied)
+For skills Claude applies automatically:
 
-For skills Claude applies automatically when relevant:
-
-**Content:**
-- [ ] Focused on domain knowledge Claude can't infer from code
-- [ ] Provides patterns, conventions, or architectural guidance
-- [ ] Includes code examples where helpful (with language tags)
-- [ ] Organized by topic or use case
-
-**Scope:**
-- [ ] Not overly broad (narrow skills are more useful than kitchen-sink skills)
-- [ ] Not duplicating what's in CLAUDE.md (use CLAUDE.md for project-specific rules)
+- [ ] Domain knowledge Claude can't infer
+- [ ] Patterns, conventions, architectural guidance
+- [ ] Code examples with language tags
+- [ ] Organized by topic/use case
+- [ ] Focused scope (narrow > kitchen-sink)
+- [ ] Not duplicating CLAUDE.md content
 - [ ] Provides guidance, not rigid instructions
 
-### 5. Tool Usage Guidance
+### Tool Usage
 
-**When skills reference tools:**
-- [ ] Recommends the right tool for the job (Read vs Bash cat, Grep vs Bash grep)
-- [ ] Suggests parallel tool calls when appropriate
+- [ ] Recommends right tool (Read vs bash cat)
+- [ ] Suggests parallel calls when appropriate
 - [ ] Uses subagents for context-heavy exploration
-- [ ] Avoids unnecessary tool use (e.g., don't read files Claude doesn't need)
+- [ ] Avoids unnecessary tool use
 
-**Context-Saving Patterns:**
-- [ ] Encourages focused searches over broad exploration
-- [ ] Recommends filtering/scoping before reading large files
-- [ ] Uses subagents for investigation tasks
-- [ ] Suggests `/clear` when context is cluttered
+**Context-saving patterns:**
+- [ ] Focused searches over broad exploration
+- [ ] Filter/scope before reading large files
+- [ ] Subagents for investigation
+- [ ] Suggests `/clear` when context cluttered
 
-### 6. Verification & Validation
+### Verification
 
-**Self-Verification:**
-- [ ] Includes steps for Claude to verify its work
-- [ ] Specifies what success looks like
-- [ ] Recommends running tests, linters, or validation commands
+- [ ] Steps for Claude to verify work
+- [ ] Defines success criteria
+- [ ] Recommends tests, linters, validation
 - [ ] Addresses root causes, not symptoms
+- [ ] Prompts for confirmation on destructive actions
+- [ ] Asks clarifying questions when ambiguous
+- [ ] Progress updates for long tasks
 
-**User Feedback:**
-- [ ] Prompts for user confirmation on destructive actions
-- [ ] Asks clarifying questions when ambiguity exists
-- [ ] Uses `AskUserQuestion` tool appropriately
-- [ ] Provides progress updates for long-running tasks
+### Code Examples
 
-### 7. Code Examples
+If included:
 
-**If the skill includes code examples:**
-- [ ] Examples use correct language syntax highlighting
-- [ ] Shows both BAD and GOOD patterns when relevant
-- [ ] Includes comments explaining non-obvious code
-- [ ] Examples are complete and runnable (not pseudocode fragments)
-- [ ] Uses realistic, practical examples (not toy examples)
+- [ ] Correct syntax highlighting
+- [ ] Shows BAD and GOOD patterns when relevant
+- [ ] Comments for non-obvious code
+- [ ] Complete and runnable (not pseudocode)
+- [ ] Realistic examples (not toy examples)
 
-### 8. Anti-Patterns to Avoid
+### Anti-Patterns to Avoid
 
-**Content Issues:**
-- ❌ Too long - skills that exceed 500 lines are probably too broad
-- ❌ Too vague - generic advice Claude already knows
-- ❌ Too rigid - skills should guide, not constrain creativity
-- ❌ Duplicates CLAUDE.md - project-specific rules belong there
-- ❌ Over-engineering - doesn't add unnecessary complexity
+**Content:**
+- ❌ Too long (>500 lines)
+- ❌ Too vague (generic advice)
+- ❌ Too rigid (constrains creativity)
+- ❌ Duplicates CLAUDE.md
+- ❌ Over-engineered
 
-**Workflow Issues:**
-- ❌ No verification steps - "implement X" without "test X"
-- ❌ Assumes context - doesn't specify where to look for files
-- ❌ Unclear scope - "investigate the codebase" without boundaries
-- ❌ Missing error handling - doesn't address what to do if steps fail
-- ❌ No user interaction - proceeds with destructive actions without confirmation
+**Workflow:**
+- ❌ No verification steps
+- ❌ Assumes context
+- ❌ Unclear scope
+- ❌ Missing error handling
+- ❌ No user interaction on destructive actions
 
-### 9. Language & Tone
+### Language & Tone
 
-**Technical Writing Principles:**
-- [ ] Uses imperative voice for instructions ("Run tests" not "You should run tests")
-- [ ] Concise and direct - eliminates filler words and redundancy
-- [ ] Precise terminology - uses exact technical terms, avoids ambiguity
-- [ ] Active voice preferred over passive voice
-- [ ] One idea per sentence for clarity
-- [ ] Avoids unnecessary adjectives or superlatives
-- [ ] Professional and objective tone
-- [ ] No emojis (unless explicitly part of the domain)
+**Principles:**
+- [ ] Imperative voice ("Run tests" not "You should run tests")
+- [ ] Concise and direct
+- [ ] Precise terminology
+- [ ] Active voice preferred
+- [ ] One idea per sentence
+- [ ] No unnecessary adjectives/superlatives
+- [ ] Professional, objective tone
+- [ ] No emojis (unless domain-specific)
 
-**Common Verbosity Patterns to Eliminate:**
+**Eliminate verbosity:**
 - "In order to" → "To"
-- "It is important to note that" → (delete, just state the fact)
-- "You should" / "You need to" → Use imperative ("Run", "Check", "Verify")
+- "It is important to note that" → (delete)
+- "You should" / "You need to" → imperative
 - "Please note that" → (delete)
 - "Going forward" / "Moving forward" → (delete)
 - "At this point in time" → "Now" or (delete)
 - "For the purpose of" → "To" or "For"
 - "With regard to" → "About" or "Regarding"
 
-### 10. Maintenance & Evolution
+### Maintenance
 
-**Sustainability:**
-- [ ] Version-agnostic (doesn't reference specific tool versions that change)
-- [ ] Links to official documentation for evolving references
-- [ ] Includes dates or context for time-sensitive information
-- [ ] Can be updated incrementally
+- [ ] Version-agnostic (no specific tool versions)
+- [ ] Links to official docs for evolving refs
+- [ ] Dates for time-sensitive information
+- [ ] Can update incrementally
 
 ## Technical Writing Principles
 
-Maximize conciseness without sacrificing clarity:
-
 ### Precision Over Description
 
-**BAD (vague):**
-> "Make sure your code is well-organized and follows good practices"
+**BAD:** "Make sure your code is well-organized and follows good practices"  
+**GOOD:** "Use dependency injection. Limit functions to 50 lines."
 
-**GOOD (precise):**
-> "Use dependency injection. Limit functions to 50 lines."
+### Eliminate Filler
 
-### Eliminate Filler Words
+Common filler: "basically", "essentially", "generally", "typically", "very", "really", "quite", "actually", "kind of", "sort of", "simply", "just"
 
-**Common filler patterns:**
-- "basically", "essentially", "generally", "typically"
-- "very", "really", "quite", "actually"
-- "kind of", "sort of", "a bit"
-- "simply", "just", "merely"
+**BAD:** "You should basically just run the tests to make sure everything is actually working correctly"  
+**GOOD:** "Run tests to verify functionality"
 
-**BAD:**
-> "You should basically just run the tests to make sure everything is actually working correctly"
+### Use Concrete Numbers
 
-**GOOD:**
-> "Run tests to verify functionality"
+**BAD:** "Keep functions small and avoid deeply nested code"  
+**GOOD:** "Limit functions to 50 lines. Limit nesting to 3 levels."
 
-### Use Concrete Numbers and Specifics
+### Active Voice
 
-**BAD:**
-> "Keep functions small and avoid deeply nested code"
+**BAD:** "The configuration should be validated before the application is started"  
+**GOOD:** "Validate configuration before starting the application"
 
-**GOOD:**
-> "Limit functions to 50 lines. Limit nesting to 3 levels."
+### Front-Load Important Info
 
-### Prefer Active Voice
+**BAD:** "When you're working with user input, which could potentially contain malicious data, it's important to remember that you should always validate and sanitize it"  
+**GOOD:** "Always validate and sanitize user input"
 
-**BAD (passive):**
-> "The configuration should be validated before the application is started"
-
-**GOOD (active):**
-> "Validate configuration before starting the application"
-
-### Front-Load Important Information
+### Parallel Structure
 
 **BAD:**
-> "When you're working with user input, which could potentially contain malicious data, it's important to remember that you should always validate and sanitize it"
-
-**GOOD:**
-> "Always validate and sanitize user input"
-
-### Use Parallel Structure
-
-**BAD (inconsistent):**
 - Check that the file exists
 - Making sure permissions are correct
 - You should verify the contents
 
-**GOOD (parallel):**
+**GOOD:**
 - Check file exists
 - Verify permissions
 - Validate contents
 
 ### Delete Hedge Words
 
-**BAD:**
-> "This might help improve performance somewhat"
-
-**GOOD:**
-> "This improves performance by 30%"
-
-Or if uncertain:
-> "This may improve performance. Benchmark to verify."
+**BAD:** "This might help improve performance somewhat"  
+**GOOD:** "This improves performance by 30%" or "This may improve performance. Benchmark to verify."
 
 ## Review Process
 
-When reviewing a skill:
-
-1. **Read the skill** at $ARGUMENTS to understand purpose and scope
-2. **Check frontmatter** for required fields and appropriate flags
-3. **Evaluate context efficiency** - is every sentence necessary?
-4. **Apply technical writing check** - concise, precise, active voice
-5. **Verify structure** - clear sections, logical flow, scannable format
-6. **Test examples** - are code examples correct and complete?
-7. **Check for anti-patterns** - does it avoid common mistakes?
-8. **Assess scope** - is it focused enough? Too broad?
-9. **Validate verification** - does it include ways for Claude to check its work?
+1. Read skill at $ARGUMENTS
+2. Check frontmatter for required fields
+3. Evaluate context efficiency
+4. Apply technical writing check
+5. Verify structure and flow
+6. Test code examples
+7. Check for anti-patterns
+8. Assess scope
+9. Validate verification steps
 
 ## Output Format
-
-Provide review results in this format:
 
 ```markdown
 ## Skill Review: [skill-name]
 
 ### Summary
-[1-2 sentence overview of the skill's purpose and overall quality]
+[1-2 sentence overview]
 
 ### Strengths
-- [What the skill does well]
-- [Effective patterns or structure]
+- [What works well]
+- [Effective patterns]
 
 ### Issues Found
 
-#### Critical Issues (Must Fix)
-- [ ] [Issue description] - Location: [section/line]
-- [ ] [Issue description] - Location: [section/line]
+#### Critical (Must Fix)
+- [ ] [Issue] - Location: [section/line]
 
 #### Recommendations (Should Fix)
-- [ ] [Recommendation] - Location: [section/line]
 - [ ] [Recommendation] - Location: [section/line]
 
 #### Suggestions (Nice to Have)
 - [ ] [Suggestion] - Location: [section/line]
 
 ### Context Efficiency Score
-[Rating 1-5]: [Brief explanation]
+[1-5]: [Brief explanation]
 - 5: Extremely concise, every word necessary
 - 4: Mostly efficient, minor verbosity
-- 3: Acceptable, some areas could be tightened
+- 3: Acceptable, some trimming needed
 - 2: Verbose, significant trimming needed
 - 1: Bloated, major revision required
 
 ### Technical Writing Quality
-[Rating 1-5]: [Brief explanation]
+[1-5]: [Brief explanation]
 - 5: Precise, concise, active voice, no filler
-- 4: Mostly clear, minor improvements needed
-- 3: Acceptable, some verbosity or vagueness
-- 2: Significant clarity issues, passive voice, filler words
-- 1: Unclear, verbose, imprecise terminology
+- 4: Mostly clear, minor improvements
+- 3: Acceptable, some verbosity/vagueness
+- 2: Significant clarity issues, passive voice, filler
+- 1: Unclear, verbose, imprecise
 
 ### Overall Assessment
 [Pass/Pass with Recommendations/Needs Revision]
 
 ### Specific Improvements
-
 ```diff
-[Show specific diffs for suggested changes if applicable]
+[Show diffs for suggested changes]
 ```
 ```
 
 ## Common Skill Smells
 
-Watch for these indicators of poorly-designed skills:
-
-### The Encyclopedia Skill
-**Symptom:** Skill tries to cover an entire domain in exhaustive detail
-**Fix:** Break into focused, topic-specific skills or link to external docs
+### The Encyclopedia
+**Symptom:** Exhaustive domain coverage  
+**Fix:** Break into focused skills or link to docs
 
 ### The CLAUDE.md Duplicate
-**Symptom:** Skill contains project-specific conventions
-**Fix:** Move project-specific rules to CLAUDE.md, keep skills for domain knowledge
+**Symptom:** Project-specific conventions  
+**Fix:** Move to CLAUDE.md, keep domain knowledge in skill
 
 ### The Vague Guide
-**Symptom:** Generic advice like "write clean code" or "follow best practices"
-**Fix:** Provide specific, actionable guidance Claude can't infer
+**Symptom:** Generic advice ("write clean code")  
+**Fix:** Provide specific, actionable guidance
 
 ### The Context Hog
-**Symptom:** Skill is loaded automatically but contains 1000+ lines
-**Fix:** Compress, split into multiple skills, or make it invokable-only
+**Symptom:** 1000+ lines, auto-loaded  
+**Fix:** Compress, split, or make invokable-only
 
 ### The Rigid Workflow
-**Symptom:** Overly prescriptive steps that don't allow for adaptation
-**Fix:** Provide guidance and checkpoints, not rigid sequences
+**Symptom:** Overly prescriptive steps  
+**Fix:** Provide guidance and checkpoints, allow adaptation
 
 ### The Missing Verification
-**Symptom:** Implementation steps without validation or testing
-**Fix:** Add verification steps, success criteria, test commands
+**Symptom:** Implementation without validation  
+**Fix:** Add verification steps, success criteria, tests
 
 ### The Assumption Maker
-**Symptom:** "Update the config file" without specifying which file or where
-**Fix:** Be explicit about file paths, patterns, or how to find them
+**Symptom:** "Update the config" (which file? where?)  
+**Fix:** Explicit paths, patterns, or discovery method
 
 ### The Verbose Writer
-**Symptom:** Excessive filler words, passive voice, redundant explanations
-**Fix:** Apply technical writing principles - concise, precise, active voice
+**Symptom:** Filler words, passive voice, redundancy  
+**Fix:** Apply technical writing principles
 
-## Example Reviews
+## Examples
 
-### Example 1: Good Knowledge Skill
+### Good Knowledge Skill
 
 ```markdown
 ---
@@ -361,34 +311,29 @@ description: REST API design conventions for our microservices
 - Version in path: `/v1/`, `/v2/`
 - Collection naming: plural (`/users`, not `/user`)
 
-## Request/Response Format
-- Use camelCase for JSON properties
-- ISO 8601 for timestamps: `2024-01-15T10:30:00Z`
-- Wrap list responses: `{ "data": [...], "meta": { "total": 100 } }`
+## Request/Response
+- camelCase for JSON properties
+- ISO 8601 timestamps: `2024-01-15T10:30:00Z`
+- Wrap lists: `{ "data": [...], "meta": { "total": 100 } }`
 
 ## Pagination
 - Cursor-based for large datasets
 - Include `next`, `prev` in meta
-- Limit: max 100 items per page
+- Max 100 items per page
 
 ## Error Handling
 - Use RFC 7807 Problem Details
 - Include `type`, `title`, `status`, `detail`
 ```
 
-**Review:** ✅ Pass
-- Concise and focused
-- Provides patterns Claude can't infer
-- Scannable format
-- No unnecessary prose
-- Context-efficient
+**Why it passes:** Concise, focused, provides patterns Claude can't infer, scannable, no prose.
 
-### Example 2: Good Workflow Skill
+### Good Workflow Skill
 
 ```markdown
 ---
 name: fix-security-issue
-description: Fix a security vulnerability following our security workflow
+description: Fix security vulnerability following our security workflow
 disable-model-invocation: true
 ---
 
@@ -398,60 +343,54 @@ Fix security issue $ARGUMENTS following our security review process.
 
 ## Steps
 
-1. **Analyze the vulnerability**
-   - Use `gh issue view $ARGUMENTS` to read the security issue
+1. **Analyze vulnerability**
+   - `gh issue view $ARGUMENTS` to read security issue
    - Identify CWE category and severity
-   - Understand the attack vector
+   - Understand attack vector
 
 2. **Find affected code**
    - Search for vulnerable patterns using Grep
-   - Check for similar instances elsewhere in codebase
-   - Review recent git history: `git log -p --grep="$PATTERN"`
+   - Check for similar instances elsewhere
+   - Review history: `git log -p --grep="$PATTERN"`
 
-3. **Implement the fix**
+3. **Implement fix**
    - Address root cause, not symptoms
-   - Follow secure coding patterns from `.claude/skills/security-patterns/`
+   - Follow secure patterns from `.claude/skills/security-patterns/`
    - Update all affected locations
 
 4. **Write security tests**
-   - Create test that reproduces the vulnerability
-   - Verify the test fails on the old code
-   - Verify the test passes on the fixed code
-   - Add test for edge cases
+   - Test reproduces vulnerability
+   - Verify test fails on old code
+   - Verify test passes on fixed code
+   - Add edge case tests
 
-5. **Validate the fix**
-   - Run full test suite: `npm test`
-   - Run security scanner: `npm run security-scan`
-   - Check for regressions: `npm run lint`
+5. **Validate fix**
+   - `npm test`
+   - `npm run security-scan`
+   - `npm run lint`
 
 6. **Document and commit**
-   - Add security comment explaining the fix
-   - Commit with security prefix: `security: fix [CWE-XXX] in [component]`
-   - Reference issue in commit: `Fixes #$ARGUMENTS`
+   - Add security comment explaining fix
+   - `security: fix [CWE-XXX] in [component]`
+   - Reference issue: `Fixes #$ARGUMENTS`
 
-7. **Create PR for security review**
-   - Use security PR template: `gh pr create --template security`
-   - Request review from @security-team
+7. **Create PR**
+   - `gh pr create --template security`
+   - Request @security-team review
    - Add `security` label
 
 ## Verification
 
 - [ ] Security test added and passing
 - [ ] All tests passing
-- [ ] Security scanner shows no issues
-- [ ] Similar patterns checked across codebase
-- [ ] Security team assigned for review
+- [ ] Security scanner clean
+- [ ] Similar patterns checked
+- [ ] Security team assigned
 ```
 
-**Review:** ✅ Pass
-- Clear numbered workflow
-- Uses `disable-model-invocation: true` correctly
-- Includes verification checklist
-- Specifies exact commands
-- Has clear success criteria
-- Uses `$ARGUMENTS` appropriately
+**Why it passes:** Clear workflow, `disable-model-invocation: true`, verification checklist, exact commands, success criteria, uses `$ARGUMENTS`.
 
-### Example 3: Problematic Skill (Needs Revision)
+### Problematic Skill
 
 ```markdown
 ---
@@ -461,114 +400,79 @@ description: Improves code quality
 
 # Code Improvement Guide
 
-This skill helps you write better, cleaner, more maintainable code that follows industry best practices and modern software engineering principles.
+This skill helps you write better, cleaner, more maintainable code.
 
 ## General Principles
 
-Always write clean code that is easy to read and understand. Make sure your code follows best practices and design patterns. Remember that code is read more often than it's written, so prioritize readability.
+Always write clean code that is easy to read. Make sure your code 
+follows best practices. Remember that code is read more often than 
+it's written.
 
 ## Things to Consider
 
-- Make your code modular and reusable
+- Make your code modular
 - Add appropriate comments
-- Follow the DRY principle
-- Use meaningful variable names
+- Follow DRY principle
+- Use meaningful names
 - Keep functions small
 - Write tests
-- Handle errors properly
-- Optimize for performance
+- Handle errors
+- Optimize performance
 - Make it scalable
 - Consider security
-- Think about maintainability
-...
 ```
 
-**Review:** ❌ Needs Revision
+**Why it fails:**
+- Too vague (generic advice)
+- No actionable steps
+- Missing `disable-model-invocation` flag
+- Bloated prose
+- No verification
+- No examples
+- Unclear when to use
 
-**Critical Issues:**
-- Too vague - generic advice Claude already knows
-- No actionable steps or specific patterns
-- Missing `disable-model-invocation` flag (unclear when to use)
-- Bloated prose without substance
-- No verification or validation guidance
-- No code examples
-- Unclear when this applies vs. other guidance
+**Fix:** Split into focused skills (security-patterns, testing-patterns), provide examples, add verification, make context-efficient.
 
-**Recommendations:**
-- Split into focused skills (security-patterns, testing-patterns, etc.)
-- Provide specific, actionable examples
-- Add code snippets showing BAD vs. GOOD
-- Include verification commands
-- Make it context-efficient
-- Add clear "When to Use" section
+### Technical Writing Improvement
 
-### Example 4: Technical Writing Improvements
-
-**BEFORE (verbose, vague):**
+**BEFORE (verbose):**
 ```markdown
 ## Error Handling
 
-When you're working with API calls, it's really important to note that you
-should always make sure to handle errors properly. Basically, you need to
-catch exceptions and then you should log them appropriately so that you can
-debug issues later. It's also a good idea to provide meaningful error messages
-to users so they understand what went wrong.
-
-In order to handle errors effectively, you should consider implementing a
-centralized error handling mechanism that can be used throughout your application.
+When working with API calls, it's important to handle errors properly. 
+You should catch exceptions and log them so you can debug issues later. 
+It's also a good idea to provide meaningful error messages.
 ```
 
-**AFTER (concise, precise):**
+**AFTER (concise):**
 ```markdown
 ## Error Handling
 
-**API Error Handling:**
 - Catch all exceptions
-- Log to monitoring system (Sentry, Datadog)
+- Log to monitoring (Sentry, Datadog)
 - Return user-friendly messages (hide stack traces)
 
-**Implementation:**
 ```javascript
 try {
   await api.call()
 } catch (error) {
-  logger.error('API call failed', { error, context })
-  throw new UserError('Unable to process request. Try again.')
+  logger.error('API failed', { error, context })
+  throw new UserError('Unable to process request')
 }
 ```
-
-**Centralized Handler:**
-- Create `errorHandler.js` middleware
-- Apply globally in `app.js`
 ```
 
-**Improvements:**
-- Eliminated filler: "it's important to note", "basically", "really"
-- Active voice: "Catch" vs "you should catch"
-- Specific: "Sentry, Datadog" vs "log appropriately"
-- Code example instead of prose description
-- 60% reduction in word count while adding more information
+**Improvements:** Eliminated filler, active voice, specific tools, added code, 60% shorter with more info.
 
 ## References
 
-Based on official Claude Code best practices:
+Based on Claude Code best practices:
 - https://code.claude.com/docs/en/best-practices
 - https://code.claude.com/docs/en/skills
 - https://code.claude.com/docs/en/how-claude-code-works
 
-## Usage Examples
+## Usage
 
-### Review a skill file
 ```
-/best-practices-reviewer .claude/skills/my-skill/SKILL.md
-```
-
-### Review all skills
-```
-Review all skill files in .claude/skills/ using the best-practices-reviewer
-```
-
-### Quick validation
-```
-Use /best-practices-reviewer to check if this skill follows best practices [paste skill content]
+/skill-reviewer path/to/SKILL.md
 ```
